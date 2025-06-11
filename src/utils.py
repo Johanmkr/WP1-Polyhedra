@@ -7,7 +7,7 @@ import torch
 
 
 class NeuralNet(nn.Module):
-    def __init__(self, input_size, hidden_sizes, num_classes):
+    def __init__(self, input_size, hidden_sizes, num_classes, classification=False):
         super(NeuralNet, self).__init__()
         self.hidden_sizes = hidden_sizes
 
@@ -26,6 +26,10 @@ class NeuralNet(nn.Module):
         output_layer_name = f"l{len(hidden_sizes) + 1}"
 
         setattr(self, output_layer_name, nn.Linear(hidden_sizes[-1], num_classes))
+        # setattr(self, "output_activation", nn.Softmax(dim=num_classes - 1) if classification else nn.Identity())
+        
+        
+ 
 
     def forward(self, x):
         out = x
@@ -37,6 +41,13 @@ class NeuralNet(nn.Module):
 
         output_layer_name = f"l{len(self.hidden_sizes) + 1}"
         out = getattr(self, output_layer_name)(out)
+        # out = getattr(self, "output_activation")(out)
+        # if len(out.shape) == 1:
+        #     out = out.unsqueeze(0)
+        # elif len(out.shape) == 2 and out.shape[0] == 1:
+        #     out = out.squeeze(0)
+        # elif len(out.shape) == 3 and out.shape[0] == 1:
+        #     out = out.squeeze(0)
         return out
 
 class DataGenerator:
