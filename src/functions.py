@@ -46,7 +46,7 @@ def get_polytope_list(
         # change this based on how many hidden layers we have
         # if we have different number of nodes for each hidden layer, I need to
         # update the code
-        split_vectors = np.array_split(bit_string, 2)
+        split_vectors = np.array_split(bit_string, 2) ### J: MUST CHANGE THIS BASED ON THE NUMBER OF HIDDEN LAYERS
         A, c = get_inequalities(
             model,
             [split_vectors],
@@ -255,6 +255,8 @@ def get_inequalities(
         # A1 = -np.matmul(np.diag(sign_str1), W1)
 
         # if we dont do reshape to a column vector like bit_str we cannot get diagonal matrix
+        # print("Sign string shape:", np.diag(sign_str.reshape(-1,)).shape)
+        # print("W shape:", W.shape)
         A = (
             np.diag(
                 sign_str.reshape(

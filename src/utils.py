@@ -39,6 +39,34 @@ class NeuralNet(nn.Module):
         out = getattr(self, output_layer_name)(out)
         return out
 
+class DataGenerator:
+    def __init__(self, n=100):
+        self.n = n
+    def convex(n=100):
+        x_1 = np.linspace(-1, 1, n, dtype="float32")
+        x_2 = np.linspace(-1, 1, n, dtype="float32")
+        x_1, x_2 = np.meshgrid(x_1, x_2)
+        x_1 = np.reshape(x_1, (n**2,1))
+        x_2 = np.reshape(x_2, (n**2,1))
+        
+        y = np.asarray([i**2+j**2-2/3 for i, j in zip(x_1, x_2)])
+        x = np.concatenate((x_1,x_2), axis = 1)
+        return x, y
+
+    def franke(n=100):
+        x = np.linspace(0, 1, n)
+        y = np.linspace(0, 1, n)
+        x_1, x_2 = np.meshgrid(x, y)
+        x_1 = np.reshape(x_1, (n**2, 1))
+        x_2 = np.reshape(x_2, (n**2, 1))
+        y = 0.75 * np.exp(-(9 * x_1 - 2) ** 2 / 4.0 - (9 * x_2 - 2) ** 2 / 4.0) + \
+            0.75 * np.exp(-(9 * x_1 + 1) ** 2 / 49.0 - (9 * x_2 + 1) ** 2 / 10.0) + \
+            0.5 * np.exp(-(9 * x_1 - 7) ** 2 / 4.0 - (9 * x_2 - 3) ** 2 / 49.0) - \
+            0.2 * np.exp(-(9 * x_1 - 4) ** 2 - (9 * x_2 - 7) ** 2)
+        x = np.concatenate((x_1, x_2), axis=1)
+        return x, y
+
+
 
 if __name__ == "__main__":
     pass
