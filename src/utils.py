@@ -4,6 +4,8 @@ import matplotlib.animation as animation
 import numpy as np
 import torch.nn as nn
 import torch
+from intvalpy import lineqs
+from . import functions
 
 
 class NeuralNet(nn.Module):
@@ -78,6 +80,46 @@ class DataGenerator:
         return x, y
 
 
+ 
+def calculate_vertices(Alocal, clocal, bound):
+    return lineqs(-Alocal, -clocal, title='Solution', color='red', save=False, show=False, bounds=[[-bound,bound], [-bound,bound]])
+
+def find_vertices(A, c, bound:int=1, flexible_bound:bool=False, return_broken:bool=False):
+    vertices_list = []
+    if return_broken:
+        broken_A = []
+        broken_c = []
+    for _A, _c in zip(A,c):
+        if flexible_bound:
+            counter = 0
+            bound = 1
+            while counter < 100:
+                try: 
+                    vertices = find_vertices(_A, _c, bound)
+                    vertices_list.append(vertices)
+                    break
+                except IndexError:
+                    counter += 1
+                    bound = 2**counter
+                    if counter == 100 and return_broken:
+                        broken_A.append(_A)
+                        broken_c.append(_c)
+                        break
+                    continue
+        else:
+            try:
+                vertices = find_vertices(_A, _c, bound)
+                vertices_list.append(vertices)
+            except IndexError:
+                if return_broken:
+                    broken_A.append(_A)
+                    broken_c.append(_c)
+                else:
+                    continue
+        return vertices_list, broken_A, broken_c if return_broken else vertices_list
+            
+        
+        
 
 if __name__ == "__main__":
     pass

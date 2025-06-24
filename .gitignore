@@ -11,4 +11,8 @@ wheels/
 
 *.mp4
 *.npy
+*.pth
+*.pkl
+
+state_dicts/
 
