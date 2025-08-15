@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.13"
 
 [[package]]
@@ -821,6 +821,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pip" },
     { name = "polytope" },
+    { name = "pycddlib-standalone" },
     { name = "pyqt5" },
     { name = "ruff" },
     { name = "scikit-learn" },
@@ -842,6 +843,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "pip", specifier = ">=25.1.1" },
     { name = "polytope", specifier = ">=0.2.5" },
+    { name = "pycddlib-standalone", specifier = ">=3.0.0" },
     { name = "pyqt5", specifier = ">=5.15.11" },
     { name = "ruff", specifier = ">=0.11.12" },
     { name = "scikit-learn", specifier = ">=1.6.1" },
@@ -906,6 +908,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/cd/05/0a34433a064256a57
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/37/efad0257dc6e593a18957422533ff0f87ede7c9c6ea010a2177d738fb82f/pure_eval-0.2.3-py3-none-any.whl", hash = "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0", size = 11842, upload-time = "2024-07-21T12:58:20.04Z" },
 ]
+
+[[package]]
+name = "pycddlib-standalone"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/95/ebccc84c3f397f4bcb36d94128076f39d7aee4d5e52184576846b538f602/pycddlib_standalone-3.0.0.tar.gz", hash = "sha256:28a3cba479a720257741ca72fd3048f9064351a6b1d8c8443c57258d4dc4a74e", size = 90981, upload-time = "2024-10-04T11:22:16.33Z" }
 
 [[package]]
 name = "pycparser"
