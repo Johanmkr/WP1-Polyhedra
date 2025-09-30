@@ -1,3 +1,12 @@
+@article{averkovEXPRESSIVENESSRATIONALRELU2025,
+  title = {{{ON THE EXPRESSIVENESS OF RATIONAL RELU NEURAL NETWORKS WITH BOUNDED DEPTH}}},
+  author = {Averkov, Gennadiy and Hojny, Christopher and Merkert, Maximilian},
+  year = {2025},
+  abstract = {To confirm that the expressive power of ReLU neural networks grows with their depth, the function Fn = max\{0, x1, . . . , xn\} has been considered in the literature. A conjecture by Hertrich, Basu, Di Summa, and Skutella [NeurIPS 2021] states that any ReLU network that exactly represents Fn has at least dlog2(n + 1)e hidden layers. The conjecture has recently been confirmed for networks with integer weights by Haase, Hertrich, and Loho [ICLR 2023].},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/27R3E2K5/Averkov et al. - 2025 - ON THE EXPRESSIVENESS OF RATIONAL RELU NEURAL NETWORKS WITH BOUNDED DEPTH.pdf}
+}
+
 @inproceedings{balestrieroSplineTheoryDeep2018,
   title = {A {{Spline Theory}} of {{Deep Learning}}},
   booktitle = {Proceedings of the 35th {{International Conference}} on {{Machine Learning}}},
@@ -11,6 +20,31 @@
   abstract = {We build a rigorous bridge between deep networks (DNs) and approximation theory via spline functions and operators. Our key result is that a large class of DNs can be written as a composition of max-affine spline operators (MASOs), which provide a powerful portal through which to view and analyze their inner workings. For instance, conditioned on the input signal, the output of a MASO DN can be written as a simple affine transformation of the input. This implies that a DN constructs a set of signal-dependent, class-specific templates against which the signal is compared via a simple inner product; we explore the links to the classical theory of optimal classification via matched filters and the effects of data memorization. Going further, we propose a simple penalty term that can be added to the cost function of any DN learning algorithm to force the templates to be orthogonal with each other; this leads to significantly improved classification performance and reduced overfitting with no change to the DN architecture. The spline partition of the input signal space opens up a new geometric avenue to study how DNs organize signals in a hierarchical fashion. As an application, we develop and validate a new distance metric for signals that quantifies the difference between their partition encodings.},
   langid = {english},
   file = {/home/johan/Zotero/storage/4YLLBF4I/Balestriero and baraniuk - 2018 - A Spline Theory of Deep Learning.pdf;/home/johan/Zotero/storage/SQB4AT8Y/Balestriero and baraniuk - 2018 - A Spline Theory of Deep Learning.pdf}
+}
+
+@misc{berzinsPolyhedralComplexExtraction2023,
+  title = {Polyhedral {{Complex Extraction}} from {{ReLU Networks}} Using {{Edge Subdivision}}},
+  author = {Berzins, Arturs},
+  year = {2023},
+  month = jun,
+  number = {arXiv:2306.07212},
+  eprint = {2306.07212},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2306.07212},
+  urldate = {2025-07-11},
+  abstract = {A neural network consisting of piecewise affine building blocks, such as fully-connected layers and ReLU activations, is itself a piecewise affine function supported on a polyhedral complex. This complex has been previously studied to characterize theoretical properties of neural networks, but, in practice, extracting it remains a challenge due to its high combinatorial complexity. A natural idea described in previous works is to subdivide the regions via intersections with hyperplanes induced by each neuron. However, we argue that this view leads to computational redundancy. Instead of regions, we propose to subdivide edges, leading to a novel method for polyhedral complex extraction. A key to this are sign-vectors, which encode the combinatorial structure of the complex. Our approach allows to use standard tensor operations on a GPU, taking seconds for millions of cells on a consumer grade machine. Motivated by the growing interest in neural shape representation, we use the speed and differentiability of our method to optimize geometric properties of the complex. The code is available at https://github.com/arturs-berzins/relu\_edge\_subdivision .},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning},
+  file = {/home/johan/Zotero/storage/UQF4WLEC/Berzins - 2023 - Polyhedral Complex Extraction from ReLU Networks using Edge Subdivision.pdf;/home/johan/Zotero/storage/EBCTSWHJ/2306.html}
+}
+
+@article{gagneuxHowImproveExpressivity,
+  title = {How to Improve Expressivity of Convex {{ReLU}} Neural Networks?},
+  author = {Gagneux, Anne and Massias, Mathurin and Soubies, Emmanuel and Gribonval, R{\'e}mi and {de Lyon}, Ens and Lyon, Universit{\'e} Claude Bernard and Cedex, Lyon and {de Lyon}, Ens and Lyon, Universit{\'e} Claude Bernard and Cedex, Lyon},
+  abstract = {To implement convex functions with neural networks, the standard way is to use Input Convex Neural Networks (ICNNs). This article provides a study of their expressivity, theoretically and experimentally. Leveraging the characterization of convex ReLU networks, we introduce a new regularisation which softly enforces convexity of the learnt function. Code available at github.com/annegnx/beyondicnn.},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/PGSKG9RR/Gagneux et al. - How to improve expressivity of convex ReLU neural networks.pdf}
 }
 
 @article{geigerInformationPlaneAnalyses2022,
@@ -116,6 +150,31 @@
   file = {/home/johan/Zotero/storage/5EKB47X7/Liu et al. - 2023 - ReLU Neural Networks, Polyhedral Decompositions, and Persistent Homology.pdf}
 }
 
+@misc{masdenAlgorithmicDeterminationCombinatorial2022,
+  title = {Algorithmic {{Determination}} of the {{Combinatorial Structure}} of the {{Linear Regions}} of {{ReLU Neural Networks}}},
+  author = {Masden, Marissa},
+  year = {2022},
+  month = jul,
+  number = {arXiv:2207.07696},
+  eprint = {2207.07696},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2207.07696},
+  urldate = {2025-09-24},
+  abstract = {We algorithmically determine the regions and facets of all dimensions of the canonical polyhedral complex, the universal object into which a ReLU network decomposes its input space. We show that the locations of the vertices of the canonical polyhedral complex along with their signs with respect to layer maps determine the full facet structure across all dimensions.We present an algorithm which calculates this full combinatorial structure, making use of our theorems that the dual complex to the canonical polyhedral complex is cubical and it possesses a multiplication compatible with its facet structure. The resulting algorithm is numerically stable, polynomial time in the number of intermediate neurons, and obtains accurate information across all dimensions. This permits us to obtain, for example, the true topology of the decision boundaries of networks with low-dimensional inputs. We run empirics on such networks at initialization, finding that width alone does not increase observed topology, but width in the presence of depth does. Source code for our algorithms is accessible online at https://github.com/mmasden/canonicalpoly.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Computational Geometry,Computer Science - Machine Learning,Mathematics - Algebraic Topology},
+  file = {/home/johan/Zotero/storage/FIA9P5ED/Masden - 2022 - Algorithmic Determination of the Combinatorial Structure of the Linear Regions of ReLU Neural Networ.pdf}
+}
+
+@article{pakLecturesDiscretePolyhedral,
+  title = {Lectures on {{Discrete}} and {{Polyhedral Geometry}}},
+  author = {Pak, Igor},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/SIXLH6YF/Pak - Lectures on Discrete and Polyhedral Geometry.pdf}
+}
+
 @misc{pascanuNumberResponseRegions2014,
   title = {On the Number of Response Regions of Deep Feed Forward Networks with Piece-Wise Linear Activations},
   author = {Pascanu, Razvan and Montufar, Guido and Bengio, Yoshua},
@@ -132,6 +191,24 @@
   langid = {english},
   keywords = {Computer Science - Machine Learning,Computer Science - Neural and Evolutionary Computing},
   file = {/home/johan/Zotero/storage/BI8FU8DA/Pascanu et al. - 2014 - On the number of response regions of deep feed for.pdf}
+}
+
+@article{roldan-pensadoSurveyMassPartitions2021,
+  title = {A Survey of Mass Partitions},
+  author = {{Rold{\'a}n-Pensado}, Edgardo and Sober{\'o}n, Pablo},
+  year = {2021},
+  month = feb,
+  journal = {Bulletin of the American Mathematical Society},
+  volume = {59},
+  number = {2},
+  pages = {227--267},
+  issn = {0273-0979, 1088-9485},
+  doi = {10.1090/bull/1725},
+  urldate = {2025-09-23},
+  abstract = {Mass partition problems describe the partitions we can induce on a family of measures or finite sets of points in Euclidean spaces by dividing the ambient space into pieces. In this survey we describe recent progress in the area in addition to its connections to topology, discrete geometry, and computer science.},
+  copyright = {https://www.ams.org/publications/copyright-and-permissions},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/RUMP59KI/Roldán-Pensado and Soberón - 2021 - A survey of mass partitions.pdf}
 }
 
 @article{sattelbergLocallyLinearAttributes2023,
