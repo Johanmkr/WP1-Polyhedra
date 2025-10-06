@@ -180,10 +180,10 @@ def _find_halfspace_intersection(inequalities):
         raise ValueError("No feasible point found for the given inequalities.")
     feasible_point = res.x[:-1]
 
-    # Print a lot of info
-    print("Feasible point found:", feasible_point)
-    print("Halfspaces shape:", halfspaces.shape)
-    print("Halfspaces:", halfspaces)
+    # # Print a lot of info
+    # print("Feasible point found:", feasible_point)
+    # print("Halfspaces shape:", halfspaces.shape)
+    # print("Halfspaces:", halfspaces)
     
     
     
@@ -195,48 +195,79 @@ def _fill_tree_with_projection_matrices(tree, hyperplanes, feasible_activations)
     root = [node for node in tree.levelorder_iter()][0]  # root node
     root.slope_projection = np.eye(hyperplanes[0].shape[1] - 1)
     root.intercept_projection = np.zeros((hyperplanes[0].shape[1] - 1, 1))
-    root.region_inequalities = np.zeros((1, hyperplanes[0].shape[1] + 1))  # trivial
+    root.region_inequalities = np.zeros((1, hyperplanes[0].shape[1]))  # trivial
 
     # Start with the root as the only node to process at layer 0
     current_nodes = [root]
 
     # Loop through each layer of the network (correspond to hyperplanes)
     for layer_index, hp in enumerate(hyperplanes):
-        layer_idx = layer_index + 1
+        # layer_idx = layer_index + 1
         next_nodes = []
 
-        for node in tqdm(current_nodes, desc=f"Processing layer {layer_idx}"):
+        for parent_node in tqdm(current_nodes, desc=f"Processing layer {layer_index}"):
             # Iterate over the parent's children (snapshot list so we can remove safely)
-            node = tree[node_name].node
-            # activation_pattern stored in node_name as string; convert back
-            activation_pattern = np.array(eval(node.node_name)).reshape(-1, 1)
+            for child in list(parent_node.children):
+                # activation_pattern stored in node_name as string; convert back
+                activation_pattern = np.array(eval(child.node_name)).reshape(-1, 1)
 
-            # Compute inequalities / projections using node.parent projections
-            signs = _get_signs_from_activation(activation_pattern).flatten()
-            D = np.diag(signs) @ hp[:, :-1] @ node.parent.slope_projection
-            c = -np.diag(signs) @ (hp[:, :-1] @ node.parent.intercept_projection + hp[:, -1:])
+                # Compute inequalities / projections using parent_node projections. Inequalities are of the form D x <= c
+                signs = _get_signs_from_activation(activation_pattern).flatten()
+                D = np.diag(signs) @ hp[:, :-1] @ parent_node.slope_projection
+                c = -np.diag(signs) @ (hp[:, :-1] @ parent_node.intercept_projection + hp[:, -1:])
 
-            # Combine with parent's region inequalities
-            node.region_inequalities = np.vstack((np.hstack((D, c)), node.parent.region_inequalities))
+                # from IPython import embed; embed()
+                # Combine with parent's region inequalities
+                child.region_inequalities = np.vstack((np.hstack((D, c)), parent_node.region_inequalities))
 
-            # Slope and intercept projections for this child
-            node.slope_projection = np.diag(activation_pattern.flatten()) @ hp[:, :-1] @ node.parent.slope_projection
-            node.intercept_projection = np.diag(activation_pattern.flatten()) @ (hp[:, :-1] @ node.parent.intercept_projection + hp[:, -1:])
+                # Slope and intercept projections for this child
+                child.slope_projection = np.diag(activation_pattern.flatten()) @ hp[:, :-1] @ parent_node.slope_projection
+                child.intercept_projection = np.diag(activation_pattern.flatten()) @ (hp[:, :-1] @ parent_node.intercept_projection + hp[:, -1:])
 
-            # Test feasibility. If infeasible, remove the child subtree by removing this child.
-            try:
-                # skip the parent's trivial inequality (index 0) if needed; your original used [1:]
-                _find_halfspace_intersection(node.region_inequalities[1:])
-            except ValueError:
-                # Remove the infeasible child (and thus its entire subtree)
-                node.parent.remove_child(node)
-                continue
+                # Test feasibility. If infeasible, remove the child subtree by removing this child.
+                try:
+                    # skip the parent's trivial inequality (index 0) if needed; your original used [1:]
+                    _find_halfspace_intersection(child.region_inequalities[1:])
+                    next_nodes.append(child)
+                except ValueError:
+                    # Remove the infeasible child (and thus its entire subtree)
+                    # parent_node.remove_child(child)
+                    continue
 
-            # Only append to next_nodes if child is still present (feasible)
-            next_nodes.append(node)
+                # Only append to next_nodes if child is still present (feasible)
+                # next_nodes.append(child)
 
         # Move down one layer
         current_nodes = next_nodes
+
+def _plot_regions_from_tree(tree, layer_index):
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Polygon
+
+    # Get nodes at the specified layer
+    nodes_at_layer = [node for node in tree.levelorder_iter() if node.depth == layer_index]
+
+    plt.figure(figsize=(8, 8))
+    ax = plt.gca()
+
+    for node in nodes_at_layer:
+        if node.region_inequalities is None:
+            continue
+        try:
+            hs = _find_halfspace_intersection(node.region_inequalities[1:])  # Skip trivial inequality
+            hull = ConvexHull(hs.intersections)
+            polygon = Polygon(hs.intersections[hull.vertices], alpha=0.3)
+            ax.add_patch(polygon)
+        except ValueError:
+            continue
+
+    ax.set_xlim(-10, 10)
+    ax.set_ylim(-10, 10)
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    ax.set_title(f'Regions at Layer {layer_index}')
+    plt.grid()
+    plt.show()
 
 
 
@@ -288,7 +319,7 @@ def _fill_tree_with_projection_matrices(tree, hyperplanes, feasible_activations)
 
 if __name__ == "__main__":
     # Make model
-    model = NeuralNet(input_size=2, num_classes=1, hidden_sizes=[4,6,5])
+    model = NeuralNet(input_size=2, num_classes=1, hidden_sizes=[4,6,5,3])
     # Get hyperplanes
     hyperplanes = _get_hyperplanes(model.state_dict())
     for i, hp in enumerate(hyperplanes):
@@ -308,6 +339,8 @@ if __name__ == "__main__":
         
     _fill_tree_with_projection_matrices(mytree, hyperplanes, feasible_activations)
 
-        
+    for layer_index in range(1, len(hyperplanes) + 1):
+        _plot_regions_from_tree(mytree, layer_index)
+
     # Find projections
     # projections = _find_projections(hyperplanes, feasible_activations)
