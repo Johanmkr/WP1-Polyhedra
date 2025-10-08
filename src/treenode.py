@@ -93,16 +93,21 @@ class RegionTree:
             # Move to the next layer
             current_layer_nodes = next_layer_nodes
         
-    def pass_input_through_tree(self, x, reset=False):
+    def pass_input_through_tree(self, x, return_path=False, reset=False):
         # Pass input x through the tree to find the corresponding leaf node
         if self.root.projection_matrix is None or self.root.intercept_vector is None:
             raise ValueError("Tree has not been built. Please build the tree before passing input.")
         
-
+        if reset:
+            self.reset_counters()
+        
         current_node = self.root
-            
+        
+        path = [current_node]
+
         while not current_node.is_leaf():
             found_child = False
+            # print(f"At layer {current_node.layer_number}, checking children...")
             for child in current_node.get_children():
                 # Get inequalities for the child node
                 inequalities = child.inequalities
@@ -110,15 +115,20 @@ class RegionTree:
                     continue
                 A = inequalities[:,:-1]
                 b = inequalities[:,-1]
+                # print(f"Checking child at layer {child.layer_number}")
                 # Check if x satisfies the inequalities
                 if np.all(A @ x <= b):
                     current_node = child
                     found_child = True
-                    current_node.counter += 1
+                    path.append(current_node)
                     break
             if not found_child:
                 raise ValueError("Input does not belong to any region in the tree.")
-    
+        for path_node in path:
+            path_node.counter += 1
+        if return_path:
+            return path
+
     def reset_counters(self):
         # Reset counters for all nodes in the tree
         def dfs(node):
@@ -137,15 +147,34 @@ class RegionTree:
                 dfs(child)
         dfs(self.root)
         return nodes
-    
+
     def read_off_counters(self):
         # Each node has a counter, I need to read them off for each layer in order to estimate the probability density using these number counts.
+        counters = self.get_counters()
+        for layer_idx, layer_counters in enumerate(counters):
+            print(f"Layer {layer_idx}: {layer_counters}\nTotal: {sum(layer_counters)}\n")
+            
+    def get_counters(self):
+        counters_per_layer = []
         for layer in range(len(self.size)):
-            print(f"Layer {layer} has {self.size[layer]} nodes.")
             nodes_in_layer = self._get_nodes_at_layer(layer)
             counters = [node.counter for node in nodes_in_layer]
-            print(f"Counters: {counters}")
+            counters_per_layer.append(counters)
+        return counters_per_layer
 
+    def get_nonzero_counter_nodes(self):
+        nonzero_counter_nodes = {}
+        for layer in range(len(self.size)):
+            nodes_in_layer = self._get_nodes_at_layer(layer)
+            nonzero_nodes = []
+            for node in nodes_in_layer:
+                if np.abs(node.counter) < 1e-5:
+                    continue
+                else:
+                    nonzero_nodes.append(node)
+            nonzero_counter_nodes[layer] = nonzero_nodes
+        return nonzero_counter_nodes
+        
     # Small utility functions
     def _get_activation_from_signs(self, signs):
         return -(signs - 1) / 2
