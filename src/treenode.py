@@ -174,6 +174,25 @@ class RegionTree:
                     nonzero_nodes.append(node)
             nonzero_counter_nodes[layer] = nonzero_nodes
         return nonzero_counter_nodes
+    
+    def store_counters(self, reset=True):
+        nonzero_nodes = self.get_nonzero_counter_nodes(self)
+        for node in nonzero_nodes:
+            node.number_counts.append(node.counter)
+            if reset:
+                node.counter = 0
+    
+    def get_number_counts(self):
+        all_number_counts = {}
+        for layer in range(len(self.size)):
+            nodes_in_layer = self.get_nodes_at_layer(layer)
+            for node in nodes_in_layer:
+                if len(node.numbers_counts) > 0:
+                    all_number_counts[layer] = node.number_counts
+                else:
+                    continue
+        return all_number_counts
+            
         
     # Small utility functions
     def _get_activation_from_signs(self, signs):
@@ -200,6 +219,7 @@ class TreeNode:
         self.layer_number = 0 if self.parent == None else None # Layer index in the network
         self.children = []
         self.counter = 0
+        self.number_counts = []
         
     def add_child(self, child_node):
         child_node.parent = self
