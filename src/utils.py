@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn as nn
 import torch
 from intvalpy import lineqs
-from . import functions
+# from . import functions
 
 
 class NeuralNet(nn.Module):

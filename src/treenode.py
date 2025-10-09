@@ -1,4 +1,4 @@
-from platform import node
+# from platform import node
 import numpy as np
 import itertools
 from tqdm import tqdm
@@ -57,6 +57,7 @@ class RegionTree:
         if self.state_dict is None:
             raise ValueError("State dictionary is not provided.")
         
+        print("Building tree...")
         # Find the hyperplanes from the state_dict
         self._find_hyperplanes()
         
@@ -75,10 +76,13 @@ class RegionTree:
             next_layer_nodes = []
             num_neurons = hp.shape[0]
             # Generate all possible activation patterns for the current layer
-            for activation_pattern in tqdm(itertools.product([0, 1], repeat=num_neurons), desc=f"Processing Layer {layer_index + 1}/{len(self.hyperplanes)}"):
+            # possible_activation_patterns = itertools.product([0, 1], repeat=num_neurons)
+            # print(possible_activation_patterns)
+            for activation_pattern in tqdm(itertools.product([0, 1], repeat=num_neurons),total=2 ** num_neurons, desc=f"Layer {layer_index+1} / {len(self.hyperplanes)}"):
                 activation_pattern = np.array(activation_pattern)
                 # Create a new node for each activation pattern
-                for parent_node in current_layer_nodes:
+                
+                for parent_node in tqdm(current_layer_nodes, desc=f"Node", leave=False):
                     # Create new node with the current activation pattern
                     new_node = TreeNode(activation=activation_pattern)
                     new_node.layer_number = layer_index + 1
@@ -176,21 +180,23 @@ class RegionTree:
         return nonzero_counter_nodes
     
     def store_counters(self, reset=True):
-        nonzero_nodes = self.get_nonzero_counter_nodes(self)
-        for node in nonzero_nodes:
-            node.number_counts.append(node.counter)
-            if reset:
-                node.counter = 0
-    
+        for layer in range(len(self.size)):
+            for node in self._get_nodes_at_layer(layer):
+                node.number_counts.append(node.counter)
+                if reset:
+                    node.counter = 0
+        
     def get_number_counts(self):
         all_number_counts = {}
         for layer in range(len(self.size)):
-            nodes_in_layer = self.get_nodes_at_layer(layer)
+            nodes_in_layer = self._get_nodes_at_layer(layer)
+            layer_counts = []
             for node in nodes_in_layer:
-                if len(node.numbers_counts) > 0:
-                    all_number_counts[layer] = node.number_counts
+                if sum(node.number_counts) > 1e-5:
+                    layer_counts.append(node.number_counts)
                 else:
                     continue
+            all_number_counts[layer] = layer_counts
         return all_number_counts
             
         
@@ -263,4 +269,7 @@ class TreeNode:
     
     
 if __name__=="__main__":
-    pass
+    import utils
+    net = utils.NeuralNet(input_size=2, num_classes=1, hidden_sizes=[3,3,3,3,3])
+    tree = RegionTree(net.state_dict())
+    tree.build_tree()
