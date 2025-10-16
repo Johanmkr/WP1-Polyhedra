@@ -1,11 +1,13 @@
-# from platform import node
 import numpy as np
 import itertools
 from tqdm import tqdm
+
+from geobin import treenode as tn
+
 class RegionTree:
     def __init__(self, state_dict=None, automatic_build=False):
         self.state_dict = state_dict
-        self.root = TreeNode()
+        self.root = tn.TreeNode()
         self.root.layer_number = 0
         self.hyperplanes = []
         self.size = []
@@ -84,7 +86,7 @@ class RegionTree:
                 
                 for parent_node in tqdm(current_layer_nodes, desc=f"Node", leave=False):
                     # Create new node with the current activation pattern
-                    new_node = TreeNode(activation=activation_pattern)
+                    new_node = tn.TreeNode(activation=activation_pattern)
                     new_node.layer_number = layer_index + 1
                     self.size[-1] += 1
                     new_node.parent = parent_node
@@ -214,62 +216,3 @@ class RegionTree:
         return self.state_dict
     def get_hyperplanes(self):
         return self.hyperplanes
-
-class TreeNode:
-    def __init__(self, activation=None):
-        self.activation = activation  # Region
-        self.projection_matrix = None # For affine transformation to next layer
-        self.intercept_vector = None # For affine transformation to next layer
-        self.parent = None # Parent TreeNode
-        self.inequalities = None # Inequalities added at this node
-        self.layer_number = 0 if self.parent == None else None # Layer index in the network
-        self.children = []
-        self.counter = 0
-        self.number_counts = []
-        
-    def add_child(self, child_node):
-        child_node.parent = self
-        self.children.append(child_node)
-        
-    def is_leaf(self):
-        return len(self.children) == 0
-    
-    def is_root(self):
-        return self.parent is None
-
-    def get_children(self):
-        return self.children
-
-    def get_depth(self):
-        depth = 0
-        node = self
-        while node.parent is not None:
-            node = node.parent
-            depth += 1
-            
-        assert depth == self.layer_number, "Layer number mismatch"
-        return depth
-    
-    def get_ancestors(self):
-        ancestors = []
-        node = self
-        while node.parent is not None:
-            ancestors.append(node.parent)
-            node = node.parent
-        return ancestors[::-1]  # Return in root-to-leaf order
-    
-    def get_path_inequalities(self):
-        inequalities = []
-        node = self
-        while node.parent is not None:
-            if node.inequalities is not None:
-                inequalities.append(node.inequalities)
-            node = node.parent
-        return np.vstack(inequalities[::-1]) if inequalities else None  # Return in root-to-leaf order
-    
-    
-if __name__=="__main__":
-    import utils
-    net = utils.NeuralNet(input_size=2, num_classes=1, hidden_sizes=[3,3,3,3,3])
-    tree = RegionTree(net.state_dict())
-    tree.build_tree()
