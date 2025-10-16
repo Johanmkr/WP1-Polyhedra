@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex nba_main"] 1757059791.03477 "nba_main.aux" "nba_main.bbl" "nba_main" 1757060274.11749 0
-  "./Polyhedral_Decomposition.bib" 1756815306.27636 20692 d66c15b5d341c9c33f518438a17495be ""
+["bibtex nba_main"] 1760563938.92739 "nba_main.aux" "nba_main.bbl" "nba_main" 1760563939.09765 0
+  "./Polyhedral_Decomposition.bib" 1760563938.7151 49908 333e97adc5eb4e7563b96094808e41d4 ""
   "./iclr2025_conference.bst" 1756283657.94569 26973 af983813ca1a1414954dbceae7baa2a1 ""
   "nba_main.aux" 1757060273.93417 2839 0ff00b47a65d30ad8b26d543ffde2b3d "pdflatex"
   (generated)
   "nba_main.bbl"
   "nba_main.blg"
   (rewritten before read)
-["pdflatex"] 1757060273.52182 "/home/johan/Documents/phd/WP1/polyhedra/nobim_abstract/nba_main.tex" "nba_main.pdf" "nba_main" 1757060274.11761 0
+["pdflatex"] 1757060273.52182 "/home/johan/Documents/phd/WP1/polyhedra/nobim_abstract/nba_main.tex" "nba_main.pdf" "nba_main" 1760563939.09774 0
   "/etc/texmf/web2c/texmf.cnf" 1738337534.61235 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/johan/Documents/phd/WP1/polyhedra/nobim_abstract/nba_main.tex" 1757060273.36343 4622 ce9db8cd8ac23fb5736ae333057f1da5 ""
+  "/home/johan/Documents/phd/WP1/polyhedra/nobim_abstract/nba_main.tex" 1757060276.39124 4622 ce9db8cd8ac23fb5736ae333057f1da5 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/helvetic/phvb.tfm" 1136768653 2300 14616918391efa49ac8b481a75fbdc1a ""
@@ -126,9 +126,9 @@
   "math_commands.tex" 1756283712.81041 12284 a71653715108dc62b66e3a0bde0307d8 ""
   "natbib.sty" 1756283488.98641 45154 40088ce024445d7ee2bca59e704cdd01 ""
   "nba_main.aux" 1757060273.93417 2839 0ff00b47a65d30ad8b26d543ffde2b3d "pdflatex"
-  "nba_main.bbl" 1757059791.11761 2850 0d99823284b9c0c3aced7c0649f45a45 "bibtex nba_main"
+  "nba_main.bbl" 1760563939.07809 2850 0d99823284b9c0c3aced7c0649f45a45 "bibtex nba_main"
   "nba_main.out" 1757060273.84694 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "nba_main.tex" 1757060273.36343 4622 ce9db8cd8ac23fb5736ae333057f1da5 ""
+  "nba_main.tex" 1757060276.39124 4622 ce9db8cd8ac23fb5736ae333057f1da5 ""
   (generated)
   "nba_main.aux"
   "nba_main.log"

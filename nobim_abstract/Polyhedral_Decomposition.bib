@@ -1,3 +1,15 @@
+@inproceedings{adilovaInformationPlaneAnalysis2022,
+  title = {Information {{Plane Analysis}} for {{Dropout Neural Networks}}},
+  booktitle = {The {{Eleventh International Conference}} on {{Learning Representations}}},
+  author = {Adilova, Linara and Geiger, Bernhard C. and Fischer, Asja},
+  year = {2022},
+  month = sep,
+  urldate = {2025-10-15},
+  abstract = {The information-theoretic framework promises to explain the predictive power of neural networks. In particular, the information plane analysis, which measures mutual information (MI) between input and representation as well as representation and output, should give rich insights into the training process. This approach, however, was shown to strongly depend on the choice of estimator of the MI. The problem is amplified for deterministic networks if the MI between input and representation is infinite. Thus, the estimated values are defined by the different approaches for estimation, but do not adequately represent the training process from an information-theoretic perspective. In this work, we show that dropout with continuously distributed noise ensures that MI is finite. We demonstrate in a range of experiments that this enables a meaningful information plane analysis for a class of dropout neural networks that is widely used in practice.},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/QW48I42Y/Adilova et al. - 2022 - Information Plane Analysis for Dropout Neural Networks.pdf}
+}
+
 @article{averkovEXPRESSIVENESSRATIONALRELU2025,
   title = {{{ON THE EXPRESSIVENESS OF RATIONAL RELU NEURAL NETWORKS WITH BOUNDED DEPTH}}},
   author = {Averkov, Gennadiy and Hojny, Christopher and Merkert, Maximilian},
@@ -22,6 +34,45 @@
   file = {/home/johan/Zotero/storage/4YLLBF4I/Balestriero and baraniuk - 2018 - A Spline Theory of Deep Learning.pdf;/home/johan/Zotero/storage/SQB4AT8Y/Balestriero and baraniuk - 2018 - A Spline Theory of Deep Learning.pdf}
 }
 
+@article{basiratGeometricPerspectiveInformation2021,
+  title = {A {{Geometric Perspective}} on {{Information Plane Analysis}}},
+  author = {Basirat, Mina and Geiger, Bernhard C. and Roth, Peter M.},
+  year = {2021},
+  month = jun,
+  journal = {Entropy},
+  volume = {23},
+  number = {6},
+  pages = {711},
+  publisher = {Multidisciplinary Digital Publishing Institute},
+  issn = {1099-4300},
+  doi = {10.3390/e23060711},
+  urldate = {2025-01-20},
+  abstract = {Information plane analysis, describing the mutual information between the input and a hidden layer and between a hidden layer and the target over time, has recently been proposed to analyze the training of neural networks. Since the activations of a hidden layer are typically continuous-valued, this mutual information cannot be computed analytically and must thus be estimated, resulting in apparently inconsistent or even contradicting results in the literature. The goal of this paper is to demonstrate how information plane analysis can still be a valuable tool for analyzing neural network training. To this end, we complement the prevailing binning estimator for mutual information with a geometric interpretation. With this geometric interpretation in mind, we evaluate the impact of regularization and interpret phenomena such as underfitting and overfitting. In addition, we investigate neural network learning in the presence of noisy data and noisy labels.},
+  copyright = {http://creativecommons.org/licenses/by/3.0/},
+  langid = {english},
+  keywords = {adaptive and fixed binning,image classification,information plane analysis,neural networks},
+  file = {/home/johan/Zotero/storage/659PB4FZ/Basirat et al. - 2021 - A Geometric Perspective on Information Plane Analy.pdf}
+}
+
+@misc{belghaziMINEMutualInformation2021a,
+  title = {{{MINE}}: {{Mutual Information Neural Estimation}}},
+  shorttitle = {{{MINE}}},
+  author = {Belghazi, Mohamed Ishmael and Baratin, Aristide and Rajeswar, Sai and Ozair, Sherjil and Bengio, Yoshua and Courville, Aaron and Hjelm, R. Devon},
+  year = {2021},
+  month = aug,
+  number = {arXiv:1801.04062},
+  eprint = {1801.04062},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1801.04062},
+  urldate = {2025-10-15},
+  abstract = {We argue that the estimation of mutual information between high dimensional continuous random variables can be achieved by gradient descent over neural networks. We present a Mutual Information Neural Estimator (MINE) that is linearly scalable in dimensionality as well as in sample size, trainable through back-prop, and strongly consistent. We present a handful of applications on which MINE can be used to minimize or maximize mutual information. We apply MINE to improve adversarially trained generative models. We also use MINE to implement the Information Bottleneck, applying it to supervised classification; our results demonstrate substantial improvement in flexibility and performance in these settings.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/home/johan/Zotero/storage/TGSY9J5X/Belghazi et al. - 2021 - MINE Mutual Information Neural Estimation.pdf}
+}
+
 @misc{berzinsPolyhedralComplexExtraction2023,
   title = {Polyhedral {{Complex Extraction}} from {{ReLU Networks}} Using {{Edge Subdivision}}},
   author = {Berzins, Arturs},
@@ -37,6 +88,31 @@
   archiveprefix = {arXiv},
   keywords = {Computer Science - Machine Learning},
   file = {/home/johan/Zotero/storage/UQF4WLEC/Berzins - 2023 - Polyhedral Complex Extraction from ReLU Networks using Edge Subdivision.pdf;/home/johan/Zotero/storage/EBCTSWHJ/2306.html}
+}
+
+@inproceedings{brandenburgDecompositionPolyhedraPiecewise2024,
+  title = {Decomposition {{Polyhedra}} of {{Piecewise Linear Functions}}},
+  booktitle = {The {{Thirteenth International Conference}} on {{Learning Representations}}},
+  author = {Brandenburg, Marie-Charlotte and Grillo, Moritz Leo and Hertrich, Christoph},
+  year = {2024},
+  month = oct,
+  urldate = {2025-10-15},
+  abstract = {In this paper we contribute to the frequently studied question of how to decompose a continuous piecewise linear (CPWL) function into a difference of two convex CPWL functions. Every CPWL function has infinitely many such decompositions, but for applications in optimization and neural network theory, it is crucial to find decompositions with as few linear pieces as possible. This is a highly challenging problem, as we further demonstrate by disproving a recently proposed approach by Tran and Wang [Minimal representations of tropical rational functions. Algebraic Statistics, 15(1):27--59, 2024]. To make the problem more tractable, we propose to fix an underlying polyhedral complex determining the possible locus of nonlinearity. Under this assumption, we prove that the set of decompositions forms a polyhedron that arises as intersection of two translated cones. We prove that irreducible decompositions correspond to the bounded faces of this polyhedron and minimal solutions must be vertices. We then identify cases with a unique minimal decomposition, and illustrate how our insights have consequences in the theory of submodular functions. Finally, we improve upon previous constructions of neural networks for a given convex CPWL function and apply our framework to obtain results in the nonconvex case.},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/B76KIQX4/Brandenburg et al. - 2024 - Decomposition Polyhedra of Piecewise Linear Functions.pdf}
+}
+
+@article{felUnderstandingVisualFeature2024b,
+  title = {Understanding {{Visual Feature Reliance}} through the {{Lens}} of {{Complexity}}},
+  author = {Fel, Thomas and B{\'e}thune, Louis and Lampinen, Andrew K. and Serre, Thomas and Hermann, Katherine},
+  year = {2024},
+  month = dec,
+  journal = {Advances in Neural Information Processing Systems},
+  volume = {37},
+  pages = {69888--69924},
+  urldate = {2025-10-15},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/93NAR8ZJ/Fel et al. - 2024 - Understanding Visual Feature Reliance through the Lens of Complexity.pdf}
 }
 
 @article{gagneuxHowImproveExpressivity,
@@ -66,6 +142,24 @@
   langid = {english},
   keywords = {Computer Science - Computer Vision and Pattern Recognition,Computer Science - Information Theory,Computer Science - Machine Learning,Mathematics - Information Theory,Statistics - Machine Learning},
   file = {/home/johan/Zotero/storage/L3DX5KFV/Geiger - 2022 - On Information Plane Analyses of Neural Network Cl.pdf}
+}
+
+@misc{goldfeldSlicedMutualInformation2021,
+  title = {Sliced {{Mutual Information}}: {{A Scalable Measure}} of {{Statistical Dependence}}},
+  shorttitle = {Sliced {{Mutual Information}}},
+  author = {Goldfeld, Ziv and Greenewald, Kristjan},
+  year = {2021},
+  month = oct,
+  number = {arXiv:2110.05279},
+  eprint = {2110.05279},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2110.05279},
+  urldate = {2025-06-20},
+  abstract = {Mutual information (MI) is a fundamental measure of statistical dependence, with a myriad of applications to information theory, statistics, and machine learning. While it possesses many desirable structural properties, the estimation of high-dimensional MI from samples suffers from the curse of dimensionality. Motivated by statistical scalability to high dimensions, this paper proposes sliced MI (SMI) as a surrogate measure of dependence. SMI is defined as an average of MI terms between one-dimensional random projections. We show that it preserves many of the structural properties of classic MI, while gaining scalable computation and efficient estimation from samples. Furthermore, and in contrast to classic MI, SMI can grow as a result of deterministic transformations. This enables leveraging SMI for feature extraction by optimizing it over processing functions of raw data to identify useful representations thereof. Our theory is supported by numerical studies of independence testing and feature extraction, which demonstrate the potential gains SMI offers over classic MI for high-dimensional inference.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Information Theory,Mathematics - Information Theory},
+  file = {/home/johan/Zotero/storage/WXVRNDC9/Goldfeld and Greenewald - 2021 - Sliced Mutual Information A Scalable Measure of Statistical Dependence.pdf;/home/johan/Zotero/storage/9GYKU4VQ/2110.html}
 }
 
 @misc{goujonNumberRegionsPiecewise2023,
@@ -139,6 +233,30 @@
   file = {/home/johan/Zotero/storage/BBACG9J5/Humayun et al. - 2024 - SplineCam Exact Visualization and Characterization of Deep Network Geometry and Decision Boundaries.pdf}
 }
 
+@misc{InfoNetNeuralEstimation,
+  title = {{{InfoNet}}: {{Neural Estimation}} of {{Mutual Information}} without {{Test-Time Optimization}}},
+  urldate = {2025-10-15},
+  howpublished = {https://arxiv.org/html/2402.10158v1},
+  file = {/home/johan/Zotero/storage/2NB6KWFD/2402.html}
+}
+
+@article{kraskovEstimatingMutualInformation2004,
+  title = {Estimating Mutual Information},
+  author = {Kraskov, Alexander and St{\"o}gbauer, Harald and Grassberger, Peter},
+  year = {2004},
+  month = jun,
+  journal = {Physical Review E},
+  volume = {69},
+  number = {6},
+  pages = {066138},
+  issn = {1539-3755, 1550-2376},
+  doi = {10.1103/PhysRevE.69.066138},
+  urldate = {2025-04-22},
+  copyright = {http://link.aps.org/licenses/aps-default-license},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/N6QV9BTS/Kraskov et al. - 2004 - Estimating mutual information.pdf}
+}
+
 @article{liuReLUNeuralNetworks2023,
   title = {{{ReLU Neural Networks}}, {{Polyhedral Decompositions}}, and {{Persistent Homology}}},
   author = {Liu, Yajing and Cole, Christina M. and Peterson, Chris and Kirby, Michael},
@@ -148,6 +266,43 @@
   abstract = {A ReLU neural network leads to a finite polyhedral decomposition of input space and a corresponding finite dual graph. We show that while this dual graph is a coarse quantization of input space, it is sufficiently robust that it can be combined with persistent homology to detect homological signals of manifolds in the input space from samples. This property holds for a wide range of networks trained for a wide range of purposes that have nothing to do with this topological application. We found this feature to be surprising and interesting; we hope it will also be useful.},
   langid = {english},
   file = {/home/johan/Zotero/storage/5EKB47X7/Liu et al. - 2023 - ReLU Neural Networks, Polyhedral Decompositions, and Persistent Homology.pdf}
+}
+
+@article{longoExplainableArtificialIntelligence2024,
+  title = {Explainable {{Artificial Intelligence}} ({{XAI}}) 2.0: {{A}} Manifesto of Open Challenges and Interdisciplinary Research Directions},
+  shorttitle = {Explainable {{Artificial Intelligence}} ({{XAI}}) 2.0},
+  author = {Longo, Luca and Brcic, Mario and Cabitza, Federico and Choi, Jaesik and Confalonieri, Roberto and Ser, Javier Del and Guidotti, Riccardo and Hayashi, Yoichi and Herrera, Francisco and Holzinger, Andreas and Jiang, Richard and Khosravi, Hassan and Lecue, Freddy and Malgieri, Gianclaudio and P{\'a}ez, Andr{\'e}s and Samek, Wojciech and Schneider, Johannes and Speith, Timo and Stumpf, Simone},
+  year = {2024},
+  month = jun,
+  journal = {Information Fusion},
+  volume = {106},
+  pages = {102301},
+  issn = {15662535},
+  doi = {10.1016/j.inffus.2024.102301},
+  urldate = {2025-10-15},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/AHWFW7Q9/Longo et al. - 2024 - Explainable Artificial Intelligence (XAI) 2.0 A manifesto of open challenges and interdisciplinary.pdf}
+}
+
+@article{lordGeometricKnearestNeighbor2018,
+  title = {Geometric K-Nearest Neighbor Estimation of Entropy and Mutual Information},
+  author = {Lord, Warren M. and Sun, Jie and Bollt, Erik M.},
+  year = {2018},
+  month = mar,
+  journal = {Chaos: An Interdisciplinary Journal of Nonlinear Science},
+  volume = {28},
+  number = {3},
+  eprint = {1711.00748},
+  primaryclass = {math},
+  pages = {033114},
+  issn = {1054-1500, 1089-7682},
+  doi = {10.1063/1.5011683},
+  urldate = {2025-04-22},
+  abstract = {Nonparametric estimation of mutual information is used in a wide range of scientific problems to quantify dependence between variables. The k-nearest neighbor (knn) methods are consistent, and therefore expected to work well for large sample size. These methods use geometrically regular local volume elements. This practice allows maximum localization of the volume elements, but can also induce a bias due to a poor description of the local geometry of the underlying probability measure. We introduce a new class of knn estimators that we call geometric knn estimators (g-knn), which use more complex local volume elements to better model the local geometry of the probability measures. As an example of this class of estimators, we develop a g-knn estimator of entropy and mutual information based on elliptical volume elements, capturing the local stretching and compression common to a wide range of dynamical systems attractors. A series of numerical examples in which the thickness of the underlying distribution and the sample sizes are varied suggest that local geometry is a source of problems for knn methods such as the Kraskov-St{\textbackslash}"\{o\}gbauer-Grassberger (KSG) estimator when local geometric effects cannot be removed by global preprocessing of the data. The g-knn method performs well despite the manipulation of the local geometry. In addition, the examples suggest that the g-knn estimators can be of particular relevance to applications in which the system is large, but data size is limited.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Information Theory,Mathematics - Dynamical Systems,Mathematics - Information Theory,Mathematics - Statistics Theory,Statistics - Methodology,Statistics - Statistics Theory},
+  file = {/home/johan/Zotero/storage/PK22SL8E/Lord et al. - 2018 - Geometric k-nearest neighbor estimation of entropy and mutual information.pdf}
 }
 
 @misc{masdenAlgorithmicDeterminationCombinatorial2022,
@@ -166,6 +321,23 @@
   langid = {english},
   keywords = {Computer Science - Computational Geometry,Computer Science - Machine Learning,Mathematics - Algebraic Topology},
   file = {/home/johan/Zotero/storage/FIA9P5ED/Masden - 2022 - Algorithmic Determination of the Combinatorial Structure of the Linear Regions of ReLU Neural Networ.pdf}
+}
+
+@article{moonEstimationMutualInformation1995,
+  title = {Estimation of Mutual Information Using Kernel Density Estimators},
+  author = {Moon, Young-Il and Rajagopalan, Balaji and Lall, Upmanu},
+  year = {1995},
+  month = sep,
+  journal = {Physical Review E},
+  volume = {52},
+  number = {3},
+  pages = {2318--2321},
+  issn = {1063-651X, 1095-3787},
+  doi = {10.1103/PhysRevE.52.2318},
+  urldate = {2025-03-12},
+  copyright = {http://link.aps.org/licenses/aps-default-license},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/E7NEDFHV/Moon et al. - 1995 - Estimation of mutual information using kernel density estimators.pdf}
 }
 
 @article{pakLecturesDiscretePolyhedral,
@@ -228,6 +400,24 @@
   file = {/home/johan/Zotero/storage/7MTD5DY8/Sattelberg et al. - 2023 - Locally linear attributes of ReLU neural networks.pdf}
 }
 
+@article{saxeInformationBottleneckTheory2019,
+  title = {On the Information Bottleneck Theory of Deep Learning*},
+  author = {Saxe, Andrew M and Bansal, Yamini and Dapello, Joel and Advani, Madhu and Kolchinsky, Artemy and Tracey, Brendan D and Cox, David D},
+  year = {2019},
+  month = dec,
+  journal = {Journal of Statistical Mechanics: Theory and Experiment},
+  volume = {2019},
+  number = {12},
+  pages = {124020},
+  publisher = {{IOP Publishing and SISSA}},
+  issn = {1742-5468},
+  doi = {10.1088/1742-5468/ab3985},
+  urldate = {2025-01-20},
+  abstract = {The practical successes of deep neural networks have not been matched by theoretical progress that satisfyingly explains their behavior. In this work, we study the information bottleneck (IB) theory of deep learning, which makes three specific claims: first, that deep networks undergo two distinct phases consisting of an initial fitting phase and a subsequent compression phase; second, that the compression phase is causally related to the excellent generalization performance of deep networks; and third, that the compression phase occurs due to the diffusion-like behavior of stochastic gradient descent. Here we show that none of these claims hold true in the general case, and instead reflect assumptions made to compute a finite mutual information metric in deterministic networks. When computed using simple binning, we demonstrate through a combination of analytical results and simulation that the information plane trajectory observed in prior work is predominantly a function of the neural nonlinearity employed: double-sided saturating nonlinearities like yield a compression phase as neural activations enter the saturation regime, but linear activation functions and single-sided saturating nonlinearities like the widely used ReLU in fact do not. Moreover, we find that there is no evident causal connection between compression and generalization: networks that do not compress are still capable of generalization, and vice versa. Next, we show that the compression phase, when it exists, does not arise from stochasticity in training by demonstrating that we can replicate the IB findings using full batch gradient descent rather than stochastic gradient descent. Finally, we show that when an input domain consists of a subset of task-relevant and task-irrelevant information, hidden representations do compress the task-irrelevant information, although the overall information about the input may monotonically increase with training time, and that this compression happens concurrently with the fitting process rather than during a subsequent compression period.},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/VG8MR8FC/Saxe et al. - 2019 - On the information bottleneck theory of deep learn.pdf}
+}
+
 @misc{serraBoundingCountingLinear2018,
   title = {Bounding and {{Counting Linear Regions}} of {{Deep Neural Networks}}},
   author = {Serra, Thiago and Tjandraatmadja, Christian and Ramalingam, Srikumar},
@@ -264,6 +454,19 @@
   file = {/home/johan/Zotero/storage/EPNBT9D7/Shwartz-Ziv and Tishby - 2017 - Opening the Black Box of Deep Neural Networks via .pdf}
 }
 
+@inproceedings{skeanLayerLayerUncovering2025a,
+  title = {Layer by {{Layer}}: {{Uncovering Hidden Representations}} in {{Language Models}}},
+  shorttitle = {Layer by {{Layer}}},
+  booktitle = {Forty-Second {{International Conference}} on {{Machine Learning}}},
+  author = {Skean, Oscar and Arefin, Md Rifat and Zhao, Dan and Patel, Niket Nikul and Naghiyev, Jalal and LeCun, Yann and {Shwartz-Ziv}, Ravid},
+  year = {2025},
+  month = jun,
+  urldate = {2025-10-15},
+  abstract = {From extracting features to generating text, the outputs of large language models (LLMs) typically rely on their final layers, following the conventional wisdom that earlier layers capture only low-level cues. However, our analysis shows that intermediate layers can encode even richer representations, often improving performance on a wide range of downstream tasks. To explain and quantify these hidden-layer properties, we propose a unified framework of representation quality metrics based on information theory, geometry, and invariance to input perturbations. Our framework highlights how each model layer balances information compression and signal preservation, revealing why mid-depth embeddings can exceed the last layer's performance. Through extensive experiments on 32 text-embedding tasks across various architectures (transformers, state-space models) and domains (language, vision), we demonstrate that intermediate layers consistently provide stronger features, challenging the standard view on final-layer embeddings and opening new directions on using mid-layer representations for more robust and accurate representations.},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/LTREUTKV/Skean et al. - 2025 - Layer by Layer Uncovering Hidden Representations in Language Models.pdf}
+}
+
 @misc{tishbyDeepLearningInformation2015a,
   title = {Deep {{Learning}} and the {{Information Bottleneck Principle}}},
   author = {Tishby, Naftali and Zaslavsky, Noga},
@@ -280,4 +483,37 @@
   langid = {english},
   keywords = {Computer Science - Machine Learning},
   file = {/home/johan/Zotero/storage/6YVR5ZXU/Tishby and Zaslavsky - 2015 - Deep Learning and the Information Bottleneck Princ.pdf}
+}
+
+@inproceedings{wongsoUsingSlicedMutual2023,
+  title = {Using {{Sliced Mutual Information}} to {{Study Memorization}} and {{Generalization}} in {{Deep Neural Networks}}},
+  booktitle = {Proceedings of {{The}} 26th {{International Conference}} on {{Artificial Intelligence}} and {{Statistics}}},
+  author = {Wongso, Shelvia and Ghosh, Rohan and Motani, Mehul},
+  year = {2023},
+  month = apr,
+  pages = {11608--11629},
+  publisher = {PMLR},
+  issn = {2640-3498},
+  urldate = {2025-04-28},
+  abstract = {In this paper, we study the memorization and generalization behaviour of deep neural networks (DNNs) using sliced mutual information (SMI), which is the average of the mutual information (MI) between one-dimensional random projections. We argue that the SMI between features in a DNN ({$T$}TT) and ground truth labels ({$Y$}YY), {$SI$}({$T$};{$Y$})SI(T;Y)SI(T;Y), can be seen as a form of usable information that the features contain about the labels. We show theoretically that {$SI$}({$T$};{$Y$})SI(T;Y)SI(T;Y) can encode geometric properties of the feature distribution, such as its spherical soft-margin and intrinsic dimensionality, in a way that MI cannot. Additionally, we present empirical evidence showing how {$SI$}({$T$};{$Y$})SI(T;Y)SI(T;Y) can capture memorization and generalization in DNNs. In particular, we find that, in the presence of label noise, all layers start to memorize but the earlier layers stabilize more quickly than the deeper layers. Finally, we point out that, in the context of Bayesian Neural Networks, the SMI between the penultimate layer and the output represents the worst case uncertainty of the network's output.},
+  langid = {english},
+  file = {/home/johan/Zotero/storage/MCSYYEQX/Wongso et al. - 2023 - Using Sliced Mutual Information to Study Memorization and Generalization in Deep Neural Networks.pdf}
+}
+
+@article{yuUnderstandingConvolutionalNeural2021a,
+  title = {Understanding {{Convolutional Neural Networks With Information Theory}}: {{An Initial Exploration}}},
+  shorttitle = {Understanding {{Convolutional Neural Networks With Information Theory}}},
+  author = {Yu, Shujian and Wickstr{\o}m, Kristoffer and Jenssen, Robert and Pr{\'i}ncipe, Jos{\'e} C.},
+  year = {2021},
+  month = jan,
+  journal = {IEEE Transactions on Neural Networks and Learning Systems},
+  volume = {32},
+  number = {1},
+  pages = {435--442},
+  issn = {2162-2388},
+  doi = {10.1109/TNNLS.2020.2968509},
+  urldate = {2025-10-15},
+  abstract = {A novel functional estimator for R{\'e}nyi's {\textbackslash}alpha -entropy and its multivariate extension was recently proposed in terms of the normalized eigenspectrum of a Hermitian matrix of the projected data in a reproducing kernel Hilbert space (RKHS). However, the utility and possible applications of these new estimators are rather new and mostly unknown to practitioners. In this brief, we first show that this estimator enables straightforward measurement of information flow in realistic convolutional neural networks (CNNs) without any approximation. Then, we introduce the partial information decomposition (PID) framework and develop three quantities to analyze the synergy and redundancy in convolutional layer representations. Our results validate two fundamental data processing inequalities and reveal more inner properties concerning CNN training.},
+  keywords = {Convolution,Convolutional neural networks,Convolutional neural networks (CNNs),data processing inequality (DPI),Entropy,Estimation,IP networks,Kernel,Linear matrix inequalities,multivariate matrix-based Renyi's -entropy,partial information decomposition (PID)},
+  file = {/home/johan/Zotero/storage/46FHZBRD/Yu et al. - 2021 - Understanding Convolutional Neural Networks With Information Theory An Initial Exploration.pdf;/home/johan/Zotero/storage/WFI39FQZ/8998186.html}
 }

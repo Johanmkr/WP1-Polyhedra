@@ -73,7 +73,5 @@ class DataGenerator:
         x = np.concatenate((x_1, x_2), axis=1)
         return x, y
 
-         
-
 if __name__ == "__main__":
     pass
