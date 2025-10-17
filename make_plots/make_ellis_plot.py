@@ -5,8 +5,8 @@ import pickle
 import os, sys
 import pandas as pd
 
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
+# parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# sys.path.append(parent_dir)
 import geobin.region_tree as tn
 
 ground_path = pl.Path(parent_dir) / "stored_data"
