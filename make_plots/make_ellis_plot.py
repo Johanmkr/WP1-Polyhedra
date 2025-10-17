@@ -7,10 +7,9 @@ import pandas as pd
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
-import src.treenode as tn
+import geobin.region_tree as tn
 
-ground_path = pl.Path(parent_dir) / "state_dicts"
-
+ground_path = pl.Path(parent_dir) / "stored_data"
 params = {
     'legend.fontsize': 'x-large',
     'figure.figsize': (12, 10),
@@ -90,7 +89,7 @@ def plot_ellis_data():
 
     # --- Bottom row: Mutual Information ---
     markers = ["o", "v", "*", ">"]
-    for rx, lrd in zip(axes[1], [clean_data_lwd, noisy_data_lwd]):
+    for ax, lwd in zip(axes[1], [clean_data_lwd, noisy_data_lwd]):
         for i, (layer, data) in enumerate(lwd["layer_wise_data"].items()):
             if layer in [0, "0"] or layer in [5, "5"]:
                 continue

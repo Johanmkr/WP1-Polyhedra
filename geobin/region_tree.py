@@ -2,7 +2,7 @@ import numpy as np
 import itertools
 from tqdm import tqdm
 
-from geobin import treenode as tn
+from geobin import tree_node as tn
 
 class RegionTree:
     def __init__(self, state_dict=None, automatic_build=False):
