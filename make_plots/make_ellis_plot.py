@@ -1,88 +1,3 @@
-# import numpy as np
-# import matplotlib.pyplot as plt
-# import pathlib as pl
-# import pickle
-# import os, sys
-# import pandas as pd
-# # Get the parent directory
-# parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# # Add parent directory to sys.path
-# sys.path.append(parent_dir)
-# import src.treenode as tn
-# ground_path = pl.Path(parent_dir) / "state_dicts"
-
-
-# params = {'legend.fontsize': 'x-large',
-#           'figure.figsize': (12, 10),
-#          'axes.labelsize': 'xx-large',
-#          'axes.titlesize':'x-large',
-#          'xtick.labelsize':'xx-large',
-#          'ytick.labelsize':'xx-large'}
-# plt.rcParams.update(params)
-
-# def plot_ellis_data():
-    
-    
-#     # Load the information theory data (pickle data)
-#     with open(ground_path/"mm_sd"/"mi_information.pkl", "rb") as fp:
-#         clean_data_lwd = pickle.load(fp)
-#     with open(ground_path/"mm_ssd"/"mi_information.pkl", "rb") as fp:
-#         noisy_data_lwd = pickle.load(fp)
-    
-#     clean_training = pd.read_pickle(ground_path/"mm_sd"/"training_data.pkl")
-#     noisy_training = pd.read_pickle(ground_path/"mm_ssd"/"training_data.pkl")
-
-#     # Load training data
-    
-#     fig, axes = plt.subplots(2, 2, sharex='col', sharey='row')
-    
-#     clean_axes = axes[:,0]
-#     noisy_axes = axes[:,1]
-    
-    
-#     # Plot MI
-#     markers = ["o", "v", "*", ">"]
-#     for ax, lwd in zip(axes[1], [clean_data_lwd, noisy_data_lwd]):
-#         for i, (layer, data) in enumerate(lwd["layer_wise_data"].items()):
-#             if layer in [0, "0"] or layer in [5, "5"]:
-#                 continue
-#             ax.plot(lwd["epochs"][::4], data[::4], ls="-", marker=markers[i-1], lw=1.5, markersize=10, label=f"Layer: {layer}")
-            
-#     # Plot training data
-    
-#     for ax1, train_data in zip(axes[0], [clean_training, noisy_training]):
-#         train_loss = train_data["train_loss"]
-#         train_accuracy = train_data["train_accuracy"]
-#         test_loss = train_data["test_loss"]
-#         test_accuracy = train_data["test_accuracy"]
-        
-#         ax1.plot(train_loss, label='Train Loss', ls='--', c='blue')
-#         ax1.plot(test_loss, label='Test Loss', ls='-', c='blue')
-#         # ax1.set_xlabel('Epochs')
-#         # ax1.set_title(f'Loss and Accuracy: {exp_results["exp_name"][0]}')
-
-#         ax2 = ax1.twinx()
-#         ax2.plot(train_accuracy, label='Train Accuracy', ls='--', c='red')
-#         ax2.plot(test_accuracy, label='Test Accuracy', ls='-', c='red')
-#         counter = 0
-#         if counter == 0:
-#             ax2.set_yticks([])
-#             counter += 1
-#         else:
-#             ax2.set_yticks([0.1, 0.3, 0.5, 0.7, 0.9])
-            
-#     # ax.set_title(titles[exp_name])
-#     # ax.set_xlabel("Epoch")
-#     # ax.set_ylabel(r"$MI(L,Y)$")
-#     plt.legend()
-#     plt.tight_layout()
-#     # plt.savefig(pl.Path(parent_dir)/"figures"/f"MI_{layer_wise_dict['exp_name']}.pdf")
-#     plt.show()
-    
-# if __name__ == "__main__":
-#     plot_ellis_data()
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pathlib as pl
@@ -175,7 +90,7 @@ def plot_ellis_data():
 
     # --- Bottom row: Mutual Information ---
     markers = ["o", "v", "*", ">"]
-    for ax, lwd in zip(axes[1], [clean_data_lwd, noisy_data_lwd]):
+    for rx, lrd in zip(axes[1], [clean_data_lwd, noisy_data_lwd]):
         for i, (layer, data) in enumerate(lwd["layer_wise_data"].items()):
             if layer in [0, "0"] or layer in [5, "5"]:
                 continue
