@@ -1,9 +1,7 @@
 # Config.yaml file
-#
-#
 experiment_name: "default_experiment"
 architecture : [3,3,3] # Number and layout of hidden layers
-optimizer:
+optimizer_args:
   optimizer: "SGD"
   learning_rate: 0.1
 training_params:
