@@ -2,10 +2,9 @@ import numpy as np
 import itertools
 from tqdm import tqdm
 
-from geobin import tree_node as tn
 
 class RegionTree:
-    def __init__(self, state_dict=None, automatic_build=False):
+    def __init__(self, root_node, state_dict=None, automatic_build=False):
         self.state_dict = state_dict
         self.root = tn.TreeNode()
         self.root.layer_number = 0
