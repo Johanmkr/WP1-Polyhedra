@@ -20,15 +20,24 @@ args = scf.get_args()
 
 # Check if the experiment path exists, if not, create 
 experiment_path = scf.get_path_to_experiment_storage(args.experiment_name)
-if not experiment_path.exists():
-    createfolders(experiment_path)
-
+state_dict_path = experiment_path/"state_dicts"
+if not state_dict_path.exists():
+    scf.createfolders(state_dict_path)
 
 # Make the data
 train_data = scf.make_moon_dataloader()
+test_data = scf.make_moon_dataloader(n_samples=100, noise=0.1, random_state=testing_seed)
+
+# Set up the model based on the parsed arguments or the config file
+model = scf.NeuralNet(input_size=2, hidden_sizes=args.architecture, num_classes=1)
+
+# Train the model on the training data
+scf.train_model(model, train_data, test_data, args.epochs, state_dict_path, args.experiment_name, SAVE_STATES=True)
+
+
 
 # Set up and train the model
-from IPython import embed; embed()
+#from IPython import embed; embed()
 
 
 if __name__ == "__main__":
