@@ -1,13 +1,13 @@
 import pathlib as pl 
 
 # Get path to the parent directory of this file
-current_dir = pl.Path(__file__).parent.resolve()
+current_dir = pl.Path(__file__).parent.parent.resolve()
 
 # Get path to current working directory
 working_dir = pl.Path().resolve()
 
 # Path to the data storage
-data_storage = working_dir/"stored_data"
+data_storage = current_dir/"stored_data"
 
 
 # Desired datastructure
