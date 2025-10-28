@@ -6,15 +6,10 @@ import torch
 from sklearn.datasets import make_moons
 import matplotlib.pyplot as plt
 import pickle
-
+import torch
 import os, sys
-# Get the parent directory
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# Add parent directory to sys.path
-sys.path.append(parent_dir)
-import src.treenode as tn
-ground_path = pl.Path(parent_dir) / "state_dicts"
-
+from region_tree import RegionTree
+from tree_node import TreeNode
 
 params = {'legend.fontsize': 'x-large',
           'figure.figsize': (7, 4),
@@ -42,12 +37,12 @@ def estimate_mutual_information_from_number_counts(number_counts:dict, N:int, n0
     return MI_layer
 
 
-# Function to calculate the mutual information for each layer
-def calc_MI(local_state_dict, class0, class1):
+# Function to get the number counts based on the geometric binning. 
+def gnc_geobin(local_state_dict, data:torch.utils.data.DataLoader):
     # Create and build tree from state dict
-    tree = tn.RegionTree(local_state_dict)
+    tree = RegionTree(local_state_dict)
     tree.build_tree()
-    
+    from IPython import embed; embed()  
     # Run class 0 data through and store number counts
     tree.reset_counters()
     for input in tqdm(np.array(class0)):
@@ -71,8 +66,16 @@ def calc_MI(local_state_dict, class0, class1):
     print(local_MI)
     return local_MI
 
+def gnc_regular_binning(local_state_dict:dict, data:torch.utils.data.DataLoader):
+    pass
 
-def estimate_MI_from_experiment(exp_name, X, y, store=True):
+def gnc_ksg(local_state_dict:dict, data:torch.utils.data.DataLoader):
+    pass
+
+
+
+
+def estimate_MI(exp_name, X, y, store=True):
     # Find state dicts
     state_dicts = {}
     for filename in os.listdir(ground_path/exp_name):
@@ -155,9 +158,19 @@ def plot_layer_wise_data(layer_wise_dict, exp_name):
     plt.savefig(pl.Path(parent_dir)/"figures"/f"MI_{layer_wise_dict['exp_name']}.pdf")
     plt.show()
 
+
+
+# New functions -----------------------------------------------------
+
+# Function to find the per class number counts given a state dict. 
+def get_number_counts_from_geometric_bins(state_dict:dict, data:torch.utils.data.DataLoader):
+    # Step 1 construct tree from state dict:
+    tree = RegionTree(state_dict, build=True)
+
+    # Step 2 run the data through the tree 
+    
+
 if __name__ == "__main__":
-    X_val, y_val = make_moons(n_samples=5000, noise=0.05, random_state=111)
-    X_val_noise, y_val_noise = make_moons(n_samples=5000, noise=2, random_state=111)
     
     # lwd1 = estimate_MI_from_experiment("sm_sd", X_val, y_val)
     # # plot_layer_wise_data(lwd1)
@@ -181,11 +194,6 @@ if __name__ == "__main__":
     # plot_layer_wise_data(lwd7)
     
     
-    for exp_name in ["mm_sd", "mm_ssd", "mm_nd"]:
-        with open(ground_path/exp_name/"mi_information.pkl", "rb") as fp:
-            lwd = pickle.load(fp)
-        plot_layer_wise_data(lwd, exp_name)
-    
-    
+    pass  
     
     

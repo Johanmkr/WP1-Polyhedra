@@ -10,7 +10,7 @@ class TreeNode:
         self.layer_number = 0 if self.parent == None else None # Layer index in the network
         self.children = []
         self.counter = 0
-        self.number_counts = []
+        self.number_counts = {}
         
     def add_child(self, child_node):
         child_node.parent = self
@@ -18,7 +18,6 @@ class TreeNode:
         
     def is_leaf(self):
         return len(self.children) == 0
-    
     def is_root(self):
         return self.parent is None
 

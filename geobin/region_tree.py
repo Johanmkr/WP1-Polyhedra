@@ -1,17 +1,17 @@
 import numpy as np
 import itertools
 from tqdm import tqdm
-
+from tree_node import TreeNode
 
 class RegionTree:
-    def __init__(self, root_node, state_dict=None, automatic_build=False):
+    def __init__(self, state_dict=None, build=False):
         self.state_dict = state_dict
-        self.root = tn.TreeNode()
+        self.root = TreeNode()
         self.root.layer_number = 0
         self.hyperplanes = []
         self.size = []
 
-        if automatic_build:
+        if build:
             self.build_tree()
 
     def _find_hyperplanes(self):
@@ -85,7 +85,7 @@ class RegionTree:
                 
                 for parent_node in tqdm(current_layer_nodes, desc=f"Node", leave=False):
                     # Create new node with the current activation pattern
-                    new_node = tn.TreeNode(activation=activation_pattern)
+                    new_node = TreeNode(activation=activation_pattern)
                     new_node.layer_number = layer_index + 1
                     self.size[-1] += 1
                     new_node.parent = parent_node
