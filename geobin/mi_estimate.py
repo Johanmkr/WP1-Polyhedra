@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import pickle
 import torch
 import os, sys
-from region_tree import RegionTree
-from tree_node import TreeNode
+from .region_tree import RegionTree
+from .tree_node import TreeNode
 
 params = {'legend.fontsize': 'x-large',
           'figure.figsize': (7, 4),

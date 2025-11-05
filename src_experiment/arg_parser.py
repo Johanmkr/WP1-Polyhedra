@@ -45,7 +45,7 @@ def get_args():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=10000,
+        default=1000,
         help="Number of training epochs.",
     )
     # Parse command-line arguments

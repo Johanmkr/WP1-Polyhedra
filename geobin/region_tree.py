@@ -1,7 +1,7 @@
 import numpy as np
 import itertools
 from tqdm import tqdm
-from tree_node import TreeNode
+from .tree_node import TreeNode
 
 class RegionTree:
     def __init__(self, state_dict=None, build=False):
@@ -215,3 +215,7 @@ class RegionTree:
         return self.state_dict
     def get_hyperplanes(self):
         return self.hyperplanes
+    
+    
+if __name__=="__main__":
+    pass

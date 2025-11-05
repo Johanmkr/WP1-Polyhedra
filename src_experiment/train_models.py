@@ -19,7 +19,7 @@ def train_model(model, train_data, test_data, epochs, savepath, experiment_name,
         model.train()
         running_loss = 0 
         num_correct = 0 
-        total_samples = 0 
+        total_samples = 0
 
         for i, (x,y) in enumerate(train_data):
             optimizer.zero_grad()
