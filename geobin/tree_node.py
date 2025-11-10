@@ -8,6 +8,7 @@ class TreeNode:
         self.parent = None # Parent TreeNode
         self.inequalities = None # Inequalities added at this node
         self.layer_number = 0 if self.parent == None else None # Layer index in the network
+        self.region_index = 0
         self.children = []
         self.counter = 0
         self.number_counts = {}

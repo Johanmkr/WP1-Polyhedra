@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 from tqdm import tqdm
 from .tree_node import TreeNode
+import torch
 
 class RegionTree:
     def __init__(self, state_dict=None, build=False):
@@ -79,6 +80,7 @@ class RegionTree:
             # Generate all possible activation patterns for the current layer
             # possible_activation_patterns = itertools.product([0, 1], repeat=num_neurons)
             # print(possible_activation_patterns)
+            region_index = 0
             for activation_pattern in tqdm(itertools.product([0, 1], repeat=num_neurons),total=2 ** num_neurons, desc=f"Layer {layer_index+1} / {len(self.hyperplanes)}"):
                 activation_pattern = np.array(activation_pattern)
                 # Create a new node for each activation pattern
@@ -88,6 +90,11 @@ class RegionTree:
                     new_node = TreeNode(activation=activation_pattern)
                     new_node.layer_number = layer_index + 1
                     self.size[-1] += 1
+                    
+                    # Region index
+                    new_node.region_index = region_index
+                    region_index += 1
+                    
                     new_node.parent = parent_node
                     # Calculate and set the projection matrix and intercept vector for the new node
                     self._calculate_projections_for_node(new_node, hp)
@@ -98,46 +105,88 @@ class RegionTree:
             # Move to the next layer
             current_layer_nodes = next_layer_nodes
         
-    def pass_input_through_tree(self, x, return_path=False, reset=False):
-        # Pass input x through the tree to find the corresponding leaf node
+    # def pass_input_through_tree(self, x, return_path=False, reset=False):
+    #     # Pass input x through the tree to find the corresponding leaf node
+    #     if self.root.projection_matrix is None or self.root.intercept_vector is None:
+    #         raise ValueError("Tree has not been built. Please build the tree before passing input.")
+        
+    #     if reset:
+    #         self.reset_counters()
+        
+    #     current_node = self.root
+        
+    #     path = [current_node]
+
+    #     while not current_node.is_leaf():
+    #         found_child = False
+    #         # print(f"At layer {current_node.layer_number}, checking children...")
+    #         for child in current_node.get_children():
+    #             # Get inequalities for the child node
+    #             inequalities = child.inequalities
+    #             if inequalities is None:
+    #                 continue
+    #             A = inequalities[:,:-1]
+    #             b = inequalities[:,-1]
+    #             # print(f"Checking child at layer {child.layer_number}")
+    #             # Check if x satisfies the inequalities
+    #             if np.all(A @ x <= b):
+    #                 current_node = child
+    #                 found_child = True
+    #                 path.append(current_node)
+    #                 break
+    #         if not found_child:
+    #             raise ValueError("Input does not belong to any region in the tree.")
+    #     for path_node in path:
+    #         path_node.counter += 1
+    #     if return_path:
+    #         return path
+    
+    
+    def pass_single_point_through_tree(self, point:tuple):
+        x, y = point
+        current_node = self.root
+        
+        while not current_node.is_leaf():
+            found_child = False
+            for child in current_node.get_children():
+                ineqs = child.inequalities
+                if ineqs is None:
+                    continue
+                A = ineqs[:,:-1]
+                b = ineqs[:,-1]
+                
+                # Check if point satisfy the inequalities
+                if np.all(A@x <= b):
+                    current_node = child
+                    try:
+                        current_node.number_counts[f"{y}"] += 1
+                    except:
+                        current_node.number_counts[f"{y}"] = 1
+                    found_child = True
+                    break # break out of current.
+                
+                
+                    
+    
+    def pass_dataloader_through_tree(self, dl):
+        # 1. check if tree has been built
+        # 2. test inequalities for each layer for each datapoint. Make a slow implementation at first. 
+        # 2.1 Logic: loop through each batch of the data_loader object, loop throguh each x and y in dataloader. 
         if self.root.projection_matrix is None or self.root.intercept_vector is None:
             raise ValueError("Tree has not been built. Please build the tree before passing input.")
         
-        if reset:
-            self.reset_counters()
-        
-        current_node = self.root
-        
-        path = [current_node]
-
-        while not current_node.is_leaf():
-            found_child = False
-            # print(f"At layer {current_node.layer_number}, checking children...")
-            for child in current_node.get_children():
-                # Get inequalities for the child node
-                inequalities = child.inequalities
-                if inequalities is None:
-                    continue
-                A = inequalities[:,:-1]
-                b = inequalities[:,-1]
-                # print(f"Checking child at layer {child.layer_number}")
-                # Check if x satisfies the inequalities
-                if np.all(A @ x <= b):
-                    current_node = child
-                    found_child = True
-                    path.append(current_node)
-                    break
-            if not found_child:
-                raise ValueError("Input does not belong to any region in the tree.")
-        for path_node in path:
-            path_node.counter += 1
-        if return_path:
-            return path
-
+        for i, (inputs, labels) in enumerate(dl):
+            # That is for every dataloader object, has to enumerate through each datapoint as well. 
+            for point in zip(inputs, labels):
+                # For each point, pass it through the tree
+                self.pass_single_point_through_tree(point)
+    
     def reset_counters(self):
+        ###TODO Check if this implementation works.
         # Reset counters for all nodes in the tree
         def dfs(node):
             node.counter = 0
+            node.number_coutns = {}
             for child in node.get_children():
                 dfs(child)
         dfs(self.root)
@@ -180,25 +229,35 @@ class RegionTree:
             nonzero_counter_nodes[layer] = nonzero_nodes
         return nonzero_counter_nodes
     
-    def store_counters(self, reset=True):
-        for layer in range(len(self.size)):
-            for node in self._get_nodes_at_layer(layer):
-                node.number_counts.append(node.counter)
-                if reset:
-                    node.counter = 0
+    # def store_counters(self, reset=True):
+    #     for layer in range(len(self.size)):
+    #         for node in self._get_nodes_at_layer(layer):
+    #             node.number_counts.append(node.counter)
+    #             if reset:
+    #                 node.counter = 0
         
+    # def get_number_counts(self):
+    #     all_number_counts = {}
+    #     for layer in range(len(self.size)):
+    #         nodes_in_layer = self._get_nodes_at_layer(layer)
+    #         layer_counts = []
+    #         for node in nodes_in_layer:
+    #             if sum(node.number_counts) > 1e-5:
+    #                 layer_counts.append(node.number_counts)
+    #             else:
+    #                 continue
+    #         all_number_counts[layer] = layer_counts
+    #     return all_number_counts
+    
     def get_number_counts(self):
-        all_number_counts = {}
-        for layer in range(len(self.size)):
-            nodes_in_layer = self._get_nodes_at_layer(layer)
-            layer_counts = []
-            for node in nodes_in_layer:
-                if sum(node.number_counts) > 1e-5:
-                    layer_counts.append(node.number_counts)
-                else:
-                    continue
-            all_number_counts[layer] = layer_counts
-        return all_number_counts
+        ###TODO Figure out how to return the number counts. 
+        rows = []
+        node = self.root
+        def _collect(node):
+            rows.append({
+                "layer_number": node.layer_number,
+                "region"
+            })
             
         
     # Small utility functions
