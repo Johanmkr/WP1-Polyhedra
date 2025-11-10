@@ -3,6 +3,7 @@ import itertools
 from tqdm import tqdm
 from .tree_node import TreeNode
 import torch
+import pandas as pd
 
 class RegionTree:
     def __init__(self, state_dict=None, build=False):
@@ -165,9 +166,6 @@ class RegionTree:
                     found_child = True
                     break # break out of current.
                 
-                
-                    
-    
     def pass_dataloader_through_tree(self, dl):
         # 1. check if tree has been built
         # 2. test inequalities for each layer for each datapoint. Make a slow implementation at first. 
@@ -179,14 +177,15 @@ class RegionTree:
             # That is for every dataloader object, has to enumerate through each datapoint as well. 
             for point in zip(inputs, labels):
                 # For each point, pass it through the tree
-                self.pass_single_point_through_tree(point)
+                # self.pass_single_point_through_tree(point) #TODO Make this work with tensors
+                self.pass_single_point_through_tree((point[0].numpy(), point[1].numpy()))
     
     def reset_counters(self):
         ###TODO Check if this implementation works.
         # Reset counters for all nodes in the tree
         def dfs(node):
             node.counter = 0
-            node.number_coutns = {}
+            node.number_counts= {}
             for child in node.get_children():
                 dfs(child)
         dfs(self.root)
@@ -250,14 +249,31 @@ class RegionTree:
     #     return all_number_counts
     
     def get_number_counts(self):
-        ###TODO Figure out how to return the number counts. 
         rows = []
-        node = self.root
+        # node = self.root
         def _collect(node):
             rows.append({
-                "layer_number": node.layer_number,
-                "region"
+                "layer_idx": node.layer_number,
+                "region_idx": node.region_index,
+                **node.number_counts
             })
+            for child in node.get_children():
+                _collect(child)
+        _collect(self.root)
+        
+        # Convert to dataframe
+        frame = pd.DataFrame(rows)
+        column_names = frame.columns.values # Get all of the column names of the frame
+        classes = column_names[2:] # Two first columns are layer and region indices, the rest are class labels
+        
+        # Convert nans to zeros
+        for c in classes:
+            frame[c] = np.nan_to_num(frame[c], nan=0.0)
+        
+        # Create new column with total number counts
+        frame["total"] = frame.apply(lambda row: np.sum([row[c] for c in classes]), axis=1)
+        
+        return frame 
             
         
     # Small utility functions
