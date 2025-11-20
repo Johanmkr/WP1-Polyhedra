@@ -25,14 +25,14 @@ if not state_dict_path.exists():
     scf.createfolders(state_dict_path)
 
 # Make the data
-train_data = scf.make_moon_dataloader(n_samples=1000, noise=0.15, random_state=training_seed, batch_size=250)
+train_data = scf.make_moon_dataloader(n_samples=10000, noise=0.15, random_state=training_seed, batch_size=250)
 test_data = scf.make_moon_dataloader(n_samples=500, noise=0.15, random_state=testing_seed, batch_size=250)
 
 # Set up the model based on the parsed arguments or the config file
 model = scf.NeuralNet(input_size=2, hidden_sizes=args.architecture, num_classes=1)
 
 # Train the model on the training data
-scf.train_model(model, train_data, test_data, args.epochs, state_dict_path, args.experiment_name, SAVE_STATES=False, save_everyth_epoch=10)
+scf.train_model(model, train_data, test_data, args.epochs, state_dict_path, args.experiment_name, SAVE_STATES=True, save_everyth_epoch=10)
 
 
 

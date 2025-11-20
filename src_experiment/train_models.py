@@ -68,7 +68,7 @@ def train_model(model, train_data, test_data, epochs, savepath, experiment_name,
     }
     if SAVE_STATES:
         frame = pd.DataFrame.from_dict(experiment_results)
-        frame.to_pickle(savepath/".."/f"{experiment_name}_training_data.pkl")
+        frame.to_csv(savepath/".."/f"{experiment_name}_training_data.csv")
     return experiment_results
 
 if __name__=="__main__":

@@ -12,6 +12,7 @@ class RegionTree:
         self.root.layer_number = 0
         self.hyperplanes = []
         self.size = []
+        self.number_count_dict = None
 
         if build:
             self.build_tree()
@@ -248,7 +249,7 @@ class RegionTree:
     #         all_number_counts[layer] = layer_counts
     #     return all_number_counts
     
-    def get_number_counts(self):
+    def find_number_counts(self):
         rows = []
         # node = self.root
         def _collect(node):
@@ -273,9 +274,11 @@ class RegionTree:
         # Create new column with total number counts
         frame["total"] = frame.apply(lambda row: np.sum([row[c] for c in classes]), axis=1)
         
-        return frame 
-            
+        self.number_count_dict = frame[frame["total"]!=0] # Ignore empty region.
         
+    def get_number_counts(self):
+        return self.number_count_dict
+
     # Small utility functions
     def _get_activation_from_signs(self, signs):
         return -(signs - 1) / 2
