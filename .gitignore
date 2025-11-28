@@ -21,3 +21,6 @@ stored_data/
 # Ignore old figures
 old_figures/
 
+# Ignore data
+mnist/
+

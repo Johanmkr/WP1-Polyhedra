@@ -5,12 +5,14 @@ from tqdm import trange
 import pathlib as pl
 import matplotlib.pyplot as plt
 import pandas as pd
+import copy
 
-def train_model(model, train_data, test_data, epochs, savepath, experiment_name, SAVE_STATES = False, save_everyth_epoch = 50):
+def train_model(model, train_data, test_data, epochs, savepath=None, experiment_name=None, SAVE_STATES = False, save_everyth_epoch = 50, RETURN_STATES=False):
     train_loss = np.zeros((epochs))
     train_accuracy = np.zeros((epochs))
     test_loss = np.zeros((epochs))
     test_accuracy = np.zeros((epochs))
+    states = {}
 
     optimizer = torch.optim.SGD(model.parameters(), lr=0.01,momentum=0.1)
     loss_fn = nn.BCEWithLogitsLoss()
@@ -60,6 +62,11 @@ def train_model(model, train_data, test_data, epochs, savepath, experiment_name,
         if SAVE_STATES and (epoch % save_everyth_epoch == 0 or epoch == epochs-1):
             torch.save(model.state_dict(), savepath / f"{experiment_name}_epoch{epoch}.pth")
         
+        if RETURN_STATES and (epoch % save_everyth_epoch == 0 or epoch == epochs-1):
+            states[epoch] = copy.deepcopy(model.state_dict())
+            
+
+        
     experiment_results = {
         "train_loss": train_loss,
         "train_accuracy": train_accuracy,
@@ -69,7 +76,7 @@ def train_model(model, train_data, test_data, epochs, savepath, experiment_name,
     if SAVE_STATES:
         frame = pd.DataFrame.from_dict(experiment_results)
         frame.to_csv(savepath/".."/f"{experiment_name}_training_data.csv")
-    return experiment_results
+    return experiment_results if not RETURN_STATES else (experiment_results, states)
 
 if __name__=="__main__":
    pass
