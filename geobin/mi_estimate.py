@@ -14,7 +14,7 @@ import pandas as pd
 
 def layer_wise_MI_from_number_counts(counts:pd.DataFrame):
     # See if dataframe has a column "total"
-    if not "total" in counts.columns:
+    if "total" not in counts.columns:
         classes = counts.columns.values[2:] # Two first columns are layer and region indices, the rest are class labels
         # Convert nans to zeros
         for cl in classes:
@@ -57,8 +57,12 @@ def layer_wise_MI_from_number_counts(counts:pd.DataFrame):
         
     return lwmi
         
+        
+class MIQuantityEstimator:
+    def __init__(self):
+        pass
 
 if __name__ == "__main__":
-    pass  
+    pass
     
     
