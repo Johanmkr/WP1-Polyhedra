@@ -1,5 +1,7 @@
 
 import numpy as np 
+from pyparsing import Optional
+from sklearn import tree
 from tqdm import tqdm
 import pathlib as pl
 import torch
@@ -11,6 +13,7 @@ import os, sys
 from .region_tree import RegionTree
 from .tree_node import TreeNode
 import pandas as pd
+from collections import defaultdict
 
 def layer_wise_MI_from_number_counts(counts:pd.DataFrame):
     # See if dataframe has a column "total"
@@ -56,11 +59,34 @@ def layer_wise_MI_from_number_counts(counts:pd.DataFrame):
         lwmi[layer] = sum(counts[counts["layer_idx"]==layer]["rwmi"])
         
     return lwmi
+
+
+
         
         
-class MIQuantityEstimator:
-    def __init__(self):
-        pass
+        
+# class MIQuantityEstimator:
+#     def __init__(self, state_dicts:Optional[dict, list[dict]], data_loader:torch.utils.data.DataLoader):
+#         # This state dict has epochs as keys and states as values
+#         # Check if state_dict is a list of dicts
+#         # self.list_of_dicts should be a list of dictionaries, one for each sample run. Each dictionary is itself a dictionary with epochs as keys and state_dicts as values.
+#         if isinstance(state_dicts, dict):
+#             self.list_of_dicts = [state_dicts]
+#             self.find_average = False
+#         else:
+#             self.list_of_dicts = state_dicts
+#             self.find_average = True
+#         self.data_loader = data_loader
+        
+    
+#     def layer_wise_MI_from_state_dict(self, state_dicts:dict):
+#         # 1 Build the tree
+#         tree = RegionTree(state_dict)
+#         tree.build_tree(verbose=False)
+        
+#         # 2 Pass the data through the tree
+    
+#     # 2
 
 if __name__ == "__main__":
     pass
