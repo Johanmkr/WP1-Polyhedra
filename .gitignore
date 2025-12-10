@@ -9,10 +9,18 @@ wheels/
 # Virtual environments
 .venv
 
+# Potentially large files 
 *.mp4
 *.npy
 *.pth
 *.pkl
 
-state_dicts/
+# Ignore stored data
+stored_data/
+
+# Ignore old figures
+old_figures/
+
+# Ignore data
+mnist/
 
