@@ -2,6 +2,10 @@ import numpy as np
 import torch.nn as nn
 from sklearn.datasets import make_moons
 from pathlib import Path
+import torch
+import pandas as pd
+import os
+from .paths import get_path_to_moon_experiment_storage
 
 # from . import functions
 
@@ -52,6 +56,55 @@ def createfolders(*dirs: Path) -> None:
     """
     for dir in dirs:
         dir.mkdir(parents=True, exist_ok=True)
+        
+def get_specific_moon_state_dict(
+    model_name: str,
+    dataset_name: str,
+    noise_level: float,
+    run_number: int,
+    epoch: int,
+    ) -> Path:
+    assert isinstance(epoch, int) and epoch >= 0, f"Epoch {epoch} must be a non-negative integer."
+    base_path = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+    state_dict_path = base_path/"state_dicts"/f"epoch{epoch}.pth"
+    
+    state_dict = torch.load(state_dict_path)
+    return state_dict
+
+def get_df_of_run_summary(
+    model_name: str,
+    dataset_name: str,
+    noise_level: float,
+    run_number: int,
+):
+
+    base_path = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+    summary_path = base_path/"run_summary.csv"
+    
+    if not os.path.exists(summary_path):
+        raise FileNotFoundError(f"Run summary file not found at {summary_path}")
+    
+    df = pd.read_csv(summary_path)
+    return df
+
+def get_df_of_convergence_summary(
+    model_name: str,
+    dataset_name: str,
+    noise_level: float,
+    run_number: int,
+):
+
+    base_path = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+    summary_path = base_path/"convergence_summary.csv"
+    
+    if not os.path.exists(summary_path):
+        raise FileNotFoundError(f"Convergence summary file not found at {summary_path}")
+    
+    df = pd.read_csv(summary_path)
+    return df
+
+
+
 
 if __name__ == "__main__":
     pass

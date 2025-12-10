@@ -18,7 +18,7 @@ decreasing_model = NeuralNet(input_size=2, hidden_sizes=[7,5,3], num_classes=1)
 
 moons_models = {
     "small_uniform": small_uniform_model,
-    "small_uniform_long": small_uniform_model_long,
+    # "small_uniform_long": small_uniform_model_long,
     "medium_uniform": medium_uniform_model,
     "large_uniform": large_uniform_model,
     "increasing": increasing_model,

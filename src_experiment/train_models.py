@@ -8,6 +8,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import trange
 import pandas as pd
+from .utils import createfolders
 
 
 # ================================================================
@@ -188,6 +189,7 @@ def determine_convergence_and_minimum(
         "local_minimum": local_minimum,
         "accurate": accurate,
         "globalish_minimum": converged and not local_minimum,
+        "min_acceptable_acc": min_acceptable_acc,
         "reasons": reasons
     })
 
@@ -207,7 +209,8 @@ def train_model(
     experiment_name: Optional[str] = None,
     SAVE_STATES: bool = False,
     save_everyth_epoch: int = 50,
-    RETURN_STATES: bool = False
+    RETURN_STATES: bool = False,
+    min_acceptable_acc: float = 0.75
 ) -> Any:
     """
     Train a PyTorch model, record training curves, optionally save
@@ -314,7 +317,7 @@ def train_model(
     # Convergence analysis
     # ================================================================
     convergence_results = determine_convergence_and_minimum(
-        train_loss, test_loss, train_accuracy, test_accuracy
+        train_loss, test_loss, train_accuracy, test_accuracy, min_acceptable_acc=min_acceptable_acc
     )
 
     run_results = {
@@ -326,6 +329,7 @@ def train_model(
 
     # Save to disk if desired and training converged
     if SAVE_STATES and savepath is not None and convergence_results["converged"] and convergence_results["accurate"]:
+        createfolders(savepath)
         for epoch, state in saved_states.items():
             torch.save(state, savepath / f"epoch{epoch}.pth")
 
@@ -334,14 +338,16 @@ def train_model(
         
         df = pd.DataFrame.from_dict([convergence_results])
         (savepath / ".." / "convergence_summary.csv").write_text(df.to_csv(index=False))
+        convergence_results["saved"] = True
     else:
         print("Training did not converge or was not accurate; states not saved.")
         # Print accuracy and reasons
-        print("Final validation accuracy:", np.mean(test_accuracy[-5:]))
+        print(f"Final validation accuracy: {np.mean(test_accuracy[-5:])}/{min_acceptable_acc}")
         for reason in convergence_results["reasons"]:
             print(" -", reason)
+        convergence_results["saved"] = False
 
-    return run_results if not RETURN_STATES else (run_results, saved_states)
+    return (run_results, convergence_results) if not RETURN_STATES else (run_results, convergence_results, saved_states)
 
 
 if __name__ == "__main__":
