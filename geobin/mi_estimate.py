@@ -64,29 +64,26 @@ def layer_wise_MI_from_number_counts(counts:pd.DataFrame):
 
         
         
+class EstimateQuantities1Run:
+    def __init__(self, model_name = "small_uniform",
+    dataset_name = "small",
+    noise_level = 0.0,
+    run_number = 1):
+        self.model_name = model_name
+        self.noise_level = noise_level
+        self.run_number = run_number
         
-# class MIQuantityEstimator:
-#     def __init__(self, state_dicts:Optional[dict, list[dict]], data_loader:torch.utils.data.DataLoader):
-#         # This state dict has epochs as keys and states as values
-#         # Check if state_dict is a list of dicts
-#         # self.list_of_dicts should be a list of dictionaries, one for each sample run. Each dictionary is itself a dictionary with epochs as keys and state_dicts as values.
-#         if isinstance(state_dicts, dict):
-#             self.list_of_dicts = [state_dicts]
-#             self.find_average = False
-#         else:
-#             self.list_of_dicts = state_dicts
-#             self.find_average = True
-#         self.data_loader = data_loader
+        # Step 1 - Load the ncounts dictionary and create list of epochs
         
-    
-#     def layer_wise_MI_from_state_dict(self, state_dicts:dict):
-#         # 1 Build the tree
-#         tree = RegionTree(state_dict)
-#         tree.build_tree(verbose=False)
+        # Step 2 - For each epoch do:
+        #   a) Sort values by layer idx
+        #   b) Run consistency check
+        #   c) Estimate quantites per class per epoch
+        #   d) Convert this estimate to layer-wise estimates. 
         
-#         # 2 Pass the data through the tree
-    
-#     # 2
+        # Step 3 - Make a layer-wise dictionary with the quantites per epoch, ready for plotting. 
+        
+        # Step 4 - Something else?
 
 if __name__ == "__main__":
     pass
