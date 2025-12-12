@@ -5,7 +5,12 @@ from pathlib import Path
 import torch
 import pandas as pd
 import os
-from .paths import get_path_to_moon_experiment_storage
+if __name__ == "__main__":
+    from paths import get_path_to_moon_experiment_storage
+ 
+else:
+    from .paths import get_path_to_moon_experiment_storage
+
 
 # from . import functions
 
@@ -104,7 +109,24 @@ def get_df_of_convergence_summary(
     return df
 
 
-
+def delete_tree_pkl_from_run(model_name, dataset_name, noise_level, run_number):
+    base_path = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+    tree_name = base_path / "trees.pkl"
+    if os.path.exists(tree_name) and str(tree_name)[-4:] == ".pkl": # Check if the path exists an is a pickle file
+        os.remove(tree_name)
+    else:
+        print("File does not exist")
+        
+def remove_all_tree_pickle_files():
+    model_names = ["small_uniform", "medium_uniform", "large_uniform", "decreasing", "increasing"]
+    dataset_names = ["small", "medium", "large"]
+    noises = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    run_numbers = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]
+    for model in model_names:
+        for dataset in dataset_names:
+            for noise in noises:
+                for run_number in run_numbers:
+                    delete_tree_pkl_from_run(model, dataset, noise, run_number)
 
 if __name__ == "__main__":
     pass
