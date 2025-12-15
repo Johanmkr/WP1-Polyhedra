@@ -19,7 +19,7 @@ import pandas as pd
 from collections import defaultdict
 from src_experiment import get_path_to_moon_experiment_storage
 
-     
+QUANTITIES_TO_ESTIMATE = ["MI_KL", "MI_IS"]  
         
 class EstimateQuantities1Run:
     def __init__(self, model_name = "small_uniform",
@@ -60,8 +60,7 @@ class EstimateQuantities1Run:
         self.epochs = np.array(list(self.ncounts.keys()))
         
         self.estimates = {
-            "MI_KL": [],
-            "MI_IS": [],
+            q: [] for q in QUANTITIES_TO_ESTIMATE
         }
         
         if calculate:
@@ -129,7 +128,7 @@ class EstimateQuantities1Run:
             case "MI_IS": # Itakura-Saito divergence
                 return 0 #TODO
             case _:
-                raise ValueError("Estimate identifier not found!")
+                return 0 # If nothing matches. 
         
         
     def _run_consistency_check_on_single_frame(self, frame):
@@ -174,6 +173,34 @@ class EstimateQuantities1Run:
         with open(filename, 'rb') as inp:
             obj = pickle.load(inp)
         return obj
+
+
+class AveragedEstimates:
+    def __init__(self,
+                 model_name = "small_uniform",
+                 dataset_name = "small",
+                 noise_level = 0.0):
+        self.model_name = model_name
+        self.dataset_name = dataset_name
+        self.noise_level = noise_level
+        self.run_numbers = np.arange(1,26)
+        
+    
+        
+    def _find_from_all_runs(self):
+        self.individual_estimates = {
+            q: [] for q in QUANTITIES_TO_ESTIMATE
+        }
+        for run_number in self.run_numbers:
+            run = EstimateQuantities1Run(self.model_name, self.dataset_name, self.noise_level, int(run_number))
+            run.calculate_estimates()
+            for key, val in run.get_estimates().items():
+                self.individual_estimates[key].append(val)
+        
+        
+        
+
+
 
 if __name__ == "__main__":
     pass
