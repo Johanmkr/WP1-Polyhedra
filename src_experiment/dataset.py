@@ -27,7 +27,7 @@ noises = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 training_seed = 0
 testing_seed = 1
 inference_seed = 2
-batch_size = 250
+batch_size = 200
 
 # Small moons dataset parameters
 small_moon_training_params = {
