@@ -1,5 +1,4 @@
 import numpy as np
-import torch.nn as nn
 from sklearn.datasets import make_moons
 from pathlib import Path
 import torch
@@ -15,11 +14,16 @@ else:
 # from . import functions
 
 
+import torch
+import torch.nn as nn
+import torch.nn.init as init
+
 class NeuralNet(nn.Module):
-    def __init__(self, input_size, hidden_sizes, num_classes):
+    def __init__(self, input_size, hidden_sizes, num_classes, seed: int = None):
         super(NeuralNet, self).__init__()
         self.hidden_sizes = hidden_sizes
 
+        # Create hidden layers dynamically
         for i in range(len(hidden_sizes)):
             layer_name = f"l{i + 1}"
             relu_name = f"relu{i + 1}"
@@ -32,9 +36,13 @@ class NeuralNet(nn.Module):
                 )
                 setattr(self, relu_name, nn.ReLU())
 
+        # Create output layer
         output_layer_name = f"l{len(hidden_sizes) + 1}"
-
         setattr(self, output_layer_name, nn.Linear(hidden_sizes[-1], num_classes))
+        
+        # If seed is provided, set it and initialize weights
+        if seed is not None:
+            self.set_seed(seed)
         
     def forward(self, x):
         out = x
@@ -46,14 +54,28 @@ class NeuralNet(nn.Module):
 
         output_layer_name = f"l{len(self.hidden_sizes) + 1}"
         out = getattr(self, output_layer_name)(out)
-        # out = getattr(self, "output_activation")(out)
-        # if len(out.shape) == 1:
-        #     out = out.unsqueeze(0)
-        # elif len(out.shape) == 2 and out.shape[0] == 1:
-        #     out = out.squeeze(0)
-        # elif len(out.shape) == 3 and out.shape[0] == 1:
-        #     out = out.squeeze(0)
         return out
+
+    def set_seed(self, seed: int):
+        """Set random seed and initialize all network weights."""
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+        # Initialize hidden layers
+        for i in range(len(self.hidden_sizes)):
+            layer = getattr(self, f"l{i + 1}")
+            if isinstance(layer, nn.Linear):
+                init.kaiming_uniform_(layer.weight, nonlinearity='relu')
+                if layer.bias is not None:
+                    init.zeros_(layer.bias)
+
+        # Initialize output layer
+        output_layer = getattr(self, f"l{len(self.hidden_sizes) + 1}")
+        if isinstance(output_layer, nn.Linear):
+            init.xavier_uniform_(output_layer.weight)
+            if output_layer.bias is not None:
+                init.zeros_(output_layer.bias)
+
 
 def createfolders(*dirs: Path) -> None:
     """
