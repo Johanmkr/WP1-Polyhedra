@@ -255,7 +255,7 @@ def train_model(
     loss_fn = nn.BCEWithLogitsLoss()
     sigmoid = nn.Sigmoid()
 
-    for epoch in trange(epochs, desc="Training"):
+    for epoch in trange(epochs, desc="Training", leave=False):
         # ----------------------
         # Training
         # ----------------------
