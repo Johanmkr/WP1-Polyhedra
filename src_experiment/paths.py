@@ -24,6 +24,15 @@ def get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, r
     return moon_experiment_storage/f"model_{model_name}"/f"dataset_{dataset_name}"/f"noise_{noise_level:.1f}"/f"run_{int(run_number)}"
 
 
+
+
+
+## TEST MOON DATA STORAGE
+test_moon_storage = data_storage/"test_moon"
+def get_test_moon_path(model_name, dataset_name, noise_level, run_number):
+    return test_moon_storage/f"model_{model_name}"/f"dataset_{dataset_name}"/f"noise_{noise_level:.1f}"/f"run_{int(run_number)}"
+
+
 # Desired datastructure
 # - stored_data
 # | - experiment_name

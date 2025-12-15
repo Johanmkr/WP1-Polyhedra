@@ -104,21 +104,20 @@ def train_model(
         "test_loss": test_loss,
         "test_accuracy": test_accuracy,
     }
+    results = pd.DataFrame.from_dict(run_results)
 
     # Save to disk if desired and training converged
     if SAVE_STATES and savepath is not None:
-        createfolders(savepath)
+        createfolders(savepath / "state_dicts")
         for epoch, state in saved_states.items():
-            torch.save(state, savepath / f"epoch{epoch}.pth")
-
-        df = pd.DataFrame.from_dict(run_results)
-        (savepath / ".." / "run_summary.csv").write_text(df.to_csv(index=False))
+            torch.save(state, savepath / "state_dicts" / f"epoch{epoch}.pth")
+        (savepath / "run_summary.csv").write_text(results.to_csv(index=False))
         
     else:
         print("Training not saved.")
 
 
-    return run_results if not RETURN_STATES else run_results, saved_states
+    return (results,) if not RETURN_STATES else (results, saved_states)
 
 
 if __name__ == "__main__":

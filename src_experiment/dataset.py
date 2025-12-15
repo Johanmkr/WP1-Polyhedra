@@ -24,95 +24,159 @@ def make_moon_dataloader(n_samples=1000, noise=0.1, random_state=42, batch_size=
 
 # General paramters
 noises = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+# new_noises = [0.0,0.2,0.4,0.6,0.8,1.0]
 training_seed = 0
 testing_seed = 1
 inference_seed = 2
 batch_size = 200
 
-# Small moons dataset parameters
-small_moon_training_params = {
-    "n_samples": 1000,
-    "random_state": training_seed,
-    "batch_size": batch_size,
-}
 
-small_moon_testing_params = {
-    "n_samples": 200,
-    "random_state": testing_seed,
-    "batch_size": batch_size,
-}
-small_moon_inference_params = {
-    "n_samples": 200,
-    "random_state": inference_seed,
-    "batch_size": batch_size,
-}
 
-# Medium moons dataset parameters
-medium_moon_training_params = {
-    "n_samples": 5000,
-    "random_state": training_seed,
-    "batch_size": batch_size
-}
-medium_moon_testing_params = {
-    "n_samples": 1000,
-    "random_state": testing_seed,
-    "batch_size": batch_size,
-}
-medium_moon_inference_params = {
-    "n_samples": 1000,
-    "random_state": inference_seed,
-    "batch_size": batch_size,
-}
+### NEW MOONS DATA
+noises = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]
+training_seed = 0
+n_samples_training = 10000 
 
-# Large moons dataset parameters
-large_moon_training_params = {
-    "n_samples": 25000,
-    "random_state": training_seed,
-    "batch_size": batch_size,
-}
-large_moon_testing_params = {
-    "n_samples": 5000,
-    "random_state": testing_seed,
-    "batch_size": batch_size,
-}
-large_moon_inference_params = {
-    "n_samples": 5000,
-    "random_state": inference_seed,
-    "batch_size": batch_size,
-}
+testing_seed = 1
+n_samples_testing = 5000
 
-def get_moon_dataloaders(size="small", noise=0.1):
-    if size=="small":
-        train_params = small_moon_training_params
-        test_params = small_moon_testing_params
-        inference_params = small_moon_inference_params
-    elif size=="medium":
-        train_params = medium_moon_training_params
-        test_params = medium_moon_testing_params
-        inference_params = medium_moon_inference_params
-    elif size=="large":
-        train_params = large_moon_training_params
-        test_params = large_moon_testing_params
-        inference_params = large_moon_inference_params
-    else:
-        raise ValueError("Size must be one of 'small', 'medium', or 'large'.")
+inference_seed = 2
+n_samples_inference = 5000
 
-    train_loader = make_moon_dataloader(noise=noise, **train_params)
-    test_loader = make_moon_dataloader(noise=noise, **test_params)
-    inference_loader = make_moon_dataloader(noise=noise, **inference_params)
+batch_size = 200 
 
-    return train_loader, test_loader, inference_loader
+def get_new_moons_data(type="training", noise=0.05):
+    match type:
+        case "training":
+            n_samples = n_samples_training
+            state = training_seed
+        case "testing":
+            n_samples = n_samples_testing
+            state = testing_seed
+        case "inference":
+            n_samples = n_samples_inference
+            state = inference_seed
+    return make_moon_dataloader(n_samples, noise, state, batch_size)
+            
 
-datasets = {}
-for size in ["small","medium","large"]:
-    datasets[size] = {}
+def get_new_moons_data_for_all_noises(type="training"):
+    data = {}
     for noise in noises:
-        train_loader, test_loader, inference_loader = get_moon_dataloaders(size=size, noise=noise)
-        datasets[size][noise] = {
-            "train": train_loader,
-            "test": test_loader,
-            "inference": inference_loader
-        }
+        data[noise] = get_new_moons_data(type, noise)
+    return data
+
+
+
+
+
+
+
+
+
+# # Small moons dataset parameters
+# small_moon_training_params = {
+#     "n_samples": 1000,
+#     "random_state": training_seed,
+#     "batch_size": batch_size,
+# }
+
+# small_moon_testing_params = {
+#     "n_samples": 200,
+#     "random_state": testing_seed,
+#     "batch_size": batch_size,
+# }
+# small_moon_inference_params = {
+#     "n_samples": 200,
+#     "random_state": inference_seed,
+#     "batch_size": batch_size,
+# }
+
+# # Medium moons dataset parameters
+# medium_moon_training_params = {
+#     "n_samples": 5000,
+#     "random_state": training_seed,
+#     "batch_size": batch_size
+# }
+# medium_moon_testing_params = {
+#     "n_samples": 1000,
+#     "random_state": testing_seed,
+#     "batch_size": batch_size,
+# }
+# medium_moon_inference_params = {
+#     "n_samples": 1000,
+#     "random_state": inference_seed,
+#     "batch_size": batch_size,
+# }
+
+# # Large moons dataset parameters
+# large_moon_training_params = {
+#     "n_samples": 25000,
+#     "random_state": training_seed,
+#     "batch_size": batch_size,
+# }
+# large_moon_testing_params = {
+#     "n_samples": 5000,
+#     "random_state": testing_seed,
+#     "batch_size": batch_size,
+# }
+# large_moon_inference_params = {
+#     "n_samples": 5000,
+#     "random_state": inference_seed,
+#     "batch_size": batch_size,
+# }
+
+# new_moon_training_params = {
+#     "n_samples": 10000,
+#     "random_state": training_seed,
+#     "batch_size": batch_size,
+# }
+# new_moon_testing_params = {
+#     "n_samples": 5000,
+#     "random_state": testing_seed,
+#     "batch_size": batch_size,
+# }
+# new_moon_inference_params = {
+#     "n_samples": 5000,
+#     "random_state": inference_seed,
+#     "batch_size": batch_size,
+# }
+
+# def get_moon_dataloaders(size="small", noise=0.1):
+#     if size=="small":
+#         train_params = small_moon_training_params
+#         test_params = small_moon_testing_params
+#         inference_params = small_moon_inference_params
+#     elif size=="medium":
+#         train_params = medium_moon_training_params
+#         test_params = medium_moon_testing_params
+#         inference_params = medium_moon_inference_params
+#     elif size=="large":
+#         train_params = large_moon_training_params
+#         test_params = large_moon_testing_params
+#         inference_params = large_moon_inference_params
+#     elif size=="new":
+#         train_params = new_moon_training_params
+#         test_params = new_moon_testing_params
+#         inference_params = new_moon_inference_params
+#     else:
+#         raise ValueError("Size must be one of 'small', 'medium', or 'large'.")
+
+#     train_loader = make_moon_dataloader(noise=noise, **train_params)
+#     test_loader = make_moon_dataloader(noise=noise, **test_params)
+#     inference_loader = make_moon_dataloader(noise=noise, **inference_params)
+
+#     return train_loader, test_loader, inference_loader
+
+# datasets = {}
+# for size in ["small","medium","large", "new"]:
+#     datasets[size] = {}
+#     for noise in noises:
+#         train_loader, test_loader, inference_loader = get_moon_dataloaders(size=size, noise=noise)
+#         datasets[size][noise] = {
+#             "train": train_loader,
+#             "test": test_loader,
+#             "inference": inference_loader
+#         }
 
 if __name__=="__main__":
     pass
