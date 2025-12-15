@@ -19,60 +19,14 @@ import pandas as pd
 from collections import defaultdict
 from src_experiment import get_path_to_moon_experiment_storage
 
-def layer_wise_MI_from_number_counts(counts:pd.DataFrame):
-    # See if dataframe has a column "total"
-    if "total" not in counts.columns:
-        classes = counts.columns.values[2:] # Two first columns are layer and region indices, the rest are class labels
-        # Convert nans to zeros
-        for cl in classes:
-            counts[cl] = np.nan_to_num(counts[cl], nan=0.0)
-        
-        # Create new column with total number counts
-        counts["total"] = counts.apply(lambda row: np.sum([row[cl] for cl in classes]), axis=1)
-    else:
-        classes = counts.columns.values[2:-1]
-        
-        
-    # Separate out first layer data to find the classwise split of data
-    first_layer_counts = counts[counts.layer_idx==1]
-    data_per_class = {classes[i]: np.sum(first_layer_counts[classes[i]]) for i in range(len(classes))}
-    
-    # Sparse out counts just in case
-    counts = counts[counts["total"]!=0]
-    
-    # Find total number of points
-    N = sum(data_per_class.values())
-    
-    # Total samples per region
-    n_w = counts["total"]
-    
-    # Create column for region-wise-mutual-information
-    counts["rwmi"] = 0
-    
-    # Perform class-wise addition of MI-term
-    for cl in classes:
-        n_kw = counts[cl] # Samples of class cl in each region
-        n_k = data_per_class[cl] # Total samples of class cl
-        
-        # Add MI-term
-        counts["rwmi"] += np.where(n_kw > 0, n_kw / N * np.log((N*n_kw)/(n_k*n_w)), 0) # Add zero if n_kw = 0 to avoid log(0). 
-        
-    # Add up every region in each layer to find the layer-wise MI
-    lwmi = {}
-    for layer in set(counts["layer_idx"]):
-        lwmi[layer] = sum(counts[counts["layer_idx"]==layer]["rwmi"])
-        
-    return lwmi
-
-
-
-        
+     
         
 class EstimateQuantities1Run:
     def __init__(self, model_name = "small_uniform",
     dataset_name = "small",
     noise_level = 0.0,
-    run_number = 1):
+    run_number = 1,
+    calculate=False):
         self.model_name = model_name
         self.noise_level = noise_level
         self.run_number = run_number
@@ -96,7 +50,8 @@ class EstimateQuantities1Run:
         
         # 1:
         # Path to data
-        self.data_path = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+        self.data_dir = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+        self.data_path = self.data_dir / "number_counts_per_epoch.pkl"
         
         # Get number counts
         self.ncounts = self._open_object(self.data_path) # Dict with epochs as keys
@@ -104,37 +59,77 @@ class EstimateQuantities1Run:
         # Get list of epoch
         self.epochs = np.array(list(self.ncounts.keys()))
         
-        estimates = {}
+        self.estimates = {
+            "MI_KL": [],
+            "MI_IS": [],
+        }
         
+        if calculate:
+            self.calculate_estimates()
+        
+        
+    def get_estimates(self):
+        return self.estimates
+        
+        
+    def calculate_estimates(self):
         # 2 - Iterate over all epochs
         for epoch, frame in self.ncounts.items():
+            
             # Sort frame by layer idx
             frame = frame.sort_values(by=["layer_idx", "region_idx"]).reset_index(drop=True)
             
             # Run consistency
-            frame, num_layers, classes, data_per_class = self._run_consistency_check_on_single_frame(frame)
+            frame, num_layers, classes, n_k = self._run_consistency_check_on_single_frame(frame)
             
             # Estimate quantites
-            estimates_per_layer = pd.DataFrame()
-            frame["MI_KL"] = 0.0
-            N = sum(data_per_class.values()) # Total number of points
-            n_w = np.array(frame["total"]) # Total number of points pr. region
-            for cl in classes: 
-                n_kw = np.array(frame[cl]) # Number of points pr. class pr. region
-                n_k = np.array(data_per_class[cl]) # Total number of points pr. class
+            # estimates_per_layer = pd.DataFrame()
+            
+            # N = sum(data_per_class.values()) # Total number of points
+            # n_w = np.array(frame["total"]) # Total number of points pr. region
+            
+            
+            # Find N, n_w, n_kw, n_k, m_w, m_kw, m_k
+            n_w = np.array(frame['total']) # Points pr. region
+            n_kw = np.array(frame[classes]) # Points pr. class
+            N = n_k.sum() # Total number of points
+            
+            # Make probability masses
+            m_w = np.expand_dims(n_w / N, axis=1)
+            m_kw = n_kw / N
+            m_k = n_k / N
+
+            # Estimate Quantites
+            for estimate, results in self.estimates.items():
+                # Calculate estimate
+                frame[estimate] = self._individual_estimates(estimate, m_w, m_kw, m_k, N)
+                result = (
+                    frame.groupby('layer_idx')[estimate].sum()
+                    .rename(lambda i: f"l{i}")
+                    .to_frame()
+                    .T
+                )
+                result.insert(0, "epoch", epoch)
+                result.index.name = None
+                results.append(result)
                 
-                #### MI KL ####
-                # Two-step log to avoid 0 as argument
-                logterm = N*n_kw / (n_k*n_w)
-                logterm = np.log(logterm, where=logterm>0)
-                frame["MI_KL"] += n_kw / N * logterm
+        # 3 - Make a layer-wise dictionary with the quantites per epoch, ready for plotting. 
+        for estimate, results in self.estimates.items():
+            newframe = pd.concat(results, ignore_index=True)
+            newframe = newframe.rename_axis(None, axis=1)
+            self.estimates[estimate] = newframe 
             
-            for layer in range(1, num_layers+1):
-                estimates_per_layer["layer"] = layer
-                estimates_per_layer["MI_KL"] = sum(frame[frame.layer_idx==layer]["MI_KL"])
-                
-            
-            
+    
+    def _individual_estimates(self, estimate, m_w, m_kw, m_k, N):
+        match estimate:
+            case "MI_KL": # Kullback-Leibler diverence
+                logterm = m_kw / (m_w @ m_k)
+                logterm = np.log(logterm, where=logterm > 0)
+                return (m_kw * logterm).sum(axis=1)
+            case "MI_IS": # Itakura-Saito divergence
+                return 0 #TODO
+            case _:
+                raise ValueError("Estimate identifier not found!")
         
         
     def _run_consistency_check_on_single_frame(self, frame):
@@ -160,10 +155,18 @@ class EstimateQuantities1Run:
         assert all(total_counts_per_layer == total_counts_per_layer[0]), "Total counts should be the same for each layer"
         
         # Find data per class
-        layer_counts = frame[frame.layer_idx == 0]
-        data_per_class = {cl: np.sum(layer_counts[cl]) for cl in classes}
+        layer_counts = frame.loc[frame["layer_idx"] == 1, classes]
+        n_k1 = layer_counts.sum(axis=0).to_numpy()[None, :]
+        for layer in range(1, num_layers+1):
+            layer_counts = frame.loc[frame["layer_idx"] == layer, classes]
+            n_k = layer_counts.sum(axis=0).to_numpy()[None, :]
+            
+            # Check that class division is the same for all layers
+            assert np.all(n_k1 == n_k)
+            
 
-        return frame, num_layers, classes, data_per_class
+
+        return frame, num_layers, classes, n_k
     
     
     # Method to open and read pickled ojects. 
