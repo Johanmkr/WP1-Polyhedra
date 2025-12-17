@@ -26,9 +26,17 @@ small_model_params = {
     "num_classes": 1
 }
 
+decreasing_model_params = {
+    "input_size": 2,
+    "hidden_sizes": [5,4,3],
+    "num_classes": 1
+}
+
 def get_model(type="small", seed=None):
     match type:
         case "small":
             return NeuralNet(**small_model_params, seed=seed)
+        case "decreasing":
+            return NeuralNet(**decreasing_model_params, seed=seed)
         case _:
             raise ValueError
