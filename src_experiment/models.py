@@ -1,24 +1,4 @@
-import torch
 from .utils import NeuralNet
-
-
-# Small model
-
-small_uniform_model = NeuralNet(input_size=2, hidden_sizes=[3,3,3], num_classes=1)
-
-medium_uniform_model = NeuralNet(input_size=2, hidden_sizes=[5,5,5], num_classes=1)
-
-increasing_model = NeuralNet(input_size=2, hidden_sizes=[3,5,7], num_classes=1)
-
-decreasing_model = NeuralNet(input_size=2, hidden_sizes=[7,5,3], num_classes=1)
-
-moons_models = {
-    "small_uniform": small_uniform_model,
-    "medium_uniform": medium_uniform_model,
-    "increasing": increasing_model,
-    "decreasing": decreasing_model,
-    }
-
 
 small_model_params = {
     "input_size": 2,
@@ -32,11 +12,28 @@ decreasing_model_params = {
     "num_classes": 1
 }
 
-def get_model(type="small", seed=None):
+small_model_params_wbc = {
+    "input_size": 30,
+    "hidden_sizes": [3,3,3],
+    "num_classes": 1
+}
+
+decreasing_model_params_wbc = {
+    "input_size": 30,
+    "hidden_sizes": [5,4,3],
+    "num_classes": 1
+}
+
+
+def get_model(type="small_moon", seed=None):
     match type:
-        case "small":
+        case "small_moon":
             return NeuralNet(**small_model_params, seed=seed)
-        case "decreasing":
+        case "decreasing_moon":
             return NeuralNet(**decreasing_model_params, seed=seed)
+        case "small_wbc":
+            return NeuralNet(**small_model_params_wbc, seed=seed)
+        case "decreasing_wbc":
+            return NeuralNet(**decreasing_model_params_wbc, seed=seed)
         case _:
             raise ValueError

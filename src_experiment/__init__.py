@@ -17,26 +17,18 @@
 
 # Mapping of public names to their source modules
 _lazy_attributes = {
-    # Argument parser
-    "get_args": ".arg_parser",
-
     # Models
-    "moons_models": ".models",
     "get_model": ".models",
     "NeuralNet": ".utils",
 
     # Dataset
-    "get_new_moons_data": ".dataset",
-    "get_new_moons_data_for_all_noises": ".dataset",
+    "get_data": ".dataset",
 
     # Training
     "train_model": ".train_models",
 
     # Utilities
     "createfolders": ".utils",
-    "get_specific_moon_state_dict": ".utils",
-    "get_df_of_run_summary": ".utils",
-    "get_df_of_convergence_summary": ".utils",
 
     # Visualization
     "VisualisationOfLatenRepresentation": ".visualize_data_representation",
