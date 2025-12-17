@@ -177,7 +177,7 @@ class EstimateQuantities1Run:
         return obj
 
 
-class AveragedEstimates:
+class AverageEstimates:
     """
     Collect and aggregate estimates across multiple runs.
     
