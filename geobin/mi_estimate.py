@@ -17,15 +17,15 @@ from .region_tree import RegionTree
 from .tree_node import TreeNode
 import pandas as pd
 from collections import defaultdict
-from src_experiment import get_path_to_moon_experiment_storage
+from src_experiment import get_path_to_moon_experiment_storage, get_test_moon_path
 
 QUANTITIES_TO_ESTIMATE = ["MI_KL", "MI_IS"]  
         
 class EstimateQuantities1Run:
-    def __init__(self, model_name = "small_uniform",
-    dataset_name = "small",
-    noise_level = 0.0,
-    run_number = 1,
+    def __init__(self, model_name = "small",
+    dataset_name = "new",
+    noise_level = 0.05,
+    run_number = 0,
     calculate=False):
         self.model_name = model_name
         self.noise_level = noise_level
@@ -50,7 +50,9 @@ class EstimateQuantities1Run:
         
         # 1:
         # Path to data
-        self.data_dir = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+        # self.data_dir = get_path_to_moon_experiment_storage(model_name, dataset_name, noise_level, run_number)
+        self.data_dir = get_test_moon_path(model_name, dataset_name, noise_level, run_number)
+        
         self.data_path = self.data_dir / "number_counts_per_epoch.pkl"
         
         # Get number counts
@@ -177,13 +179,13 @@ class EstimateQuantities1Run:
 
 class AveragedEstimates:
     def __init__(self,
-                 model_name = "small_uniform",
-                 dataset_name = "small",
-                 noise_level = 0.0):
+                 model_name = "small",
+                 dataset_name = "new",
+                 noise_level = 0.05):
         self.model_name = model_name
         self.dataset_name = dataset_name
         self.noise_level = noise_level
-        self.run_numbers = np.arange(1,26)
+        self.run_numbers = np.arange(35)
         
     
         
