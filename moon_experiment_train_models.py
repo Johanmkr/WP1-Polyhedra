@@ -52,7 +52,7 @@ def train_single_model_on_moons(
     run_number: int = 0
 ):
     # Create savepath
-    savepath = get_test_moon_path(model_name=model_name, dataset_name="new", noise_level=noise_level, run_number=run_number)
+    savepath = get_test_moon_path(model_name=model_name, dataset_name=dataset_name, noise_level=noise_level, run_number=run_number)
     
     # Get data
     train_loader = train_data[noise_level]
@@ -77,11 +77,12 @@ def main():
     for noise in [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]:
         for run_number in np.arange(35):
             print(f"Noise: {noise}\nRun {run_number}/{np.arange(35).max()}")
-            train_single_model_on_moons("small", "new", noise, run_number=int(run_number))
+            train_single_model_on_moons("decreasing", "new", noise, run_number=int(run_number))
     
 def test():
-    # train_single_model_on_moons("small", "new", 0.05, run_number=int(np.array([1])))
+    # train_single_model_on_moons("decreasing", "new", 0.05, run_number=int(np.array([0])))
     pass
 
 if __name__ == "__main__":
+    # main()
     main()
