@@ -19,7 +19,7 @@ import pandas as pd
 from collections import defaultdict
 from src_experiment import get_path_to_moon_experiment_storage, get_test_moon_path
 
-QUANTITIES_TO_ESTIMATE = ["MI_KL", "MI_IS"]  
+QUANTITIES_TO_ESTIMATE = ["MI_KL", "MI_IS", "MI_D"]  
         
 class EstimateQuantities1Run:
     def __init__(self, model_name = "small",
@@ -128,7 +128,11 @@ class EstimateQuantities1Run:
                 logterm = np.log(logterm, where=logterm > 0)
                 return (m_kw * logterm).sum(axis=1)
             case "MI_IS": # Itakura-Saito divergence
-                return 0 #TODO
+                term = m_kw / (m_w @ m_k)
+                logterm = np.log(term, where=term > 0)
+                return (term - logterm).sum(axis=1)
+            case "MI_D": # Directed Divergence
+                return 0 
             case _:
                 return 0 # If nothing matches. 
         
