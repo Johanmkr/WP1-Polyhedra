@@ -11,8 +11,6 @@
 _lazy_attributes = {
     "RegionTree": ".region_tree",
     "TreeNode": ".tree_node",
-    "EstimateQuantities1Run": ".mi_estimate",
-    "AveragedEstimates": ".mi_estimate",
 }
 
 # Dynamically generate __all__ from lazy attributes
