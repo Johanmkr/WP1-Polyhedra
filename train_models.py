@@ -16,7 +16,7 @@ def train_model_on_moons(
     run_number: int = 0,
     epochs = 125,
     SAVE_STATES = False,
-    RETURN_STATES = True,
+    RETURN_STATES = False,
     save_everyth_epoch = 5,
 ):
     # Create savepath
@@ -29,7 +29,7 @@ def train_model_on_moons(
     
     # Train model
     run_results = train_model(
-        model=get_model(model_name, seed=run_number),
+        model=get_model(f"{model_name}_moon", seed=run_number),
         train_data=train_loader,
         test_data=test_loader,
         epochs=epochs,
@@ -48,8 +48,8 @@ def main():
             train_model_on_moons("decreasing", "new", noise, run_number=int(run_number))
     
 def test():
-    train_model_on_moons("decreasing", "new", 0.05, run_number=int(np.array([0])))
-    pass
+    res = train_model_on_moons("decreasing", "new", 0.05)
+    res[0].plot()
 
 if __name__ == "__main__":
     # main()
