@@ -1,228 +1,149 @@
 from __future__ import annotations
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from typing import Dict, List, Optional, Tuple, Iterable
-import pickle
-from .region_tree import RegionTree
-from .tree_node import TreeNode
-from src_experiment import get_path_to_moon_experiment_storage, get_test_moon_path
+from typing import Dict, List, Tuple
 
 QUANTITIES_TO_ESTIMATE = ["MI_KL", "MI_IS", "MI_D"]
 
 
-class EstimateQuantities1Run:
+class DivergenceEngine:
     """
-    Estimate information-theoretic quantities for a single training run of a model.
-    
-    Parameters
-    ----------
-    model_name : str
-        Name of the model.
-    dataset_name : str
-        Name of the dataset.
-    noise_level : float
-        Noise level applied to the dataset.
-    run_number : int
-        Identifier for the run.
-    calculate : bool, optional
-        If True, automatically calculate estimates upon initialization.
+    General-purpose engine for computing information-theoretic
+    divergences from region-wise number counts.
+
+    This class is agnostic to:
+    - models
+    - datasets
+    - epochs
+    - file structure
+
+    It operates purely on a pandas DataFrame.
     """
 
-    def __init__(
-        self,
-        model_name: str = "small",
-        dataset_name: str = "new",
-        noise_level: float = 0.05,
-        run_number: int = 0,
-        calculate: bool = False,
-    ):
-        self.model_name = model_name
-        self.noise_level = noise_level
-        self.run_number = run_number
-
-        # Paths to data
-        self.data_dir = get_test_moon_path(model_name, dataset_name, noise_level, run_number)
-        self.data_path = self.data_dir / "number_counts_per_epoch.pkl"
-
-        # Load number counts
-        self.ncounts: Dict[int, pd.DataFrame] = self._open_object(self.data_path)
-        self.epochs: np.ndarray = np.array(list(self.ncounts.keys()))
-
-        # Initialize estimates dictionary
-        self.estimates: Dict[str, List[pd.DataFrame]] = {q: [] for q in QUANTITIES_TO_ESTIMATE}
-
-        if calculate:
-            self.calculate_estimates()
-
-    # ----------------------------------------------------------------------
-    # Public Methods
-    # ----------------------------------------------------------------------
-
-    def get_estimates(self) -> Dict[str, List[pd.DataFrame]]:
-        """Return the calculated estimates."""
-        return self.estimates
-
-    def calculate_estimates(self) -> None:
+    def __init__(self, frame: pd.DataFrame):
         """
-        Calculate information-theoretic quantities for all epochs.
-        
-        Procedure
-        ---------
-        1. Sort region counts by layer and region indices.
-        2. Run consistency checks.
-        3. Compute probability masses and estimates per layer.
-        4. Aggregate layer-wise results into final DataFrame.
+        Parameters
+        ----------
+        frame : pd.DataFrame
+            DataFrame with columns:
+            ['layer_idx', 'region_idx', class_1, ..., class_K, 'total']
         """
-        for epoch, frame in self.ncounts.items():
-            frame = frame.sort_values(by=["layer_idx", "region_idx"]).reset_index(drop=True)
-            frame, num_layers, classes, n_k = self._run_consistency_check_on_single_frame(frame)
+        self.frame = (
+            frame.sort_values(by=["layer_idx", "region_idx"])
+            .reset_index(drop=True)
+        )
 
-            # Extract counts
-            n_w = np.array(frame['total'])
-            n_kw = np.array(frame[classes])
-            N = n_k.sum()
+        (
+            self.frame,
+            self.num_layers,
+            self.classes,
+            self.n_k,
+        ) = self._run_consistency_check(self.frame)
 
-            # Probability masses
-            m_w = np.expand_dims(n_w / N, axis=1)
-            m_kw = n_kw / N
-            m_k = n_k / N
+        self.N = int(self.n_k.sum())
 
-            # Compute estimates
-            for estimate_name, results in self.estimates.items():
-                frame[estimate_name] = self._individual_estimates(estimate_name, m_w, m_kw, m_k, N)
-                result = (
-                    frame.groupby('layer_idx')[estimate_name].sum()
-                    .rename(lambda i: f"l{i}")
-                    .to_frame()
-                    .T
-                )
-                result.insert(0, "epoch", epoch)
-                result.index.name = None
-                results.append(result)
+        # Precompute probability masses
+        self._prepare_probability_masses()
 
-        # Aggregate layer-wise results
-        for estimate_name, results in self.estimates.items():
-            newframe = pd.concat(results, ignore_index=True)
-            newframe = newframe.rename_axis(None, axis=1)
-            self.estimates[estimate_name] = newframe
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
 
-    # ----------------------------------------------------------------------
-    # Internal Methods
-    # ----------------------------------------------------------------------
-
-    def _individual_estimates(
-        self,
-        estimate: str,
-        m_w: np.ndarray,
-        m_kw: np.ndarray,
-        m_k: np.ndarray,
-        N: int,
-    ) -> np.ndarray:
-        """Compute a single estimate type for all regions."""
-        match estimate:
-            case "MI_KL":
-                logterm = m_kw / (m_w @ m_k)
-                logterm = np.log(logterm, where=logterm > 0)
-                return (m_kw * logterm).sum(axis=1)
-            case "MI_IS":
-                term = m_kw / (m_w @ m_k)
-                logterm = np.log(term, where=term > 0)
-                return (term - logterm).sum(axis=1)
-            case "MI_D":
-                return np.zeros(m_w.shape[0])
-            case _:
-                return np.zeros(m_w.shape[0])
-
-    def _run_consistency_check_on_single_frame(
-        self, frame: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, int, List[str], np.ndarray]:
+    def compute(self) -> Dict[str, pd.DataFrame]:
         """
-        Perform consistency checks on region count DataFrame.
-        
+        Compute all divergences and return layer-wise aggregates.
+
         Returns
         -------
-        frame : pd.DataFrame
-            Sorted and checked frame.
-        num_layers : int
-            Number of layers.
-        classes : list[str]
-            List of class labels.
-        n_k : np.ndarray
-            Total counts per class.
+        Dict[str, pd.DataFrame]
+            Keys are divergence names (e.g. MI_KL),
+            values are DataFrames with one row and columns l1, l2, ...
         """
-        assert frame.columns[-1] == "total", "Last column should be 'total'"
+        results = {}
+
+        for quantity in QUANTITIES_TO_ESTIMATE:
+            values = self._compute_individual(quantity)
+            self.frame[quantity] = values
+
+            layerwise = (
+                self.frame
+                .groupby("layer_idx")[quantity]
+                .sum()
+                .rename(lambda i: f"l{i}")
+                .to_frame()
+                .T
+            )
+
+            layerwise.index.name = None
+            results[quantity] = layerwise
+
+        return results
+
+    # ------------------------------------------------------------------
+    # Internal logic
+    # ------------------------------------------------------------------
+
+    def _prepare_probability_masses(self) -> None:
+        n_w = self.frame["total"].to_numpy()
+        n_kw = self.frame[self.classes].to_numpy()
+
+        self.m_w = np.expand_dims(n_w / self.N, axis=1)
+        self.m_kw = n_kw / self.N
+        self.m_k = self.n_k / self.N
+
+    def _compute_individual(
+        self,
+        estimate: str,
+    ) -> np.ndarray:
+        match estimate:
+            case "MI_KL":
+                logterm = self.m_kw / (self.m_w @ self.m_k)
+                logterm = np.log(logterm, where=logterm > 0)
+                return (self.m_kw * logterm).sum(axis=1)
+
+            case "MI_IS":
+                term = self.m_kw / (self.m_w @ self.m_k)
+                logterm = np.log(term, where=term > 0)
+                return (term - logterm).sum(axis=1)
+
+            case "MI_D":
+                return np.zeros(self.m_w.shape[0])
+
+            case _:
+                raise ValueError(f"Unknown estimate: {estimate}")
+
+    def _run_consistency_check(
+        self,
+        frame: pd.DataFrame,
+    ) -> Tuple[pd.DataFrame, int, List[str], np.ndarray]:
+
+        assert frame.columns[-1] == "total"
 
         classes = frame.columns[2:-1].tolist()
-        row_sums = frame[classes].sum(axis=1)
-        totals = frame["total"]
-        assert all(row_sums == totals), "Row sums of class counts should equal total counts"
 
+        # Row consistency
+        assert np.all(
+            frame[classes].sum(axis=1) == frame["total"]
+        )
+
+        # Layer consistency
         num_layers = frame["layer_idx"].nunique()
-        total_counts_per_layer = frame.groupby("layer_idx")["total"].sum().values
-        assert all(total_counts_per_layer == total_counts_per_layer[0]), "Total counts should be the same for each layer"
+        totals_per_layer = frame.groupby("layer_idx")["total"].sum().values
+        assert np.all(totals_per_layer == totals_per_layer[0])
 
-        # Ensure class division is consistent across layers
-        n_k1 = frame.loc[frame["layer_idx"] == 1, classes].sum(axis=0).to_numpy()[None, :]
+        # Class totals consistency
+        n_k_ref = (
+            frame.loc[frame["layer_idx"] == 1, classes]
+            .sum(axis=0)
+            .to_numpy()[None, :]
+        )
+
         for layer in range(1, num_layers + 1):
-            n_k = frame.loc[frame["layer_idx"] == layer, classes].sum(axis=0).to_numpy()[None, :]
-            assert np.all(n_k1 == n_k)
-
-        return frame, num_layers, classes, n_k
-
-    def _open_object(self, filename: str):
-        """Open a pickled object."""
-        with open(filename, 'rb') as inp:
-            obj = pickle.load(inp)
-        return obj
-
-
-class AverageEstimates:
-    """
-    Collect and aggregate estimates across multiple runs.
-    
-    Parameters
-    ----------
-    model_name : str
-        Name of the model.
-    dataset_name : str
-        Name of the dataset.
-    noise_level : float
-        Noise level applied to the dataset.
-    """
-
-    def __init__(
-        self,
-        model_name: str = "small",
-        dataset_name: str = "new",
-        noise_level: float = 0.05,
-    ):
-        self.model_name = model_name
-        self.dataset_name = dataset_name
-        self.noise_level = noise_level
-        self.run_numbers: np.ndarray = np.arange(35)
-
-    # ----------------------------------------------------------------------
-    # Public Methods
-    # ----------------------------------------------------------------------
-
-    def _find_from_all_runs(self) -> None:
-        """
-        Collect estimates for all runs and store in a dictionary.
-        """
-        self.individual_estimates: Dict[str, List[pd.DataFrame]] = {q: [] for q in QUANTITIES_TO_ESTIMATE}
-
-        for run_number in self.run_numbers:
-            run = EstimateQuantities1Run(
-                model_name=self.model_name,
-                dataset_name=self.dataset_name,
-                noise_level=self.noise_level,
-                run_number=int(run_number)
+            n_k = (
+                frame.loc[frame["layer_idx"] == layer, classes]
+                .sum(axis=0)
+                .to_numpy()[None, :]
             )
-            run.calculate_estimates()
-            for key, val in run.get_estimates().items():
-                self.individual_estimates[key].append(val)
+            assert np.all(n_k == n_k_ref)
 
-
-if __name__ == "__main__":
-    pass
+        return frame, num_layers, classes, n_k_ref
