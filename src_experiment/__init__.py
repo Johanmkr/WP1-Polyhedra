@@ -14,46 +14,35 @@
 
 
 # mypackage/__init__.py
+import importlib
 
 # Mapping of public names to their source modules
 _lazy_attributes = {
-    # from dataset.py
-    "get_data": ".dataset.py",
-    
-    # from divergence_engine.py
-    "QUANTITIES_TO_ESTIMATE": ".divergence_engine.py",
-    "DivergenceEngine": ".divergence_engine.py",
-    
-    # from estimate_quanties.py
-    "EstimateQuantities1Run": ".estimate_quantities.py",
-    "AverageEstimates": ".estimate_quantities.py",
-    
-    # from models.py
-    "get_model": ".models.py",
-    
-    # from paths.py
-    "get_storage_pat": ".paths.py",
-    
-    # from train_models.py
-    "train_model": ".train_models.py",
-    
-    # from utils.py
-    "NeuralNet": ".utils.py",
-    "createfolders": ".utils.py",
+    "get_data": ".dataset",
+    "QUANTITIES_TO_ESTIMATE": ".divergence_engine",
+    "DivergenceEngine": ".divergence_engine",
+    "EstimateQuantities1Run": ".estimate_quantities",
+    "AverageEstimates": ".estimate_quantities",
+    "get_model": ".models",
+    "get_storage_path": ".paths",
+    "train_model": ".train_models",
+    "NeuralNet": ".utils",
+    "createfolders": ".utils",
 }
 
 # Dynamically define __all__ based on lazy attributes
 __all__ = list(_lazy_attributes.keys())
 
 
+
 def __getattr__(name):
-    """
-    Lazily import attributes from submodules on access.
-    """
     if name in _lazy_attributes:
-        module = __import__(_lazy_attributes[name], globals(), locals(), [name])
+        module = importlib.import_module(
+            _lazy_attributes[name],
+            package=__name__
+        )
         value = getattr(module, name)
-        globals()[name] = value  # cache in module namespace
+        globals()[name] = value  # cache
         return value
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
