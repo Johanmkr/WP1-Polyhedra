@@ -21,3 +21,11 @@ def get_wbc_storage(model_name, run_number):
     return wbc_storage / f"model_{model_name}" / f"run_{int(run_number)}"
 
 
+def get_storage_path(type="moon", **kwargs):
+    match type:
+        case "moon":
+            return get_test_moon_path(**kwargs)
+        case "wbc":
+            return get_wbc_storage(**kwargs)
+
+

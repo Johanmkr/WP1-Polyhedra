@@ -17,21 +17,29 @@
 
 # Mapping of public names to their source modules
 _lazy_attributes = {
-    # Models
-    "get_model": ".models",
-    "NeuralNet": ".utils",
-
-    # Dataset
-    "get_data": ".dataset",
-
-    # Training
-    "train_model": ".train_models",
-
-    # Utilities
-    "createfolders": ".utils",
-
-    # Visualization
-    "VisualisationOfLatenRepresentation": ".visualize_data_representation",
+    # from dataset.py
+    "get_data": ".dataset.py",
+    
+    # from divergence_engine.py
+    "QUANTITIES_TO_ESTIMATE": ".divergence_engine.py",
+    "DivergenceEngine": ".divergence_engine.py",
+    
+    # from estimate_quanties.py
+    "EstimateQuantities1Run": ".estimate_quantities.py",
+    "AverageEstimates": ".estimate_quantities.py",
+    
+    # from models.py
+    "get_model": ".models.py",
+    
+    # from paths.py
+    "get_storage_pat": ".paths.py",
+    
+    # from train_models.py
+    "train_model": ".train_models.py",
+    
+    # from utils.py
+    "NeuralNet": ".utils.py",
+    "createfolders": ".utils.py",
 }
 
 # Dynamically define __all__ based on lazy attributes

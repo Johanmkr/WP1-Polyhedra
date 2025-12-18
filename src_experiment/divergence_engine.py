@@ -147,3 +147,6 @@ class DivergenceEngine:
             assert np.all(n_k == n_k_ref)
 
         return frame, num_layers, classes, n_k_ref
+    
+if __name__=="__main__":
+    pass
