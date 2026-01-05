@@ -5,7 +5,7 @@ import pickle
 from typing import Dict, List
 
 from src_experiment import (
-    get_test_moon_path,
+    get_storage_path,
 )
 
 from .divergence_engine import (
@@ -35,11 +35,11 @@ class EstimateQuantities1Run:
         self.noise_level = noise_level
         self.run_number = run_number
 
-        self.data_dir = get_test_moon_path(
-            model_name,
-            dataset_name,
-            noise_level,
-            run_number,
+        self.data_dir = get_storage_path("moons",
+            model_name=model_name,
+            dataset_name=dataset_name,
+            noise_level=noise_level,
+            run_number=run_number,
         )
 
         self.data_path = self.data_dir / "number_counts_per_epoch.pkl"

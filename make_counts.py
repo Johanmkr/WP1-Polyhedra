@@ -1,10 +1,11 @@
 # Import necessary libraries
 # from numpy import number
 from tqdm import trange
-from src_experiment import get_args, createfolders, moons_models, train_model, get_path_to_moon_experiment_storage, get_specific_moon_state_dict, get_test_moon_path, get_new_moons_data_for_all_noises
+from src_experiment import get_storage_path, get_data
 import geobin as gb
 import os
 import torch
+from pathlib import Path
 
 try:
     import cpickle as pickle
@@ -33,18 +34,13 @@ def open_object(filename):
         obj = pickle.load(inp)
     return obj
 
-inference_datasets = get_new_moons_data_for_all_noises(type="inference")
 
-
-def find_and_store_counts(model_name: str,
-                         dataset_name: str,
-                         noise_level: float,
-                         run_number: int,
+def find_and_store_counts(basepath: Path,
+                          data: torch.utils.data.DataLoader,
                          epochs: list[int],
                          overwrite=False):
-    # savepath = get_path_to_moon_experiment_storage(model_name=model_name,dataset_name=dataset_name, noise_level=noise_level, run_number=run_number)
-    
-    savepath = get_test_moon_path(model_name, dataset_name, noise_level, run_number)
+
+    savepath = basepath
     number_count_path = savepath/"number_counts_per_epoch.pkl"
     
     def _run_and_save_counts():
@@ -52,7 +48,7 @@ def find_and_store_counts(model_name: str,
         
 
         ncounts_per_epoch = {}
-        inference_data = inference_datasets[noise_level]
+        inference_data = data
         
         # Main loop:
         # Iterate through epochs
@@ -99,22 +95,39 @@ def find_and_store_counts(model_name: str,
         print("Finding number counts...")
         _run_and_save_counts()
 
+
+def run_moon_number_counts(
+    model_name="small",
+    dataset_name="new",
+    noise_level=0.05,
+    run_number=0
+):
+    basepath = get_storage_path("moons", model_name=model_name, dataset_name=dataset_name, noise_level=noise_level, run_number=run_number)
+    data = get_data("moons", "testing", noise=noise_level)
+    find_and_store_counts(basepath, data, epochs=[0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,124], overwrite=True)
     
 def test():
     run_numbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34]
     for noise in [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]:
         for number in run_numbers:
             print(f"\nNoise: {noise}\nRun {number}/{run_numbers[-1]}")
-            find_and_store_counts(
+            run_moon_number_counts(
                 model_name="decreasing",
                 dataset_name="new",
                 noise_level = noise,
                 run_number = number,
-                epochs=[0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,124],
-                overwrite=False
         )
+            
     
     
     
 if __name__=="__main__":
-    test()
+    for noise in [0.05]:
+        for number in [0]:
+            # print(f"\nNoise: {noise}\nRun {number}/{run_numbers[-1]}")
+            run_moon_number_counts(
+                model_name="decreasing",
+                dataset_name="new",
+                noise_level = noise,
+                run_number = number,
+        )

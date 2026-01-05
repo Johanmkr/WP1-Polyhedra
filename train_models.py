@@ -7,8 +7,6 @@ import numpy as np
 from src_experiment import get_storage_path, get_model, train_model, get_data
 
 
-
-
 def train_model_on_moons(
     model_name: str,
     dataset_name: str,
@@ -38,7 +36,7 @@ def train_model_on_moons(
         RETURN_STATES=RETURN_STATES,
         save_everyth_epoch=save_everyth_epoch,
     )
-    
+     
     return run_results
     
 def main():

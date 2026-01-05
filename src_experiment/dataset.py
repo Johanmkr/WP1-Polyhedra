@@ -54,13 +54,14 @@ testing_seed = 1
 n_samples_training = 10_000
 n_samples_testing = 5_000
 
-batch_size = 200
+
 
 
 def get_data(
     dataset_name: str,
     dataset_type: str = "training",
     noise: float = 0.05,
+    batch_size: int = 200,
 ):
     if dataset_name == "moons":
         if dataset_type == "training":
