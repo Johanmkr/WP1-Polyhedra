@@ -98,12 +98,16 @@ class DivergenceEngine:
         match estimate:
             case "MI_KL":
                 logterm = self.m_kw / (self.m_w @ self.m_k)
-                logterm = np.log(logterm, where=logterm > 0)
+                outterm = np.full_like(logterm, 0, dtype=float)
+                logterm = np.log(logterm, where=logterm > 0, out=outterm)
+
                 return (self.m_kw * logterm).sum(axis=1)
 
             case "MI_IS":
                 term = self.m_kw / (self.m_w @ self.m_k)
-                logterm = np.log(term, where=term > 0)
+                outterm = np.full_like(term, 0, dtype=float)
+                logterm = np.log(term, where=term > 0, out=outterm)
+
                 return (term - logterm).sum(axis=1)
 
             case "MI_D":
