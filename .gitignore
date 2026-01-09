@@ -24,3 +24,5 @@ old_figures/
 # Ignore data
 mnist/
 
+# Ignore figures
+figures/

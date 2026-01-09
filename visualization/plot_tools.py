@@ -64,3 +64,37 @@ def plot_all_results(results, titles=None, run_number=0):
     plt.tight_layout(rect=[0, 0, 1, 0.93])
     fig.suptitle(f"Run number: {run_number}")
     plt.show()
+
+
+def plot_both_KL_IS(estimates, lw=2, super_title=""):
+    """
+    Plot all layers except the last one on the same figure as functions of epoch.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with columns 'epoch' and layers like 'l1', 'l2', ...
+    lw : float
+        Line width for the curves.
+    """
+    # All columns except 'epoch' and the last layer
+    MI = estimates["MI_KL"]
+    IS = estimates["MI_IS"]
+    
+    # layers = df.columns[1:-1]  # skip first (epoch) and last
+
+    fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1, figsize=(10, 7), sharex=True)
+
+    for Q, ax, labels in zip([MI, IS], [ax0, ax1], ["KL", "IS"]):
+        for layer in Q.columns[1:-1]:
+            ax.plot(Q["epoch"], Q[layer], lw=lw, label=layer)
+    
+    ax0.grid(True)
+    ax1.grid(True)
+    ax1.set_xlabel("Epoch")
+    ax0.set_ylabel("Kullback-Leibler MI")
+    ax1.set_ylabel("Itakura-Saito MI")
+    fig.suptitle(super_title)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
