@@ -1,26 +1,39 @@
-import torch
 from .utils import NeuralNet
 
+small_model_params = {
+    "input_size": 2,
+    "hidden_sizes": [3,3,3],
+    "num_classes": 1
+}
 
-# Small model
+decreasing_model_params = {
+    "input_size": 2,
+    "hidden_sizes": [5,4,3],
+    "num_classes": 1
+}
 
-small_uniform_model = NeuralNet(input_size=2, hidden_sizes=[3,3,3], num_classes=1)
+small_model_params_wbc = {
+    "input_size": 30,
+    "hidden_sizes": [3,3,3],
+    "num_classes": 1
+}
 
-small_uniform_model_long = NeuralNet(input_size=2, hidden_sizes=[3,3,3,3,3], num_classes=1)
+decreasing_model_params_wbc = {
+    "input_size": 30,
+    "hidden_sizes": [5,4,3],
+    "num_classes": 1
+}
 
-medium_uniform_model = NeuralNet(input_size=2, hidden_sizes=[5,5,5], num_classes=1)
 
-large_uniform_model = NeuralNet(input_size=2, hidden_sizes=[7,7,7], num_classes=1)
-
-increasing_model = NeuralNet(input_size=2, hidden_sizes=[3,5,7], num_classes=1)
-
-decreasing_model = NeuralNet(input_size=2, hidden_sizes=[7,5,3], num_classes=1)
-
-moons_models = {
-    "small_uniform": small_uniform_model,
-    # "small_uniform_long": small_uniform_model_long,
-    "medium_uniform": medium_uniform_model,
-    "large_uniform": large_uniform_model,
-    "increasing": increasing_model,
-    "decreasing": decreasing_model,
-    }
+def get_model(type="small_moon", seed=None):
+    match type:
+        case "small_moon":
+            return NeuralNet(**small_model_params, seed=seed)
+        case "decreasing_moon":
+            return NeuralNet(**decreasing_model_params, seed=seed)
+        case "small_wbc":
+            return NeuralNet(**small_model_params_wbc, seed=seed)
+        case "decreasing_wbc":
+            return NeuralNet(**decreasing_model_params_wbc, seed=seed)
+        case _:
+            raise ValueError

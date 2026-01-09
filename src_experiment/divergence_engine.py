@@ -1,0 +1,156 @@
+from __future__ import annotations
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Tuple
+
+QUANTITIES_TO_ESTIMATE = ["MI_KL", "MI_IS", "MI_D"]
+
+
+class DivergenceEngine:
+    """
+    General-purpose engine for computing information-theoretic
+    divergences from region-wise number counts.
+
+    This class is agnostic to:
+    - models
+    - datasets
+    - epochs
+    - file structure
+
+    It operates purely on a pandas DataFrame.
+    """
+
+    def __init__(self, frame: pd.DataFrame):
+        """
+        Parameters
+        ----------
+        frame : pd.DataFrame
+            DataFrame with columns:
+            ['layer_idx', 'region_idx', class_1, ..., class_K, 'total']
+        """
+        self.frame = (
+            frame.sort_values(by=["layer_idx", "region_idx"])
+            .reset_index(drop=True)
+        )
+
+        (
+            self.frame,
+            self.num_layers,
+            self.classes,
+            self.n_k,
+        ) = self._run_consistency_check(self.frame)
+
+        self.N = int(self.n_k.sum())
+
+        # Precompute probability masses
+        self._prepare_probability_masses()
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def compute(self) -> Dict[str, pd.DataFrame]:
+        """
+        Compute all divergences and return layer-wise aggregates.
+
+        Returns
+        -------
+        Dict[str, pd.DataFrame]
+            Keys are divergence names (e.g. MI_KL),
+            values are DataFrames with one row and columns l1, l2, ...
+        """
+        results = {}
+
+        for quantity in QUANTITIES_TO_ESTIMATE:
+            values = self._compute_individual(quantity)
+            self.frame[quantity] = values
+
+            layerwise = (
+                self.frame
+                .groupby("layer_idx")[quantity]
+                .sum()
+                .rename(lambda i: f"l{i}")
+                .to_frame()
+                .T
+            )
+
+            layerwise.index.name = None
+            results[quantity] = layerwise
+
+        return results
+
+    # ------------------------------------------------------------------
+    # Internal logic
+    # ------------------------------------------------------------------
+
+    def _prepare_probability_masses(self) -> None:
+        n_w = self.frame["total"].to_numpy()
+        n_kw = self.frame[self.classes].to_numpy()
+
+        self.m_w = np.expand_dims(n_w / self.N, axis=1)
+        self.m_kw = n_kw / self.N
+        self.m_k = self.n_k / self.N
+
+    def _compute_individual(
+        self,
+        estimate: str,
+    ) -> np.ndarray:
+        match estimate:
+            case "MI_KL":
+                logterm = self.m_kw / (self.m_w @ self.m_k)
+                outterm = np.full_like(logterm, 0, dtype=float)
+                logterm = np.log(logterm, where=logterm > 0, out=outterm)
+
+                return (self.m_kw * logterm).sum(axis=1)
+
+            case "MI_IS":
+                term = self.m_kw / (self.m_w @ self.m_k)
+                outterm = np.full_like(term, 0, dtype=float)
+                logterm = np.log(term, where=term > 0, out=outterm)
+
+                return (term - logterm).sum(axis=1)
+
+            case "MI_D":
+                return np.zeros(self.m_w.shape[0])
+
+            case _:
+                raise ValueError(f"Unknown estimate: {estimate}")
+
+    def _run_consistency_check(
+        self,
+        frame: pd.DataFrame,
+    ) -> Tuple[pd.DataFrame, int, List[str], np.ndarray]:
+
+        assert frame.columns[-1] == "total"
+
+        classes = frame.columns[2:-1].tolist()
+
+        # Row consistency
+        assert np.all(
+            frame[classes].sum(axis=1) == frame["total"]
+        )
+
+        # Layer consistency
+        num_layers = frame["layer_idx"].nunique()
+        totals_per_layer = frame.groupby("layer_idx")["total"].sum().values
+        assert np.all(totals_per_layer == totals_per_layer[0])
+
+        # Class totals consistency
+        n_k_ref = (
+            frame.loc[frame["layer_idx"] == 1, classes]
+            .sum(axis=0)
+            .to_numpy()[None, :]
+        )
+
+        for layer in range(1, num_layers + 1):
+            n_k = (
+                frame.loc[frame["layer_idx"] == layer, classes]
+                .sum(axis=0)
+                .to_numpy()[None, :]
+            )
+            assert np.all(n_k == n_k_ref)
+
+        return frame, num_layers, classes, n_k_ref
+    
+if __name__=="__main__":
+    pass
