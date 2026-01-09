@@ -5,11 +5,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 
-
+breast_cancer = fetch_ucirepo(id=17)
 def make_wbc_dataset():
     # Fetch dataset
-    breast_cancer = fetch_ucirepo(id=17)
-
+    
     X_bc = breast_cancer.data.features.to_numpy(dtype="float32")
     y_bc = (breast_cancer.data.targets["Diagnosis"] == "M").astype(int).to_numpy(dtype="int64")
 

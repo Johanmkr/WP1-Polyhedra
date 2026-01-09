@@ -106,7 +106,16 @@ def run_moon_number_counts(
     data = get_data("moons", "testing", noise=noise_level)
     find_and_store_counts(basepath, data, epochs=[0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,124], overwrite=True)
     
-def test():
+    
+def run_wbc_number_counts(
+    model_name="small",
+    run_number=0
+):
+    basepath = get_storage_path("wbc", model_name=model_name, run_number=run_number)
+    data = get_data("breast_cancer", "testing", batch_size=75)
+    find_and_store_counts(basepath, data, epochs=[0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300,320,340,360,380,400,420,440,460,480,499], overwrite=True)
+    
+def run_all_moon_counts():
     run_numbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34]
     for noise in [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]:
         for number in run_numbers:
@@ -117,17 +126,24 @@ def test():
                 noise_level = noise,
                 run_number = number,
         )
-            
+   
+def run_all_wbc_counts():
+    run_numbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+    for model_name in ["small", "decreasing"]:
+        for number in run_numbers:
+            print(f"\nModel: {model_name}\nRun {number}/{run_numbers[-1]}")
+            run_wbc_number_counts(
+                model_name=model_name,
+                run_number = number,
+        )  
+         
+def test():
+    run_wbc_number_counts(
+        model_name="small",
+        run_number=0
+    )
     
     
     
 if __name__=="__main__":
-    for noise in [0.05]:
-        for number in [0]:
-            # print(f"\nNoise: {noise}\nRun {number}/{run_numbers[-1]}")
-            run_moon_number_counts(
-                model_name="decreasing",
-                dataset_name="new",
-                noise_level = noise,
-                run_number = number,
-        )
+    run_all_wbc_counts()

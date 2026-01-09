@@ -24,24 +24,9 @@ class EstimateQuantities1Run:
 
     def __init__(
         self,
-        model_name: str = "small",
-        dataset_name: str = "new",
-        noise_level: float = 0.05,
-        run_number: int = 0,
-        calculate: bool = False,
+        data_dir
     ):
-        self.model_name = model_name
-        self.dataset_name = dataset_name
-        self.noise_level = noise_level
-        self.run_number = run_number
-
-        self.data_dir = get_storage_path("moons",
-            model_name=model_name,
-            dataset_name=dataset_name,
-            noise_level=noise_level,
-            run_number=run_number,
-        )
-
+        self.data_dir = data_dir
         self.data_path = self.data_dir / "number_counts_per_epoch.pkl"
         self.ncounts: Dict[int, pd.DataFrame] = self._open_object(self.data_path)
 
@@ -49,8 +34,8 @@ class EstimateQuantities1Run:
             q: [] for q in QUANTITIES_TO_ESTIMATE
         }
 
-        if calculate:
-            self.calculate_estimates()
+        # Perform calculations
+        self.calculate_estimates()
 
     # ------------------------------------------------------------------
 
@@ -88,29 +73,43 @@ class AverageEstimates:
 
     def __init__(
         self,
-        model_name: str = "small",
-        dataset_name: str = "new",
-        noise_level: float = 0.05,
-        run_numbers: np.ndarray | None = None,
+        data_dirs: List,
     ):
-        self.model_name = model_name
-        self.dataset_name = dataset_name
-        self.noise_level = noise_level
-        self.run_numbers = run_numbers if run_numbers is not None else np.arange(35)
+        self.data_dirs = data_dirs
+        self.means = {q: [] for q in QUANTITIES_TO_ESTIMATE}
+        self.stds = {q: [] for q in QUANTITIES_TO_ESTIMATE}
+        self._find_means_and_stds()
 
-    def collect(self) -> Dict[str, List[pd.DataFrame]]:
+    def _collect(self) -> Dict[str, List[pd.DataFrame]]:
         aggregated = {q: [] for q in QUANTITIES_TO_ESTIMATE}
 
-        for run_number in self.run_numbers:
+        for data_dir in self.data_dirs:
             run = EstimateQuantities1Run(
-                model_name=self.model_name,
-                dataset_name=self.dataset_name,
-                noise_level=self.noise_level,
-                run_number=int(run_number),
-                calculate=True,
+                data_dir=data_dir
             )
 
             for key, df in run.get_estimates().items():
                 aggregated[key].append(df)
 
         return aggregated
+    
+    def _concatenate(self) -> Dict[str, pd.DataFrame]:
+        aggregated = self._collect()
+        concatenated = {}
+
+        for key, dfs in aggregated.items():
+            concatenated[key] = pd.concat(dfs, keys=np.arange(len(dfs)), names=["run", "row"]).reset_index(level="run")
+
+        return concatenated
+    
+    def _find_means_and_stds(self) -> None:
+        concatenated = self._concatenate()
+
+        for key, df in concatenated.items():
+            summary = (df
+                       .groupby("epoch")[[col for col in df.columns[1:] if col not in ["run", "epoch"]]]
+                       .agg(["mean", "std"])
+                       )
+
+            self.means[key] = summary.xs("mean", axis=1, level=1).reset_index()
+            self.stds[key] = summary.xs("std", axis=1, level=1).reset_index()
