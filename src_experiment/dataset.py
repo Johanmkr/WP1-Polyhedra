@@ -6,116 +6,178 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 
-breast_cancer = fetch_ucirepo(id=17)
 
-def make_wbc_dataset(noise_ratio=0.0, random_state=42):
+# ============================================================
+# Global configuration
+# ============================================================
+
+TRAINING_SEED = 0
+TESTING_SEED = 1
+
+N_SAMPLES_TRAINING = 10_000
+N_SAMPLES_TESTING = 5_000
+
+DEFAULT_BATCH_SIZE = 200
+
+
+# ============================================================
+# Helper utilities
+# ============================================================
+
+def inject_symmetric_label_noise(
+    y: np.ndarray,
+    noise_ratio: float,
+    seed: int,
+) -> np.ndarray:
     """
-    noise_ratio: float in [0, 1]
-        Fraction of training labels to corrupt with symmetric label noise
+    Apply symmetric label noise to binary labels.
+
+    noise_ratio: fraction of labels to flip
     """
+    if noise_ratio <= 0.0:
+        return y
 
-    # Fetch dataset
-    X_bc = breast_cancer.data.features.to_numpy(dtype="float32")
-    y_bc = (breast_cancer.data.targets["Diagnosis"] == "M") \
-            .astype(int).to_numpy(dtype="int64")
+    rng = np.random.default_rng(seed)
+    y_noisy = y.copy()
 
-    # Train / test split (test labels stay clean)
-    X_bc_train, X_bc_test, y_bc_train, y_bc_test = train_test_split(
-        X_bc, y_bc, test_size=0.2, random_state=random_state, stratify=y_bc
+    n_samples = len(y)
+    n_noisy = int(noise_ratio * n_samples)
+    noisy_indices = rng.choice(n_samples, size=n_noisy, replace=False)
+
+    y_noisy[noisy_indices] = 1 - y_noisy[noisy_indices]
+    return y_noisy
+
+
+def to_tensor_dataset(X: np.ndarray, y: np.ndarray) -> TensorDataset:
+    return TensorDataset(
+        torch.tensor(X, dtype=torch.float32),
+        torch.tensor(y, dtype=torch.int64),
     )
 
-    # ---- Inject symmetric label noise into training labels ----
-    if noise_ratio > 0.0:
-        rng = np.random.default_rng(random_state)
-        n_samples = len(y_bc_train)
-        n_noisy = int(noise_ratio * n_samples)
 
-        noisy_indices = rng.choice(n_samples, size=n_noisy, replace=False)
+# ============================================================
+# Dataset builders
+# ============================================================
 
-        # Binary symmetric noise: flip labels (0 ↔ 1)
-        y_bc_train = y_bc_train.copy()
-        y_bc_train[noisy_indices] = 1 - y_bc_train[noisy_indices]
+def make_moons_datasets(
+    feature_noise: float,
+) -> tuple[TensorDataset, TensorDataset]:
+    """
+    Create train/test moons datasets.
 
-    # Scale features
+    feature_noise controls geometric noise in the input space.
+    """
+    X_train, y_train = make_moons(
+        n_samples=N_SAMPLES_TRAINING,
+        noise=feature_noise,
+        random_state=TRAINING_SEED,
+    )
+
+    X_test, y_test = make_moons(
+        n_samples=N_SAMPLES_TESTING,
+        noise=feature_noise,
+        random_state=TESTING_SEED,
+    )
+
+    return (
+        to_tensor_dataset(X_train, y_train),
+        to_tensor_dataset(X_test, y_test),
+    )
+
+
+def make_wbc_datasets(
+    label_noise: float,
+    random_state: int = 42,
+) -> tuple[TensorDataset, TensorDataset]:
+    """
+    Create train/test datasets for the Wisconsin Breast Cancer dataset.
+
+    label_noise is symmetric label corruption applied ONLY to training labels.
+    """
+    breast_cancer = fetch_ucirepo(id=17)
+
+    X = breast_cancer.data.features.to_numpy(dtype=np.float32)
+    y = (
+        breast_cancer.data.targets["Diagnosis"] == "M"
+    ).astype(np.int64).to_numpy()
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=random_state,
+        stratify=y,
+    )
+
+    # Inject label noise into training labels only
+    y_train = inject_symmetric_label_noise(
+        y_train,
+        noise_ratio=label_noise,
+        seed=random_state,
+    )
+
+    # Standardize features (fit on train only)
     scaler = StandardScaler()
-    X_bc_train = scaler.fit_transform(X_bc_train)
-    X_bc_test = scaler.transform(X_bc_test)
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
-    # Convert to tensors
-    X_bc_train = torch.tensor(X_bc_train, dtype=torch.float32)
-    y_bc_train = torch.tensor(y_bc_train, dtype=torch.int64)
-
-    X_bc_test = torch.tensor(X_bc_test, dtype=torch.float32)
-    y_bc_test = torch.tensor(y_bc_test, dtype=torch.int64)
-
-    # TensorDatasets
-    bc_train_dataset = TensorDataset(X_bc_train, y_bc_train)
-    bc_test_dataset = TensorDataset(X_bc_test, y_bc_test)
-
-    return bc_train_dataset, bc_test_dataset
+    return (
+        to_tensor_dataset(X_train, y_train),
+        to_tensor_dataset(X_test, y_test),
+    )
 
 
+# ============================================================
+# Public API (explicit and unambiguous)
+# ============================================================
 
-
-def make_moons_dataset(n_samples, noise, seed):
-    X, y = make_moons(n_samples=n_samples, noise=noise, random_state=seed)
-    X = torch.tensor(X, dtype=torch.float32)
-    y = torch.tensor(y, dtype=torch.long)
-    return TensorDataset(X, y)
-
-
-
-noises = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]
-
-training_seed = 0
-testing_seed = 1
-
-n_samples_training = 10_000
-n_samples_testing = 5_000
-
-
-
-
-def get_data(
-    dataset_name: str,
+def get_moons_data(
     dataset_type: str = "training",
-    noise: float = 0.05,
-    batch_size: int = 200,
-):
-    if dataset_name == "moons":
-        if dataset_type == "training":
-            dataset = make_moons_dataset(
-                n_samples=n_samples_training,
-                noise=noise,
-                seed=training_seed,
-            )
-            shuffle = True
-        elif dataset_type == "testing":
-            dataset = make_moons_dataset(
-                n_samples=n_samples_testing,
-                noise=noise,
-                seed=testing_seed,
-            )
-            shuffle = False
-        else:
-            raise ValueError("dataset_type must be 'training' or 'testing'")
+    feature_noise: float = 0.0,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+) -> DataLoader:
+    """
+    Return a DataLoader for the moons dataset.
 
-    elif dataset_name == "breast_cancer":
-        bc_train, bc_test = make_wbc_dataset()
-        if dataset_type == "training":
-            dataset = bc_train
-            shuffle = True
-        elif dataset_type == "testing":
-            dataset = bc_test
-            shuffle = False
-        else:
-            raise ValueError("dataset_type must be 'training' or 'testing'")
+    dataset_type: "training" or "testing"
+    feature_noise: geometric noise level in the input space
+    """
+    if dataset_type not in {"training", "testing"}:
+        raise ValueError("dataset_type must be 'training' or 'testing'")
 
-    else:
-        raise ValueError(f"Unknown dataset_name: {dataset_name}")
+    train_ds, test_ds = make_moons_datasets(feature_noise=feature_noise)
+    dataset = train_ds if dataset_type == "training" else test_ds
 
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=(dataset_type == "training"),
+    )
 
 
-if __name__=="__main__":
+def get_wbc_data(
+    dataset_type: str = "training",
+    label_noise: float = 0.0,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+) -> DataLoader:
+    """
+    Return a DataLoader for the Wisconsin Breast Cancer dataset.
+
+    dataset_type: "training" or "testing"
+    label_noise: symmetric label noise applied to training labels only
+    """
+    if dataset_type not in {"training", "testing"}:
+        raise ValueError("dataset_type must be 'training' or 'testing'")
+
+    train_ds, test_ds = make_wbc_datasets(label_noise=label_noise)
+    dataset = train_ds if dataset_type == "training" else test_ds
+
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=(dataset_type == "training"),
+    )
+
+
+if __name__ == "__main__":
     pass
