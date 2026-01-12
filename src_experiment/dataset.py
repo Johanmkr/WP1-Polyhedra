@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.datasets import make_moons
 from sklearn.preprocessing import StandardScaler
@@ -6,16 +7,34 @@ from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 
 breast_cancer = fetch_ucirepo(id=17)
-def make_wbc_dataset():
-    # Fetch dataset
-    
-    X_bc = breast_cancer.data.features.to_numpy(dtype="float32")
-    y_bc = (breast_cancer.data.targets["Diagnosis"] == "M").astype(int).to_numpy(dtype="int64")
 
-    # Train / test split
+def make_wbc_dataset(noise_ratio=0.0, random_state=42):
+    """
+    noise_ratio: float in [0, 1]
+        Fraction of training labels to corrupt with symmetric label noise
+    """
+
+    # Fetch dataset
+    X_bc = breast_cancer.data.features.to_numpy(dtype="float32")
+    y_bc = (breast_cancer.data.targets["Diagnosis"] == "M") \
+            .astype(int).to_numpy(dtype="int64")
+
+    # Train / test split (test labels stay clean)
     X_bc_train, X_bc_test, y_bc_train, y_bc_test = train_test_split(
-        X_bc, y_bc, test_size=0.2, random_state=42, stratify=y_bc
+        X_bc, y_bc, test_size=0.2, random_state=random_state, stratify=y_bc
     )
+
+    # ---- Inject symmetric label noise into training labels ----
+    if noise_ratio > 0.0:
+        rng = np.random.default_rng(random_state)
+        n_samples = len(y_bc_train)
+        n_noisy = int(noise_ratio * n_samples)
+
+        noisy_indices = rng.choice(n_samples, size=n_noisy, replace=False)
+
+        # Binary symmetric noise: flip labels (0 ↔ 1)
+        y_bc_train = y_bc_train.copy()
+        y_bc_train[noisy_indices] = 1 - y_bc_train[noisy_indices]
 
     # Scale features
     scaler = StandardScaler()
@@ -23,15 +42,16 @@ def make_wbc_dataset():
     X_bc_test = scaler.transform(X_bc_test)
 
     # Convert to tensors
-    X_bc_train = torch.tensor(X_bc_train)
-    y_bc_train = torch.tensor(y_bc_train)
+    X_bc_train = torch.tensor(X_bc_train, dtype=torch.float32)
+    y_bc_train = torch.tensor(y_bc_train, dtype=torch.int64)
 
-    X_bc_test = torch.tensor(X_bc_test)
-    y_bc_test = torch.tensor(y_bc_test)
+    X_bc_test = torch.tensor(X_bc_test, dtype=torch.float32)
+    y_bc_test = torch.tensor(y_bc_test, dtype=torch.int64)
 
     # TensorDatasets
     bc_train_dataset = TensorDataset(X_bc_train, y_bc_train)
     bc_test_dataset = TensorDataset(X_bc_test, y_bc_test)
+
     return bc_train_dataset, bc_test_dataset
 
 
