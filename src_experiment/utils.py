@@ -7,27 +7,16 @@ import torch.nn as nn
 import torch.nn.init as init
 
 
+import torch
+import torch.nn as nn
+import torch.nn.init as init
+from typing import List, Optional
+
+
 class NeuralNet(nn.Module):
     """
-    Fully-connected feedforward neural network with ReLU activations.
-
-    Hidden layers are created dynamically based on the provided
-    `hidden_sizes` list. Layer names follow the convention:
-
-        l1, relu1, l2, relu2, ..., lK, reluK, l(K+1)
-
-    where l(K+1) is the output layer.
-
-    Parameters
-    ----------
-    input_size : int
-        Dimensionality of the input.
-    hidden_sizes : list[int]
-        Number of neurons in each hidden layer.
-    num_classes : int
-        Number of output classes.
-    seed : int, optional
-        Random seed for reproducible weight initialization.
+    Fully-connected feedforward neural network with ReLU activations
+    and Dropout regularization.
     """
 
     def __init__(
@@ -35,57 +24,46 @@ class NeuralNet(nn.Module):
         input_size: int,
         hidden_sizes: List[int],
         num_classes: int,
+        dropout: float = 0.0,
         seed: Optional[int] = None,
     ):
         super().__init__()
         self.hidden_sizes = hidden_sizes
+        self.dropout = dropout  
 
         # ------------------------------------------------------------------
         # Hidden Layers
         # ------------------------------------------------------------------
-
         for i, hidden_dim in enumerate(hidden_sizes):
             layer_name = f"l{i + 1}"
             relu_name = f"relu{i + 1}"
+            dropout_name = f"dropout{i + 1}"
 
             in_features = input_size if i == 0 else hidden_sizes[i - 1]
+
             setattr(self, layer_name, nn.Linear(in_features, hidden_dim))
             setattr(self, relu_name, nn.ReLU())
+            setattr(self, dropout_name, nn.Dropout(p=dropout))
 
         # ------------------------------------------------------------------
         # Output Layer
         # ------------------------------------------------------------------
-
         output_layer_name = f"l{len(hidden_sizes) + 1}"
         setattr(self, output_layer_name, nn.Linear(hidden_sizes[-1], num_classes))
 
-        # Optional seeded initialization
         if seed is not None:
             self.set_seed(seed)
 
     # ----------------------------------------------------------------------
     # Forward Pass
     # ----------------------------------------------------------------------
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass through the network.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input tensor of shape (batch_size, input_size).
-
-        Returns
-        -------
-        torch.Tensor
-            Output logits of shape (batch_size, num_classes).
-        """
         out = x
 
         for i in range(len(self.hidden_sizes)):
             out = getattr(self, f"l{i + 1}")(out)
             out = getattr(self, f"relu{i + 1}")(out)
+            out = getattr(self, f"dropout{i + 1}")(out)
 
         out = getattr(self, f"l{len(self.hidden_sizes) + 1}")(out)
         return out
@@ -93,14 +71,7 @@ class NeuralNet(nn.Module):
     # ----------------------------------------------------------------------
     # Initialization Utilities
     # ----------------------------------------------------------------------
-
     def set_seed(self, seed: int) -> None:
-        """
-        Set random seed and initialize all network weights.
-
-        Hidden layers use Kaiming initialization (ReLU),
-        output layer uses Xavier initialization.
-        """
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
 
@@ -118,7 +89,6 @@ class NeuralNet(nn.Module):
             init.xavier_uniform_(output_layer.weight)
             if output_layer.bias is not None:
                 init.zeros_(output_layer.bias)
-
 
 # ----------------------------------------------------------------------
 # Filesystem Utilities

@@ -25,7 +25,7 @@ def train_model(
     save_everyth_epoch: int = 50,
     RETURN_STATES: bool = False,
     sgd_lr = 0.01,
-    sgd_mom = 0.1
+    sgd_mom = 0.9
 ) -> Any:
 
     train_loss = np.zeros(epochs)
@@ -94,7 +94,7 @@ def train_model(
         # ----------------------
         # Save state to memory (for later analysis)
         # ----------------------
-        if (epoch % save_everyth_epoch == 0) or (epoch == epochs - 1):
+        if (epoch % save_everyth_epoch == 0) or (epoch == epochs-1):
             saved_states[epoch] = copy.deepcopy(model.state_dict())
 
 

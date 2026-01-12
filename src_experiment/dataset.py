@@ -6,23 +6,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 
-
-# ============================================================
-# Global configuration
-# ============================================================
-
-TRAINING_SEED = 0
-TESTING_SEED = 1
-
-N_SAMPLES_TRAINING = 10_000
-N_SAMPLES_TESTING = 5_000
-
+N_SAMPLES = 1000
 DEFAULT_BATCH_SIZE = 200
 
-
-# ============================================================
-# Helper utilities
-# ============================================================
+breast_cancer = fetch_ucirepo(id=17)
 
 def inject_symmetric_label_noise(
     y: np.ndarray,
@@ -53,30 +40,53 @@ def to_tensor_dataset(X: np.ndarray, y: np.ndarray) -> TensorDataset:
         torch.tensor(X, dtype=torch.float32),
         torch.tensor(y, dtype=torch.int64),
     )
+    
 
+def split_and_scale_data(
+    X: np.ndarray,
+    y: np.ndarray,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Split data into train/test sets and standardize features.
+    """
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y,
+    )
 
-# ============================================================
-# Dataset builders
-# ============================================================
+    # Standardize features (fit on train only)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    return X_train, X_test, y_train, y_test
+
 
 def make_moons_datasets(
     feature_noise: float,
+    random_state: int = 42,
 ) -> tuple[TensorDataset, TensorDataset]:
     """
     Create train/test moons datasets.
 
     feature_noise controls geometric noise in the input space.
     """
-    X_train, y_train = make_moons(
-        n_samples=N_SAMPLES_TRAINING,
+    X, y = make_moons(
+        n_samples=N_SAMPLES,
         noise=feature_noise,
-        random_state=TRAINING_SEED,
+        random_state=random_state,
     )
 
-    X_test, y_test = make_moons(
-        n_samples=N_SAMPLES_TESTING,
-        noise=feature_noise,
-        random_state=TESTING_SEED,
+    X_train, X_test, y_train, y_test = split_and_scale_data(
+        X,
+        y,
+        test_size=0.2,
+        random_state=random_state,
     )
 
     return (
@@ -94,7 +104,6 @@ def make_wbc_datasets(
 
     label_noise is symmetric label corruption applied ONLY to training labels.
     """
-    breast_cancer = fetch_ucirepo(id=17)
 
     X = breast_cancer.data.features.to_numpy(dtype=np.float32)
     y = (
@@ -126,13 +135,7 @@ def make_wbc_datasets(
         to_tensor_dataset(X_test, y_test),
     )
 
-
-# ============================================================
-# Public API (explicit and unambiguous)
-# ============================================================
-
 def get_moons_data(
-    dataset_type: str = "training",
     feature_noise: float = 0.0,
     batch_size: int = DEFAULT_BATCH_SIZE,
 ) -> DataLoader:
@@ -142,21 +145,20 @@ def get_moons_data(
     dataset_type: "training" or "testing"
     feature_noise: geometric noise level in the input space
     """
-    if dataset_type not in {"training", "testing"}:
-        raise ValueError("dataset_type must be 'training' or 'testing'")
-
     train_ds, test_ds = make_moons_datasets(feature_noise=feature_noise)
-    dataset = train_ds if dataset_type == "training" else test_ds
 
     return DataLoader(
-        dataset,
+        train_ds,
         batch_size=batch_size,
-        shuffle=(dataset_type == "training"),
+        shuffle=True,
+    ), DataLoader(
+        test_ds,
+        batch_size=batch_size,
+        shuffle=False,
     )
 
 
 def get_wbc_data(
-    dataset_type: str = "training",
     label_noise: float = 0.0,
     batch_size: int = DEFAULT_BATCH_SIZE,
 ) -> DataLoader:
@@ -166,16 +168,18 @@ def get_wbc_data(
     dataset_type: "training" or "testing"
     label_noise: symmetric label noise applied to training labels only
     """
-    if dataset_type not in {"training", "testing"}:
-        raise ValueError("dataset_type must be 'training' or 'testing'")
-
+    
     train_ds, test_ds = make_wbc_datasets(label_noise=label_noise)
-    dataset = train_ds if dataset_type == "training" else test_ds
+
 
     return DataLoader(
-        dataset,
+        train_ds,
         batch_size=batch_size,
-        shuffle=(dataset_type == "training"),
+        shuffle=True,
+    ), DataLoader(
+        test_ds,
+        batch_size=batch_size,
+        shuffle=False,
     )
 
 

@@ -18,13 +18,15 @@ import importlib
 
 # Mapping of public names to their source modules
 _lazy_attributes = {
-    "get_data": ".dataset",
+    "get_moons_data": ".dataset",
+    "get_wbc_data": ".dataset",
     "QUANTITIES_TO_ESTIMATE": ".divergence_engine",
     "DivergenceEngine": ".divergence_engine",
     "EstimateQuantities1Run": ".estimate_quantities",
     "AverageEstimates": ".estimate_quantities",
     "get_model": ".models",
-    "get_storage_path": ".paths",
+    "moon_path": ".paths",
+    "wbc_path": ".paths",
     "train_model": ".train_models",
     "NeuralNet": ".utils",
     "createfolders": ".utils",

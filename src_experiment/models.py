@@ -25,15 +25,15 @@ decreasing_model_params_wbc = {
 }
 
 
-def get_model(type="small_moon", seed=None):
+def get_model(type="small_moon", dropout=0.0, seed=None):
     match type:
         case "small_moon":
-            return NeuralNet(**small_model_params, seed=seed)
+            return NeuralNet(**small_model_params, dropout=dropout, seed=seed)
         case "decreasing_moon":
-            return NeuralNet(**decreasing_model_params, seed=seed)
+            return NeuralNet(**decreasing_model_params, dropout=dropout, seed=seed)
         case "small_wbc":
-            return NeuralNet(**small_model_params_wbc, seed=seed)
+            return NeuralNet(**small_model_params_wbc, dropout=dropout, seed=seed)
         case "decreasing_wbc":
-            return NeuralNet(**decreasing_model_params_wbc, seed=seed)
+            return NeuralNet(**decreasing_model_params_wbc, dropout=dropout, seed=seed)
         case _:
             raise ValueError
