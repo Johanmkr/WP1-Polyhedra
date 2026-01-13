@@ -11,18 +11,7 @@ try:
     import cpickle as pickle
 except ModuleNotFoundError:
     import pickle
-
-
-""" What should this script do?
-    For one single run, the script should read the state dicts for every epoch and compute a trees object of all the corresponding trees. This object should be stored. 
     
-    Further, a number count of each tree should be performed, but this require some additional data. 
-    
-    The data shohuld be created with the same noise level as the training and testing data, but different random seed. SHould import this from datasets. 
-
-"""
-
-
 # Helper functions to read and wrtie pickle objects.
 
 def save_object(obj, filename):
