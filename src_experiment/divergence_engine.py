@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Tuple
 
-QUANTITIES_TO_ESTIMATE = ["MI_KL", "MI_IS", "MI_D"]
+QUANTITIES_TO_ESTIMATE = ["Kullback-Leibler", "Itakura-Saito", "H(W)", "H(Y|W)"]
 
 
 class DivergenceEngine:
@@ -96,22 +96,27 @@ class DivergenceEngine:
         estimate: str,
     ) -> np.ndarray:
         match estimate:
-            case "MI_KL":
+            case "Kullback-Leibler":
                 logterm = self.m_kw / (self.m_w @ self.m_k)
                 outterm = np.full_like(logterm, 0, dtype=float)
                 logterm = np.log(logterm, where=logterm > 0, out=outterm)
 
                 return (self.m_kw * logterm).sum(axis=1)
 
-            case "MI_IS":
+            case "Itakura-Saito":
                 term = self.m_kw / (self.m_w @ self.m_k)
                 outterm = np.full_like(term, 0, dtype=float)
                 logterm = np.log(term, where=term > 0, out=outterm)
-
                 return (term - logterm).sum(axis=1)
 
-            case "MI_D":
-                return np.zeros(self.m_w.shape[0])
+            case "H(W)":
+                logterm = np.log(self.m_w, where=self.m_w > 0, out=np.zeros_like(self.m_w, dtype=float))
+                return - (self.m_w * logterm).squeeze()
+            
+            case "H(Y|W)":
+                term = self.m_kw / self.m_w
+                logterm = np.log(term, where=term > 0, out=np.zeros_like(term, dtype=float))
+                return - (self.m_kw * logterm).sum(axis=1)
 
             case _:
                 raise ValueError(f"Unknown estimate: {estimate}")
