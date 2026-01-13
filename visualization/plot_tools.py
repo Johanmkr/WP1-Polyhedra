@@ -1,6 +1,9 @@
+import os
+import math
+import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_training(res):
+def plot_training(res, title=None):
     ax = res[["train_loss", "test_loss"]].plot(
         figsize=(10, 10),
         color=["blue", "blue"],
@@ -22,7 +25,7 @@ def plot_training(res):
     lines1, labels1 = ax.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax.legend(lines1 + lines2, labels1 + labels2, loc="center right")
-
+    ax.set_title(title if title is not None else "Training results")
     plt.show()
     
 def plot_results_on_ax(res, ax, title=None):
@@ -66,7 +69,7 @@ def plot_all_results(results, titles=None, run_number=0):
     plt.show()
 
 
-def plot_both_KL_IS(estimates, lw=2, super_title=""):
+def plot_all_quantities(estimates, lw=2, super_title=""):
     """
     Plot all layers except the last one on the same figure as functions of epoch.
     
@@ -78,23 +81,161 @@ def plot_both_KL_IS(estimates, lw=2, super_title=""):
         Line width for the curves.
     """
     # All columns except 'epoch' and the last layer
-    MI = estimates["MI_KL"]
-    IS = estimates["MI_IS"]
+    MI = estimates["Kullback-Leibler"]
+    IS = estimates["Itakura-Saito"]
+    HW = estimates["H(W)"]
+    HYW = estimates["H(Y|W)"]
+    
+    quantities = [MI, IS, HW, HYW]
     
     # layers = df.columns[1:-1]  # skip first (epoch) and last
 
-    fig, (ax0, ax1) = plt.subplots(nrows=2, ncols=1, figsize=(10, 7), sharex=True)
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12, 7), sharex=True)
 
-    for Q, ax, labels in zip([MI, IS], [ax0, ax1], ["KL", "IS"]):
+    for Q, ax, label in zip(quantities, axes.flat, ["KL", "IS", "H(W)", "H(Y|W)"]):
         for layer in Q.columns[1:-1]:
-            ax.plot(Q["epoch"], Q[layer], lw=lw, label=layer)
+            ax.plot(Q["epoch"], Q[layer], ls="-", lw=lw, marker="o", label=layer)
+            ax.set_title(label, pad=15)
+            ax.grid(True)
+            ax.legend(loc="lower center",
+            bbox_to_anchor=(0.5, 0.98),
+            ncol=4,
+            fontsize=8,
+            frameon=False,)
+            
+    axes[1, 1].set_xlabel("Epoch")
+    axes[1, 0].set_xlabel("Epoch")
+    # axes[0, 0].set_ylabel("Quantity value")
+    # axes[1, 0].set_ylabel("Quantity value")
     
-    ax0.grid(True)
-    ax1.grid(True)
-    ax1.set_xlabel("Epoch")
-    ax0.set_ylabel("Kullback-Leibler MI")
-    ax1.set_ylabel("Itakura-Saito MI")
-    fig.suptitle(super_title)
-    plt.legend()
+    fig.suptitle(super_title, fontsize=16, fontweight="bold")
     plt.tight_layout()
     plt.show()
+    
+
+
+def plot_training_sweep(
+    vary,
+    values,
+    *,
+    arch,
+    dropout,
+    noise,
+    run_number,
+    path_fn,
+):
+    """
+    Create a subplot figure sweeping over one parameter.
+
+    Parameters
+    ----------
+    vary : str
+        One of {"arch", "dropout", "noise", "run_number"}
+    values : list
+        Values of the parameter to vary
+    arch, dropout, noise, run_number :
+        Fixed parameters (except the one being varied)
+    moon_path_fn : callable
+        Function moon_path(arch, dropout, noise, run_number)
+    """
+    assert vary in {"arch", "dropout", "noise", "run_number"}
+
+    n = len(values)
+    ncols = min(3, n)
+    nrows = math.ceil(n / ncols)
+
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(5 * ncols, 4 * nrows),
+        squeeze=False,
+        sharex=True,
+        # sharey=True,
+    )
+
+    for idx, val in enumerate(values):
+        r, c = divmod(idx, ncols)
+        ax_loss = axes[r][c]
+
+        # Set parameters
+        params = dict(
+            arch=arch,
+            dropout=dropout,
+            noise=noise,
+            run_number=run_number,
+        )
+        params[vary] = val
+
+        path = path_fn(**params)
+        df = pd.read_csv(os.path.join(path, "run_summary.csv"))
+
+        epochs = df.index.to_numpy()
+
+        # Loss
+        ax_loss.plot(epochs, df["train_loss"], color="blue", linestyle="-", label="Train Loss")
+        ax_loss.plot(epochs, df["test_loss"], color="blue", linestyle="--", label="Test Loss")
+        ax_loss.set_xlabel("Epoch")
+        ax_loss.set_ylabel("Loss")
+        ax_loss.set_title(f"{vary} = {val}", pad=15)
+        ax_loss.grid(True, alpha=0.3)
+
+        # Accuracy
+        ax_acc = ax_loss.twinx()
+        ax_acc.plot(epochs, df["train_accuracy"], color="red", linestyle="-", label="Train Acc")
+        ax_acc.plot(epochs, df["test_accuracy"], color="red", linestyle="--", label="Test Acc")
+        ax_acc.set_ylabel("Accuracy")
+
+        # Legend (only once per subplot)
+        lines_1, labels_1 = ax_loss.get_legend_handles_labels()
+        lines_2, labels_2 = ax_acc.get_legend_handles_labels()
+        ax_loss.legend(
+        lines_1 + lines_2,
+        labels_1 + labels_2,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.98),
+        ncol=4,
+        fontsize=8,
+        frameon=False,
+    )
+
+
+    # Remove empty subplots if any
+    for idx in range(n, nrows * ncols):
+        r, c = divmod(idx, ncols)
+        fig.delaxes(axes[r][c])
+
+    def _format_fixed_params(vary, arch, dropout, noise, run_number):
+        params = {
+            "arch": arch,
+            "dropout": dropout,
+            "noise": noise,
+            "run_number": run_number,
+        }
+
+        fixed = {k: v for k, v in params.items() if k != vary}
+        return ", ".join(f"{k}={v}" for k, v in fixed.items())
+
+    main_title = f"Training sweep over {vary}"
+    subtitle = f"Fixed parameters: {_format_fixed_params(vary, arch, dropout, noise, run_number)}"
+    fig.suptitle(main_title + "\n" + subtitle, fontsize=16, fontweight="bold")
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+    
+    
+    
+def plot_average_KL(frame, noise=0.0, title="", **kwargs):
+    
+    fig, ax = plt.subplots(figsize=(5,4))
+    for layer in frame.columns[1:-1]:
+            ax.plot(frame["epoch"], frame[layer], ls="-", lw=2, marker="o", label=layer, **kwargs)
+            ax.set_title(title, pad=15)
+            ax.grid(True)
+            ax.legend(loc="lower center",
+            bbox_to_anchor=(0.5, 0.98),
+            ncol=4,
+            fontsize=8,
+            frameon=False,)
+            
+    plt.show()
+    

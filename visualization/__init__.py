@@ -4,7 +4,10 @@ import importlib
 _lazy_attributes = {
     # from latent_representation.py
     "VisualisationOfLatenRepresentation": ".latent_representations",
-    "plot_both_KL_IS": ".plot_tools"
+    "plot_all_quantities": ".plot_tools",
+    "plot_training": ".plot_tools",
+    "plot_training_sweep": ".plot_tools",
+    "plot_average_KL": ".plot_tools",
 }
 
 # Dynamically define __all__ based on lazy attributes
