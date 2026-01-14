@@ -230,13 +230,13 @@ class TreeNode:
         return False
     
     def is_feasible(self, tol: float = 1e-9) -> bool:
-        if self._feasible is None:
-            if self._cheap_infeasibility_check(tol):
-                self._feasible = False
-            else:
-                self._feasible = self._lp_feasible()
+        # if self._feasible is None:
+        #     if self._cheap_infeasibility_check(tol):
+        #         self._feasible = False
+        #     else:
+        #         self._feasible = self._lp_feasible()
             
-        return self._feasible
+        return self._lp_feasible()
 
 
 
