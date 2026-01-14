@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 
 N_SAMPLES = 1000
-DEFAULT_BATCH_SIZE = 200
+DEFAULT_BATCH_SIZE = 32
 
 breast_cancer = fetch_ucirepo(id=17)
 
