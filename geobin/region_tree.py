@@ -117,7 +117,7 @@ class RegionTree:
     # Tree Construction
     # ----------------------------------------------------------------------
 
-    def build_tree(self, verbose: bool = False) -> None:
+    def build_tree(self, verbose: bool = False, check_feasibility=True) -> None:
         """
         Build the full region tree from the given `state_dict`.
 
@@ -181,8 +181,9 @@ class RegionTree:
                     self._calculate_projections_for_node(new_node, hp)
                     
                     # Feasibility check should go here
-                    
-                    
+                    if check_feasibility:
+                        if not new_node.is_feasible():
+                            continue
                     
                     parent_node.add_child(new_node)
                     next_layer_nodes.append(new_node)
@@ -250,6 +251,75 @@ class RegionTree:
             for x, y in zip(inputs, labels):
                 self.pass_single_point_through_tree((x.numpy(), int(y.numpy())))
 
+
+    def pass_dataloader_through_tree_batchwise(self, dl: Iterable) -> None:
+        """
+        Pass an entire PyTorch dataloader through the region tree in a
+        batch-wise, vectorized manner.
+
+        Parameters
+        ----------
+        dl : iterable
+            PyTorch DataLoader producing batches of (inputs, labels).
+
+        Notes
+        -----
+        At each node, the batch is split among children according to
+        which inequalities are satisfied.
+        """
+
+        if self.root.projection_matrix is None:
+            raise ValueError("Tree has not been built.")
+
+        for inputs, labels in dl:
+            X = inputs.numpy()      # shape: (B, d)
+            Y = labels.numpy()      # shape: (B,)
+
+            # Each entry: (node, X_subset, Y_subset)
+            stack = [(self.root, X, Y)]
+
+            while stack:
+                node, X_node, Y_node = stack.pop()
+
+                if X_node.shape[0] == 0:
+                    continue
+
+                # If leaf, accumulate counts and stop
+                if node.is_leaf():
+                    for y in Y_node:
+                        key = str(int(y))
+                        node.number_counts[key] = node.number_counts.get(key, 0) + 1
+                    continue
+
+                # Otherwise split batch among children
+                for child in node.get_children():
+                    if child.inequalities is None:
+                        continue
+
+                    A = child.inequalities[:, :-1]   # (m, d)
+                    b = child.inequalities[:, -1]    # (m,)
+
+                    # Vectorized inequality check
+                    mask = np.all(X_node @ A.T <= b, axis=1)
+
+                    if not np.any(mask):
+                        continue
+
+                    X_child = X_node[mask]
+                    Y_child = Y_node[mask]
+
+                    # Update counts immediately if desired
+                    for y in Y_child:
+                        key = str(int(y))
+                        child.number_counts[key] = child.number_counts.get(key, 0) + 1
+
+                    stack.append((child, X_child, Y_child))
+
+
+
+
+
+
     # ----------------------------------------------------------------------
     # Counter Reset / Aggregation
     # ----------------------------------------------------------------------
@@ -295,8 +365,14 @@ class RegionTree:
         for c in classes:
             frame[c] = np.nan_to_num(frame[c], nan=0)
 
+        # Create "total" column
         frame["total"] = frame[classes].sum(axis=1)
-        self.number_count_dict = frame[frame["total"] > 0]
+        
+        # Remove layer 0 - corresponds to input layer
+        frame = frame[frame["layer_idx"] != 0]
+        
+        # self.number_count_dict = frame[frame["total"] > 0] # Cancel empty regions
+        self.number_count_dict = frame # Include empty regions, but remove layer 0 (input)
 
     # ----------------------------------------------------------------------
     # Helpers
