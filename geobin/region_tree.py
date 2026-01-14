@@ -267,7 +267,10 @@ class RegionTree:
         At each node, the batch is split among children according to
         which inequalities are satisfied.
         """
-
+        assert True, "This function is not working properly yet"
+        
+        #FIXME
+        
         if self.root.projection_matrix is None:
             raise ValueError("Tree has not been built.")
 
@@ -300,7 +303,7 @@ class RegionTree:
                     b = child.inequalities[:, -1]    # (m,)
 
                     # Vectorized inequality check
-                    mask = np.all(X_node @ A.T <= b, axis=1)
+                    mask = np.all(X_node @ A.T < b, axis=1)
 
                     if not np.any(mask):
                         continue
