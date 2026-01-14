@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from scipy.optimize import linprog
 from typing import List, Dict, Optional
 
 
@@ -47,6 +48,8 @@ class TreeNode:
 
         self.number_counts: Dict[str, int] = {}
         """Counts of labels (or other identifiers) passing through this node."""
+        
+        self._feasible: Optional[bool] = None
 
     # ---------------------------------------------------------
 
@@ -171,6 +174,72 @@ class TreeNode:
             node = node.parent
 
         return np.vstack(inequalities[::-1]) if inequalities else None
+
+    def _lp_feasible(self, tol: float = 1e-9) -> bool:
+        """
+        Check whether the polyhedron defined by the accumulated inequalities
+        is non-empty using linear programming.
+
+        Returns
+        -------
+        bool
+            True if feasible, False otherwise.
+        """
+        ineqs = self.get_path_inequalities()
+        if ineqs is None:
+            return True  # no constraints ⇒ whole space
+
+        A = ineqs[:, :-1]
+        b = ineqs[:, -1]
+
+        n = A.shape[1]
+
+        # Dummy objective (we only care about feasibility)
+        c = np.zeros(n)
+
+        res = linprog(
+            c,
+            A_ub=A,
+            b_ub=b,
+            bounds=[(None, None)] * n,
+            method="highs",
+        )
+
+        return res.success
+
+
+    def _cheap_infeasibility_check(self, tol=1e-9) -> bool:
+        ineqs = self.get_path_inequalities()
+        if ineqs is None:
+            return False
+
+        A = ineqs[:, :-1]
+        b = ineqs[:, -1]
+
+        # Detect trivial 1D contradictions
+        for i in range(A.shape[1]):
+            pos = A[:, i] > 0
+            neg = A[:, i] < 0
+
+            if np.any(pos) and np.any(neg):
+                ub = np.min(b[pos] / A[pos, i])
+                lb = np.max(b[neg] / A[neg, i])
+                if lb > ub + tol:
+                    return True
+
+        return False
+    
+    def is_feasible(self, tol: float = 1e-9) -> bool:
+        if self._feasible is None:
+            if self._cheap_infeasibility_check(tol):
+                self._feasible = False
+            else:
+                self._feasible = self._lp_feasible()
+            
+        return self._feasible
+
+
+
 
 if __name__ == "__main__":
     pass
