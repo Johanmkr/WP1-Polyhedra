@@ -179,6 +179,11 @@ class RegionTree:
 
                     new_node.parent = parent_node
                     self._calculate_projections_for_node(new_node, hp)
+                    
+                    # Feasibility check should go here
+                    
+                    
+                    
                     parent_node.add_child(new_node)
                     next_layer_nodes.append(new_node)
 
