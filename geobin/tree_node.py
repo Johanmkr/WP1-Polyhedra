@@ -50,6 +50,9 @@ class TreeNode:
         """Counts of labels (or other identifiers) passing through this node."""
         
         self._feasible: Optional[bool] = None
+        
+        self.cumulative_inequalities = None
+
 
     # ---------------------------------------------------------
 
@@ -174,8 +177,101 @@ class TreeNode:
             node = node.parent
 
         return np.vstack(inequalities[::-1]) if inequalities else None
+    
+    
+    def accumulate_inequalitites(self):
+        if self.parent.cumulative_inequalities is None:
+            self.cumulative_inequalities = self.inequalities
+        else:
+            self.cumulative_inequalities = np.vstack(
+                [self.parent.cumulative_inequalities, self.inequalities]
+            )
 
-    def _lp_feasible(self, tol: float = 1e-9) -> bool:
+    
+    def _single_variable_bound_contradiction(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        tol: float = 1e-9,
+    ) -> bool:
+        """
+        Detect infeasibility from single-variable implied bounds.
+
+        Returns
+        -------
+        bool
+            True if infeasible, False otherwise.
+        """
+        m, n = A.shape
+
+        for i in range(n):
+            lower = -np.inf
+            upper = np.inf
+
+            ai = A[:, i]
+
+            pos = ai > tol
+            neg = ai < -tol
+
+            # Upper bounds from a_i > 0
+            if np.any(pos):
+                upper = min(upper, np.min(b[pos] / ai[pos]))
+
+            # Lower bounds from a_i < 0
+            if np.any(neg):
+                lower = max(lower, np.max(b[neg] / ai[neg]))
+
+            # Contradiction
+            if lower > upper + tol:
+                return True
+
+        return False
+    
+    def _opposing_halfspace_contradiction(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        tol: float = 1e-9,
+    ) -> bool:
+        """
+        Detect constraints of the form:
+            a^T x <= b
+        -a^T x <= -b - eps
+        """
+        m = A.shape[0]
+
+        for i in range(m):
+            for j in range(i + 1, m):
+                if np.allclose(A[i], -A[j], atol=tol):
+                    if b[i] + b[j] < -tol:
+                        return True
+
+        return False
+    
+    def cheap_infeasibility_check(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        tol: float = 1e-9,
+    ) -> bool:
+        """
+        Return True if infeasible is CERTAIN.
+        """
+        if self._single_variable_bound_contradiction(A, b, tol):
+            return True
+
+        if self._opposing_halfspace_contradiction(A, b, tol):
+            return True
+
+        return False
+
+
+    def _lp_feasible(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        tol: float = 1e-9,
+    ) -> bool:
         """
         Check whether the polyhedron defined by the accumulated inequalities
         is non-empty using linear programming.
@@ -185,12 +281,6 @@ class TreeNode:
         bool
             True if feasible, False otherwise.
         """
-        ineqs = self.get_path_inequalities()
-        if ineqs is None:
-            return True  # no constraints ⇒ whole space
-
-        A = ineqs[:, :-1]
-        b = ineqs[:, -1]
 
         n = A.shape[1]
 
@@ -201,14 +291,33 @@ class TreeNode:
             c,
             A_ub=A,
             b_ub=b,
-            bounds=[(None, None)] * n,
+            # bounds=[(None, None)] * n,
             method="highs",
         )
 
         return res.success
     
     def is_feasible(self, tol: float = 1e-9) -> bool:
-        return self._lp_feasible()
+        if self._feasible is not None:
+            return self._feasible
+
+        # Parent pruning
+        if self.parent is not None and not self.parent.is_feasible(tol):
+            self._feasible = False
+            return False
+        
+        
+
+        # Cheap contradiction test
+        if self._cheap_infeasibility_check(tol):
+            self._feasible = False
+            return False
+
+        # Exact LP
+        self._feasible = self._lp_feasible(tol)
+        return self._feasible
+
+
 
 
 

@@ -113,6 +113,7 @@ class RegionTree:
         node.projection_matrix = np.diag(q_lw) @ W_l @ A_prev
         node.intercept_vector = np.diag(q_lw) @ (W_l @ b_prev + b_l)
 
+        
     # ----------------------------------------------------------------------
     # Tree Construction
     # ----------------------------------------------------------------------
@@ -173,18 +174,18 @@ class RegionTree:
                     new_node = TreeNode(activation=activation_pattern)
                     new_node.layer_number = layer_index + 1
                     new_node.region_index = region_index
-                    region_index += 1
-
-                    self.size[-1] += 1
 
                     new_node.parent = parent_node
                     self._calculate_projections_for_node(new_node, hp)
                     
+                    new_node.accumulate_inequalitites()
                     # Feasibility check should go here
                     if check_feasibility:
                         if not new_node.is_feasible():
                             continue
                     
+                    region_index += 1
+                    self.size[-1] += 1
                     parent_node.add_child(new_node)
                     next_layer_nodes.append(new_node)
 
