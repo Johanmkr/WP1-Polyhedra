@@ -206,36 +206,8 @@ class TreeNode:
         )
 
         return res.success
-
-
-    def _cheap_infeasibility_check(self, tol=1e-9) -> bool:
-        ineqs = self.get_path_inequalities()
-        if ineqs is None:
-            return False
-
-        A = ineqs[:, :-1]
-        b = ineqs[:, -1]
-
-        # Detect trivial 1D contradictions
-        for i in range(A.shape[1]):
-            pos = A[:, i] > 0
-            neg = A[:, i] < 0
-
-            if np.any(pos) and np.any(neg):
-                ub = np.min(b[pos] / A[pos, i])
-                lb = np.max(b[neg] / A[neg, i])
-                if lb > ub + tol:
-                    return True
-
-        return False
     
     def is_feasible(self, tol: float = 1e-9) -> bool:
-        # if self._feasible is None:
-        #     if self._cheap_infeasibility_check(tol):
-        #         self._feasible = False
-        #     else:
-        #         self._feasible = self._lp_feasible()
-            
         return self._lp_feasible()
 
 
