@@ -306,15 +306,16 @@ class TreeNode:
             self._feasible = False
             return False
         
-        
+        A = self.cumulative_inequalities[:,:-1]
+        b = self.cumulative_inequalities[:,-1]
 
         # Cheap contradiction test
-        if self._cheap_infeasibility_check(tol):
+        if self._cheap_infeasibility_check(A,b,tol):
             self._feasible = False
             return False
 
         # Exact LP
-        self._feasible = self._lp_feasible(tol)
+        self._feasible = self._lp_feasible(A,b,tol)
         return self._feasible
 
 
