@@ -178,7 +178,7 @@ class RegionTree:
                     new_node.parent = parent_node
                     self._calculate_projections_for_node(new_node, hp)
                     
-                    new_node.accumulate_inequalitites()
+                    new_node.accumulate_inequalities()
                     # Feasibility check should go here
                     if check_feasibility:
                         if not new_node.is_feasible():

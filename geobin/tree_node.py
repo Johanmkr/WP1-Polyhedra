@@ -52,6 +52,13 @@ class TreeNode:
         self._feasible: Optional[bool] = None
         
         self.cumulative_inequalities = None
+        
+        self.lower_bounds: Optional[np.ndarray] = None
+        self.upper_bounds: Optional[np.ndarray] = None
+        self._bounds_propagated: bool = False
+        # self._halfspace_map = None
+
+
 
 
     # ---------------------------------------------------------
@@ -179,89 +186,219 @@ class TreeNode:
         return np.vstack(inequalities[::-1]) if inequalities else None
     
     
-    def accumulate_inequalitites(self):
-        if self.parent.cumulative_inequalities is None:
+    def accumulate_inequalities(self):
+        if self.parent is None or self.parent.cumulative_inequalities is None:
             self.cumulative_inequalities = self.inequalities
+        elif self.inequalities is None:
+            self.cumulative_inequalities = self.parent.cumulative_inequalities
         else:
             self.cumulative_inequalities = np.vstack(
                 [self.parent.cumulative_inequalities, self.inequalities]
             )
 
-    
-    def _single_variable_bound_contradiction(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        tol: float = 1e-9,
-    ) -> bool:
+    def propagate_bounds(self, tol: float = 1e-9) -> bool:
         """
-        Detect infeasibility from single-variable implied bounds.
+        Incrementally propagate single-variable bounds from parent to this node.
 
         Returns
         -------
         bool
-            True if infeasible, False otherwise.
+            False if a contradiction is detected, True otherwise.
         """
-        m, n = A.shape
 
-        for i in range(n):
-            lower = -np.inf
-            upper = np.inf
+        # Already done → no work
+        if self._bounds_propagated:
+            return True
 
-            ai = A[:, i]
+        # Root initialization
+        if self.parent is None:
+            n = self.projection_matrix.shape[1]
+            self.lower_bounds = np.full(n, -np.inf)
+            self.upper_bounds = np.full(n, np.inf)
 
-            pos = ai > tol
-            neg = ai < -tol
+        else:
+            # Parent must be feasible first
+            if not self.parent.propagate_bounds(tol):
+                return False
 
-            # Upper bounds from a_i > 0
-            if np.any(pos):
-                upper = min(upper, np.min(b[pos] / ai[pos]))
+            self.lower_bounds = self.parent.lower_bounds.copy()
+            self.upper_bounds = self.parent.upper_bounds.copy()
 
-            # Lower bounds from a_i < 0
-            if np.any(neg):
-                lower = max(lower, np.max(b[neg] / ai[neg]))
+        # No new constraints at this node
+        if self.inequalities is None:
+            self._bounds_propagated = True
+            return True
+
+        # Apply only *this node's* new inequalities
+        A = self.inequalities[:, :-1]
+        b = self.inequalities[:, -1]
+
+        for row, bi in zip(A, b):
+            nz = np.nonzero(row)[0]
+
+            # Skip multi-variable constraints
+            if len(nz) != 1:
+                continue
+
+            i = nz[0]
+            ai = row[i]
+
+            if ai > 0:
+                self.upper_bounds[i] = min(self.upper_bounds[i], bi / ai)
+            else:
+                self.lower_bounds[i] = max(self.lower_bounds[i], bi / ai)
 
             # Contradiction
-            if lower > upper + tol:
+            if self.lower_bounds[i] > self.upper_bounds[i] + tol:
+                return False
+
+        self._bounds_propagated = True
+        return True
+
+
+    # def _single_variable_bound_contradiction(
+    #     self,
+    #     A: np.ndarray,
+    #     b: np.ndarray,
+    #     tol: float = 1e-9,
+    # ) -> bool:
+    #     """
+    #     Detect infeasibility from single-variable implied bounds.
+
+    #     Returns
+    #     -------
+    #     bool
+    #         True if infeasible, False otherwise.
+    #     """
+    #     m, n = A.shape
+
+    #     for i in range(n):
+    #         lower = -np.inf
+    #         upper = np.inf
+
+    #         ai = A[:, i]
+
+    #         pos = ai > tol
+    #         neg = ai < -tol
+
+    #         # Upper bounds from a_i > 0
+    #         if np.any(pos):
+    #             upper = min(upper, np.min(b[pos] / ai[pos]))
+
+    #         # Lower bounds from a_i < 0
+    #         if np.any(neg):
+    #             lower = max(lower, np.max(b[neg] / ai[neg]))
+
+    #         # Contradiction
+    #         if lower > upper + tol:
+    #             return True
+
+    #     return False
+    
+    # def _opposing_halfspace_contradiction(
+    #     self,
+    #     A: np.ndarray,
+    #     b: np.ndarray,
+    #     tol: float = 1e-9,
+    # ) -> bool:
+    #     """
+    #     Detect constraints of the form:
+    #         a^T x <= b
+    #     -a^T x <= -b - eps
+    #     """
+    #     m = A.shape[0]
+
+    #     for i in range(m):
+    #         for j in range(i + 1, m):
+    #             if np.allclose(A[i], -A[j], atol=tol):
+    #                 if b[i] + b[j] < -tol:
+    #                     return True
+
+    #     return False
+    
+    
+    def propagate_halfspaces(self, tol: float = 1e-9) -> bool:
+        if self._halfspace_map is not None:
+            return True
+
+        if self.parent is None:
+            self._halfspace_map = {}
+        else:
+            if not self.parent.propagate_halfspaces(tol):
+                return False
+            self._halfspace_map = dict(self.parent._halfspace_map)
+
+        if self.inequalities is None:
+            return True
+
+        A = self.inequalities[:, :-1]
+        b = self.inequalities[:, -1]
+
+        for ai, bi in zip(A, b):
+            norm = np.linalg.norm(ai)
+            if norm < tol:
+                continue
+
+            a_norm = ai / norm
+            b_norm = bi / norm
+
+            if a_norm[np.argmax(np.abs(a_norm))] < 0:
+                a_norm = -a_norm
+                b_norm = -b_norm
+
+            key = tuple(np.round(a_norm / tol).astype(int))
+
+            if key in self._halfspace_map:
+                if self._halfspace_map[key] + b_norm < -tol:
+                    return False
+                self._halfspace_map[key] = min(self._halfspace_map[key], b_norm)
+            else:
+                self._halfspace_map[key] = b_norm
+
+        return True
+
+    
+    # def _cheap_infeasibility_check(
+    #     self,
+    #     A: np.ndarray,
+    #     b: np.ndarray,
+    #     tol: float = 1e-9,
+    # ) -> bool:
+    #     """
+    #     Return True if infeasible is CERTAIN.
+    #     """
+    #     if not self.propagate_bounds(A, b, tol):
+    #         return True
+
+    #     if not self.propagate_halfspaces(tol):
+    #         self._feasible = False
+    #         return False
+
+    #     return False
+
+
+    def random_probe_feasible(
+        self,
+        A: np.ndarray,
+        b: np.ndarray,
+        tol: float = 1e-9,
+        max_samples: int = 50,
+    ) -> bool:
+        lb = self.lower_bounds.copy()
+        ub = self.upper_bounds.copy()
+
+        finite = np.isfinite(lb) & np.isfinite(ub)
+        lb[~finite] = -1e3
+        ub[~finite] =  1e3
+
+        center = 0.5 * (lb + ub)
+        
+        K = min(max_samples, 10 * A.shape[1])
+
+        for _ in range(K):
+            x = center + (np.random.rand(len(lb)) * 2 - 1) * (ub - lb)
+            if np.all(A @ x <= b + tol):
                 return True
-
-        return False
-    
-    def _opposing_halfspace_contradiction(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        tol: float = 1e-9,
-    ) -> bool:
-        """
-        Detect constraints of the form:
-            a^T x <= b
-        -a^T x <= -b - eps
-        """
-        m = A.shape[0]
-
-        for i in range(m):
-            for j in range(i + 1, m):
-                if np.allclose(A[i], -A[j], atol=tol):
-                    if b[i] + b[j] < -tol:
-                        return True
-
-        return False
-    
-    def cheap_infeasibility_check(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        tol: float = 1e-9,
-    ) -> bool:
-        """
-        Return True if infeasible is CERTAIN.
-        """
-        if self._single_variable_bound_contradiction(A, b, tol):
-            return True
-
-        if self._opposing_halfspace_contradiction(A, b, tol):
-            return True
 
         return False
 
@@ -281,7 +418,6 @@ class TreeNode:
         bool
             True if feasible, False otherwise.
         """
-
         n = A.shape[1]
 
         # Dummy objective (we only care about feasibility)
@@ -291,32 +427,33 @@ class TreeNode:
             c,
             A_ub=A,
             b_ub=b,
-            # bounds=[(None, None)] * n,
+            bounds=list(zip(self.lower_bounds, self.upper_bounds)),
             method="highs",
         )
-
         return res.success
     
     def is_feasible(self, tol: float = 1e-9) -> bool:
         if self._feasible is not None:
             return self._feasible
 
-        # Parent pruning
-        if self.parent is not None and not self.parent.is_feasible(tol):
+        if not self.propagate_bounds(tol):
             self._feasible = False
             return False
+
+        # if not self.propagate_halfspaces(tol):
+        #     self._feasible = False
+        #     return False
         
-        A = self.cumulative_inequalities[:,:-1]
-        b = self.cumulative_inequalities[:,-1]
+        A = self.cumulative_inequalities[:, :-1]
+        b = self.cumulative_inequalities[:, -1]
 
-        # Cheap contradiction test
-        if self._cheap_infeasibility_check(A,b,tol):
-            self._feasible = False
-            return False
+        if self.random_probe_feasible(A, b, tol):
+            self._feasible = True
+            return True
 
-        # Exact LP
-        self._feasible = self._lp_feasible(A,b,tol)
+        self._feasible = self._lp_feasible(A, b, tol)
         return self._feasible
+
 
 
 
