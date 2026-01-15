@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import itertools
+from multiprocessing import Pool
 from tqdm import tqdm
 from .tree_node import TreeNode
 import pandas as pd
@@ -166,11 +167,19 @@ class RegionTree:
 
             region_index = 0
 
-            for activation_pattern in iterator:
-                activation_pattern = np.array(activation_pattern)
 
+            for activation_pattern in iterator:
                 parents = tqdm(current_layer_nodes, leave=False, desc="Node") if verbose else current_layer_nodes
                 for parent_node in parents:
+                    
+                      
+            # parents = tqdm(current_layer_nodes, leave=False, desc="Node") if verbose else current_layer_nodes
+            # for parent_node in parents:
+            #     for activation_pattern in iterator:
+                    
+                    
+                    activation_pattern = np.array(activation_pattern)
+
                     new_node = TreeNode(activation=activation_pattern)
                     new_node.layer_number = layer_index + 1
                     new_node.region_index = region_index
@@ -190,6 +199,84 @@ class RegionTree:
                     next_layer_nodes.append(new_node)
 
             current_layer_nodes = next_layer_nodes
+
+    # def build_tree(self, verbose: bool = False, check_feasibility: bool = True) -> None:
+    #     """
+    #     Build the full region tree from the given `state_dict`.
+
+    #     Parent-first loop order: iterate over each parent, then over all activation patterns.
+
+    #     Parameters
+    #     ----------
+    #     verbose : bool, optional
+    #         If True, display tqdm progress bars.
+    #     check_feasibility : bool
+    #         Whether to skip infeasible regions.
+    #     """
+    #     if self.state_dict is None:
+    #         raise ValueError("State dictionary is not provided.")
+
+    #     if verbose:
+    #         print("Building tree...")
+
+    #     self._find_hyperplanes()
+
+    #     # Root projections
+    #     m = self.hyperplanes[0].shape[1] - 1
+    #     self.root.projection_matrix = np.eye(m)
+    #     self.root.intercept_vector = np.zeros(m)
+    #     self.size.append(1)
+
+    #     current_layer_nodes = [self.root]
+
+    #     for layer_index, hp in enumerate(self.hyperplanes):
+    #         self.size.append(0)
+    #         next_layer_nodes = []
+    #         num_neurons = hp.shape[0]
+
+    #         # Generate all activation patterns for this layer
+    #         q_vectors = list(itertools.product([0, 1], repeat=num_neurons))
+    #         if verbose:
+    #             q_iter = tqdm(q_vectors, total=2**num_neurons, desc=f"Layer {layer_index+1} activations")
+    #         else:
+    #             q_iter = q_vectors
+
+    #         # Parent-first loop
+    #         for parent_node in tqdm(current_layer_nodes, desc=f"Layer {layer_index+1} parents", leave=False) if verbose else current_layer_nodes:
+    #             feasible_children = []
+
+    #             for activation_pattern in q_iter:
+    #                 activation_pattern = np.array(activation_pattern)
+
+    #                 # Create new child node
+    #                 new_node = TreeNode(activation=activation_pattern)
+    #                 new_node.layer_number = layer_index + 1
+    #                 new_node.parent = parent_node
+
+    #                 # Compute projection for this node
+    #                 self._calculate_projections_for_node(new_node, hp)
+
+    #                 # Accumulate inequalities (parent-first)
+    #                 new_node.accumulate_inequalities()
+
+    #                 # Feasibility check (independent of other children)
+    #                 if check_feasibility and not new_node.is_feasible():
+    #                     continue
+
+    #                 feasible_children.append(new_node)
+
+    #             # Assign region indices after collecting feasible children
+    #             for idx, child in enumerate(feasible_children):
+    #                 child.region_index = self.size[-1] + idx
+    #                 parent_node.add_child(child)
+
+    #             # Update layer size
+    #             self.size[-1] += len(feasible_children)
+    #             next_layer_nodes.extend(feasible_children)
+
+    #         current_layer_nodes = next_layer_nodes
+
+
 
     # ----------------------------------------------------------------------
     # Point / Dataloader Traversal
