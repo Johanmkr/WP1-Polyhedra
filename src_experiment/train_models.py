@@ -22,7 +22,8 @@ def train_model(
     epochs: int,
     savepath: Optional[pl.Path] = None,
     SAVE_STATES: bool = False,
-    save_everyth_epoch: int = 50,
+    save_everyth_epoch: int = None,
+    save_for_epochs: list = None,
     RETURN_STATES: bool = False,
     sgd_lr = 0.01,
     sgd_mom = 0.9
@@ -38,6 +39,9 @@ def train_model(
     optimizer = torch.optim.SGD(model.parameters(), lr=sgd_lr, momentum=sgd_mom)
     loss_fn = nn.BCEWithLogitsLoss()
     sigmoid = nn.Sigmoid()
+    
+    assert not save_everyth_epoch is not None and save_for_epochs is not None, "Either save every nth epoch or specify epoch list, not Both"
+    
 
     for epoch in trange(epochs, desc="Training", leave=False):
         # ----------------------
@@ -94,9 +98,12 @@ def train_model(
         # ----------------------
         # Save state to memory (for later analysis)
         # ----------------------
-        if (epoch % save_everyth_epoch == 0) or (epoch == epochs-1):
-            saved_states[epoch] = copy.deepcopy(model.state_dict())
-
+        if save_everyth_epoch is not None:
+            if (epoch % save_everyth_epoch == 0) or (epoch == epochs-1):
+                saved_states[epoch] = copy.deepcopy(model.state_dict())
+        elif save_for_epochs is not None:
+            if epoch in save_for_epochs:
+                saved_states[epoch] = copy.deepcopy(model.state_dict())
 
     run_results = {
         "train_loss": train_loss,
