@@ -20,6 +20,8 @@ import importlib
 _lazy_attributes = {
     "get_moons_data": ".dataset",
     "get_wbc_data": ".dataset",
+    "get_wine_data": ".dataset",
+    "get_hd_data": ".dataset",
     "QUANTITIES_TO_ESTIMATE": ".divergence_engine",
     "DivergenceEngine": ".divergence_engine",
     "EstimateQuantities1Run": ".estimate_quantities",
@@ -28,6 +30,7 @@ _lazy_attributes = {
     "moon_path": ".paths",
     "wbc_path": ".paths",
     "train_model": ".train_models",
+    "train_model_multiclass": ".train_models",
     "NeuralNet": ".utils",
     "createfolders": ".utils",
 }

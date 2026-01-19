@@ -9,7 +9,11 @@ from ucimlrepo import fetch_ucirepo
 N_SAMPLES = 1000
 DEFAULT_BATCH_SIZE = 32
 
-breast_cancer = fetch_ucirepo(id=17)
+
+# ------------------------------------------------------------------------------
+#       Utility funcs
+# ------------------------------------------------------------------------------
+
 
 def inject_symmetric_label_noise(
     y: np.ndarray,
@@ -67,6 +71,10 @@ def split_and_scale_data(
     return X_train, X_test, y_train, y_test
 
 
+# ------------------------------------------------------------------------------
+#       Datasets
+# ------------------------------------------------------------------------------
+
 def make_moons_datasets(
     feature_noise: float,
     random_state: int = 42,
@@ -94,7 +102,7 @@ def make_moons_datasets(
         to_tensor_dataset(X_test, y_test),
     )
 
-
+breast_cancer = fetch_ucirepo(id=17)
 def make_wbc_datasets(
     label_noise: float,
     random_state: int = 42,
@@ -135,6 +143,91 @@ def make_wbc_datasets(
         to_tensor_dataset(X_test, y_test),
     )
 
+wine_quality = fetch_ucirepo(id=186)
+def make_wine_data(
+    label_noise: float,
+    random_state: int = 42
+) -> tuple[TensorDataset, TensorDataset]:
+    X = wine_quality.data.features.to_numpy(dtype=np.float32)
+    y = wine_quality.data.targets.to_numpy(dtype=np.int64)
+
+    # Map labels to 0..num_classes-1
+    unique_classes = np.sort(np.unique(y))
+    class_map = {int(c): i for i, c in enumerate(unique_classes)}
+    y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=random_state,
+        stratify=y,
+    )
+
+    # Inject label noise into training labels only
+    y_train = inject_symmetric_label_noise(
+        y_train,
+        noise_ratio=label_noise,
+        seed=random_state,
+    )
+
+    # Standardize features (fit on train only)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    return (
+        to_tensor_dataset(X_train, y_train),
+        to_tensor_dataset(X_test, y_test),
+    )
+
+
+heart_disease = fetch_ucirepo(id=45) 
+def make_hd_data(
+    label_noise: float,
+    random_state: int = 42
+) -> tuple[TensorDataset, TensorDataset]:
+    X = heart_disease.data.features.to_numpy(dtype=np.float32)
+    y = heart_disease.data.targets.to_numpy(dtype=np.int64)
+
+    # Map labels to 0..num_classes-1
+    unique_classes = np.sort(np.unique(y))
+    class_map = {int(c): i for i, c in enumerate(unique_classes)}
+    y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=random_state,
+        stratify=y,
+    )
+
+    # Inject label noise into training labels only
+    y_train = inject_symmetric_label_noise(
+        y_train,
+        noise_ratio=label_noise,
+        seed=random_state,
+    )
+
+    # Standardize features (fit on train only)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    return (
+        to_tensor_dataset(X_train, y_train),
+        to_tensor_dataset(X_test, y_test),
+    )
+
+
+
+
+
+
+
+
+
 def get_moons_data(
     feature_noise: float = 0.0,
     batch_size: int = DEFAULT_BATCH_SIZE,
@@ -172,6 +265,41 @@ def get_wbc_data(
     train_ds, test_ds = make_wbc_datasets(label_noise=label_noise)
 
 
+    return DataLoader(
+        train_ds,
+        batch_size=batch_size,
+        shuffle=True,
+    ), DataLoader(
+        test_ds,
+        batch_size=batch_size,
+        shuffle=False,
+    )
+    
+ 
+def get_wine_data(
+    label_noise: float = 0.0,
+    batch_size = DEFAULT_BATCH_SIZE,
+) -> DataLoader:
+    
+    train_ds, test_ds = make_wine_data(label_noise=label_noise)
+    
+    return DataLoader(
+        train_ds,
+        batch_size=batch_size,
+        shuffle=True,
+    ), DataLoader(
+        test_ds,
+        batch_size=batch_size,
+        shuffle=False,
+    )
+    
+def get_hd_data(
+    label_noise: float = 0.0,
+    batch_size = DEFAULT_BATCH_SIZE,
+) -> DataLoader:
+    
+    train_ds, test_ds = make_hd_data(label_noise=label_noise)
+    
     return DataLoader(
         train_ds,
         batch_size=batch_size,

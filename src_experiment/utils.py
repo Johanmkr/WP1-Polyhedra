@@ -30,6 +30,8 @@ class NeuralNet(nn.Module):
         super().__init__()
         self.hidden_sizes = hidden_sizes
         self.dropout = dropout  
+        self.num_classes = num_classes
+        self.input_size = input_size
 
         # ------------------------------------------------------------------
         # Hidden Layers
