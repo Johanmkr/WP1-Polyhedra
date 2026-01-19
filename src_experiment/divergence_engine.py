@@ -107,7 +107,7 @@ class DivergenceEngine:
                 term = self.m_kw / (self.m_w @ self.m_k)
                 outterm = np.full_like(term, 0, dtype=float)
                 logterm = np.log(term, where=term > 0, out=outterm)
-                return (term - logterm).sum(axis=1)
+                return (term - logterm-1).sum(axis=1)
 
             case "H(W)":
                 logterm = np.log(self.m_w, where=self.m_w > 0, out=np.zeros_like(self.m_w, dtype=float))

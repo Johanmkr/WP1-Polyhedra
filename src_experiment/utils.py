@@ -43,7 +43,8 @@ class NeuralNet(nn.Module):
 
             setattr(self, layer_name, nn.Linear(in_features, hidden_dim))
             setattr(self, relu_name, nn.ReLU())
-            setattr(self, dropout_name, nn.Dropout(p=dropout))
+            # setattr(self, dropout_name, nn.Dropout(p=dropout))
+            setattr(self, dropout_name, GaussianDropout(p=self.dropout)) # Gaussian dropout
 
         # ------------------------------------------------------------------
         # Output Layer
@@ -89,6 +90,24 @@ class NeuralNet(nn.Module):
             init.xavier_uniform_(output_layer.weight)
             if output_layer.bias is not None:
                 init.zeros_(output_layer.bias)
+
+
+class GaussianDropout(nn.Module):
+    def __init__(self, p=0.5):
+        super(GaussianDropout, self).__init__()
+        if p < 0 or p > 1:
+            raise Exception("p value should accomplish 0 <= p <= 1")
+        self.p = p
+        
+    def forward(self, x):
+        if self.training:
+            stddev = (self.p / (1.0 - self.p))**0.5
+            epsilon = torch.randn_like(x) * stddev
+            return x * epsilon
+        else:
+            return x
+
+
 
 # ----------------------------------------------------------------------
 # Filesystem Utilities
