@@ -5,6 +5,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 from .tree_node import TreeNode
 import pandas as pd
+from scipy.optimize import linprog
 from typing import Dict, List, Optional, Tuple, Iterable
 
 
@@ -41,6 +42,8 @@ class RegionTree:
 
         self.number_count_dict: Optional[pd.DataFrame] = None
         """DataFrame summarizing region-wise class counts."""
+        
+        self.test_x = None
 
         if build:
             self.build_tree()
@@ -119,86 +122,91 @@ class RegionTree:
     # Tree Construction
     # ----------------------------------------------------------------------
 
-    def build_tree(self, verbose: bool = False, check_feasibility=True) -> None:
-        """
-        Build the full region tree from the given `state_dict`.
+    # def build_tree(self, verbose: bool = False, check_feasibility=True) -> None:
+    #     """
+    #     Build the full region tree from the given `state_dict`.
 
-        Parameters
-        ----------
-        verbose : bool, optional
-            If True, display tqdm progress bars for region enumeration.
+    #     Parameters
+    #     ----------
+    #     verbose : bool, optional
+    #         If True, display tqdm progress bars for region enumeration.
 
-        Raises
-        ------
-        ValueError
-            If no state dictionary is provided.
+    #     Raises
+    #     ------
+    #     ValueError
+    #         If no state dictionary is provided.
 
-        Notes
-        -----
-        For each layer, all 2^n activation patterns (q-vectors) are enumerated:
-            q ∈ {0, 1}^n
+    #     Notes
+    #     -----
+    #     For each layer, all 2^n activation patterns (q-vectors) are enumerated:
+    #         q ∈ {0, 1}^n
 
-        For each activation pattern and each parent node, a new child node is 
-        constructed and its projection matrices are computed.
-        """
-        if self.state_dict is None:
-            raise ValueError("State dictionary is not provided.")
+    #     For each activation pattern and each parent node, a new child node is 
+    #     constructed and its projection matrices are computed.
+    #     """
+    #     if self.state_dict is None:
+    #         raise ValueError("State dictionary is not provided.")
 
-        if verbose:
-            print("Building tree...")
+    #     if verbose:
+    #         print("Building tree...")
 
-        self._find_hyperplanes()
+    #     self._find_hyperplanes()
 
-        # Root projections
-        m = self.hyperplanes[0].shape[1] - 1
-        self.root.projection_matrix = np.eye(m)
-        self.root.intercept_vector = np.zeros(m)
-        self.size.append(1)
+    #     # Root projections
+    #     m = self.hyperplanes[0].shape[1] - 1
+    #     self.root.projection_matrix = np.eye(m)
+    #     self.root.intercept_vector = np.zeros(m)
+    #     self.size.append(1)
 
-        current_layer_nodes = [self.root]
+    #     current_layer_nodes = [self.root]
 
-        for layer_index, hp in enumerate(self.hyperplanes):
-            self.size.append(0)
-            next_layer_nodes = []
-            num_neurons = hp.shape[0]
+    #     for layer_index, hp in enumerate(self.hyperplanes):
+    #         self.size.append(0)
+    #         next_layer_nodes = []
+    #         num_neurons = hp.shape[0]
 
-            q_vectors = itertools.product([0, 1], repeat=num_neurons)
-            iterator = tqdm(q_vectors, total=2**num_neurons, desc=f"Layer {layer_index+1}") if verbose else q_vectors
+    #         q_vectors = itertools.product([0, 1], repeat=num_neurons)
+    #         iterator = tqdm(q_vectors, total=2**num_neurons, desc=f"Layer {layer_index+1}") if verbose else q_vectors
 
-            region_index = 0
+    #         region_index = 0
 
 
-            for activation_pattern in iterator:
-                parents = tqdm(current_layer_nodes, leave=False, desc="Node") if verbose else current_layer_nodes
-                for parent_node in parents:
+    #         for activation_pattern in iterator:
+    #             parents = tqdm(current_layer_nodes, leave=False, desc="Node") if verbose else current_layer_nodes
+    #             for parent_node in parents:
                     
                       
-            # parents = tqdm(current_layer_nodes, leave=False, desc="Node") if verbose else current_layer_nodes
-            # for parent_node in parents:
-            #     for activation_pattern in iterator:
+    #         # parents = tqdm(current_layer_nodes, leave=False, desc="Node") if verbose else current_layer_nodes
+    #         # for parent_node in parents:
+    #         #     for activation_pattern in iterator:
                     
                     
-                    activation_pattern = np.array(activation_pattern)
+    #                 activation_pattern = np.array(activation_pattern)
 
-                    new_node = TreeNode(activation=activation_pattern)
-                    new_node.layer_number = layer_index + 1
-                    new_node.region_index = region_index
+    #                 new_node = TreeNode(activation=activation_pattern)
+    #                 new_node.layer_number = layer_index + 1
+    #                 new_node.region_index = region_index
 
-                    new_node.parent = parent_node
-                    self._calculate_projections_for_node(new_node, hp)
+    #                 new_node.parent = parent_node
+    #                 self._calculate_projections_for_node(new_node, hp)
                     
-                    new_node.accumulate_inequalities()
-                    # Feasibility check should go here
-                    if check_feasibility:
-                        if not new_node.is_feasible():
-                            continue
+    #                 new_node.accumulate_inequalities()
+    #                 # Feasibility check should go here
+    #                 if check_feasibility:
+    #                     if not new_node.is_feasible():
+    #                         continue
                     
-                    region_index += 1
-                    self.size[-1] += 1
-                    parent_node.add_child(new_node)
-                    next_layer_nodes.append(new_node)
+    #                 region_index += 1
+    #                 self.size[-1] += 1
+    #                 parent_node.add_child(new_node)
+    #                 next_layer_nodes.append(new_node)
 
-            current_layer_nodes = next_layer_nodes
+    #         current_layer_nodes = next_layer_nodes
+
+
+#-------------------------------------------------------------------------------
+#       BELOW: Tree builder that loops over parents first, then activations
+#-------------------------------------------------------------------------------
 
     # def build_tree(self, verbose: bool = False, check_feasibility: bool = True) -> None:
     #     """
@@ -276,6 +284,163 @@ class RegionTree:
 
     #         current_layer_nodes = next_layer_nodes
 
+#-------------------------------------------------------------------------------
+#       BELOW: New method with pruning algorithm. 
+#-------------------------------------------------------------------------------
+
+    def _activation_from_point(
+        self,
+        parent: TreeNode,
+        hp: np.ndarray,
+        x: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Compute activation pattern at this layer for a given input x.
+        """
+        W = hp[:, :-1]
+        b = hp[:, -1]
+
+
+        z = W @ (parent.projection_matrix @ x + parent.intercept_vector) + b
+        return (z > 0).astype(int)
+
+
+    def _traverse_activation_graph(
+        self,
+        parent: TreeNode,
+        hp: np.ndarray,
+    ) -> list[TreeNode]:
+        """
+        Enumerate all feasible activation patterns reachable from
+        an initial pattern by flipping active bits.
+        """
+        num_neurons = hp.shape[0]
+
+        # Fixed starting point
+        x0 = np.random.randint(parent.lower_bounds.max(),parent.upper_bounds.min(), size=self.hyperplanes[1]) # Random sample from input space that is within parent region.
+
+        q0 = self._activation_from_point(parent, hp, x0)
+        q0_t = tuple(q0.tolist())
+
+        visited = {q0_t}
+        stack = [q0]
+
+        feasible_children = []
+
+        while stack:
+            q = stack.pop()
+
+            node = TreeNode(activation=q)
+            node.parent = parent
+
+            self._calculate_projections_for_node(node, hp)
+            node.accumulate_inequalities()
+            node.propagate_bounds()
+
+            # if not node.is_feasible():
+            #     continue
+
+            # feasible_children.append(node)
+
+            # Explore neighbors
+            active_bits = self.get_active_bits_lp(node, len(q))
+            for i in active_bits:
+                q_new = q.copy()
+                q_new[i] ^= 1
+                q_new_t = tuple(q_new.tolist())
+
+                if q_new_t not in visited:
+                    visited.add(q_new_t)
+                    stack.append(q_new)
+
+        return feasible_children
+
+    def get_active_bits_lp(self, node, num_current_neurons: int, tol: float = 1e-7):
+        """
+        Return indices (0-based) of active bits for the CURRENT layer only.
+        """
+        if node.inequalities is None:
+            return []
+
+        A = node.inequalities[:, :-1]
+        b = node.inequalities[:, -1]
+
+        n_constraints, d = A.shape
+
+        # Indices of current-layer constraints in the accumulated system
+        start = n_constraints - num_current_neurons
+        end = n_constraints
+
+        active_bits = []
+
+        bounds = [(None, None)] * d
+
+        for global_i in range(start, end):
+            res = linprog(
+                c=-A[global_i],
+                A_ub=A,
+                b_ub=b,
+                bounds=bounds,
+                method="highs",
+            )
+
+            if not res.success:
+                continue
+
+            max_val = -res.fun
+
+            if abs(max_val - b[global_i]) <= tol:
+                # Map global constraint index → local neuron index
+                local_i = global_i - start
+                active_bits.append(local_i)
+
+        return active_bits
+
+
+    def build_tree(self, verbose: bool = False, check_feasibility: bool = True) -> None:
+        """
+        Build the region tree using traversal-and-pruning (Algorithm 2).
+        """
+        if self.state_dict is None:
+            raise ValueError("State dictionary is not provided.")
+
+        if verbose:
+            print("Building tree (traversal-and-pruning)...")
+
+        self._find_hyperplanes()
+
+        # Root projections
+        m = self.hyperplanes[0].shape[1] - 1
+        self.root.projection_matrix = np.eye(m)
+        self.root.intercept_vector = np.zeros(m)
+        self.root.propagate_bounds()
+        self.size = [1]
+        # self.test_x = np.ones(self.root.projection_matrix.shape[1])
+        current_layer_nodes = [self.root]
+
+        for layer_index, hp in enumerate(self.hyperplanes):
+            if verbose:
+                print(f"Layer {layer_index + 1}")
+
+            self.size.append(0)
+            next_layer_nodes = []
+
+            parents = tqdm(current_layer_nodes, leave=False) if verbose else current_layer_nodes
+
+
+            for parent in parents:
+                # Algorithm 2 happens here
+                children = self._traverse_activation_graph(parent, hp)
+
+                for child in children:
+                    child.layer_number = layer_index + 1
+                    child.region_index = self.size[-1]
+                    parent.add_child(child)
+
+                    self.size[-1] += 1
+                    next_layer_nodes.append(child)
+
+            current_layer_nodes = next_layer_nodes
 
 
     # ----------------------------------------------------------------------

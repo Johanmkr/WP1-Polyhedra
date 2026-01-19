@@ -256,206 +256,124 @@ class TreeNode:
         return True
 
 
-    # def _single_variable_bound_contradiction(
+    
+    # def propagate_halfspaces(self, tol: float = 1e-9) -> bool:
+    #     if self._halfspace_map is not None:
+    #         return True
+
+    #     if self.parent is None:
+    #         self._halfspace_map = {}
+    #     else:
+    #         if not self.parent.propagate_halfspaces(tol):
+    #             return False
+    #         self._halfspace_map = dict(self.parent._halfspace_map)
+
+    #     if self.inequalities is None:
+    #         return True
+
+    #     A = self.inequalities[:, :-1]
+    #     b = self.inequalities[:, -1]
+
+    #     for ai, bi in zip(A, b):
+    #         norm = np.linalg.norm(ai)
+    #         if norm < tol:
+    #             continue
+
+    #         a_norm = ai / norm
+    #         b_norm = bi / norm
+
+    #         if a_norm[np.argmax(np.abs(a_norm))] < 0:
+    #             a_norm = -a_norm
+    #             b_norm = -b_norm
+
+    #         key = tuple(np.round(a_norm / tol).astype(int))
+
+    #         if key in self._halfspace_map:
+    #             if self._halfspace_map[key] + b_norm < -tol:
+    #                 return False
+    #             self._halfspace_map[key] = min(self._halfspace_map[key], b_norm)
+    #         else:
+    #             self._halfspace_map[key] = b_norm
+
+    #     return True
+
+
+    # def random_probe_feasible(
+    #     self,
+    #     A: np.ndarray,
+    #     b: np.ndarray,
+    #     tol: float = 1e-9,
+    #     max_samples: int = 50,
+    # ) -> bool:
+    #     lb = self.lower_bounds.copy()
+    #     ub = self.upper_bounds.copy()
+
+    #     finite = np.isfinite(lb) & np.isfinite(ub)
+    #     lb[~finite] = -1e3
+    #     ub[~finite] =  1e3
+
+    #     center = 0.5 * (lb + ub)
+        
+    #     K = min(max_samples, 10 * A.shape[1])
+
+    #     for _ in range(K):
+    #         x = center + (np.random.rand(len(lb)) * 2 - 1) * (ub - lb)
+    #         if np.all(A @ x <= b + tol):
+    #             return True
+
+    #     return False
+
+
+    # def _lp_feasible(
     #     self,
     #     A: np.ndarray,
     #     b: np.ndarray,
     #     tol: float = 1e-9,
     # ) -> bool:
     #     """
-    #     Detect infeasibility from single-variable implied bounds.
+    #     Check whether the polyhedron defined by the accumulated inequalities
+    #     is non-empty using linear programming.
 
     #     Returns
     #     -------
     #     bool
-    #         True if infeasible, False otherwise.
+    #         True if feasible, False otherwise.
     #     """
-    #     m, n = A.shape
+    #     n = A.shape[1]
 
-    #     for i in range(n):
-    #         lower = -np.inf
-    #         upper = np.inf
+    #     # Dummy objective (we only care about feasibility)
+    #     c = np.zeros(n)
 
-    #         ai = A[:, i]
-
-    #         pos = ai > tol
-    #         neg = ai < -tol
-
-    #         # Upper bounds from a_i > 0
-    #         if np.any(pos):
-    #             upper = min(upper, np.min(b[pos] / ai[pos]))
-
-    #         # Lower bounds from a_i < 0
-    #         if np.any(neg):
-    #             lower = max(lower, np.max(b[neg] / ai[neg]))
-
-    #         # Contradiction
-    #         if lower > upper + tol:
-    #             return True
-
-    #     return False
+    #     res = linprog(
+    #         c,
+    #         A_ub=A,
+    #         b_ub=b,
+    #         bounds=list(zip(self.lower_bounds, self.upper_bounds)),
+    #         method="highs",
+    #     )
+    #     return res.success
     
-    # def _opposing_halfspace_contradiction(
-    #     self,
-    #     A: np.ndarray,
-    #     b: np.ndarray,
-    #     tol: float = 1e-9,
-    # ) -> bool:
-    #     """
-    #     Detect constraints of the form:
-    #         a^T x <= b
-    #     -a^T x <= -b - eps
-    #     """
-    #     m = A.shape[0]
+    # def is_feasible(self, tol: float = 1e-9) -> bool:
+    #     if self._feasible is not None:
+    #         return self._feasible
 
-    #     for i in range(m):
-    #         for j in range(i + 1, m):
-    #             if np.allclose(A[i], -A[j], atol=tol):
-    #                 if b[i] + b[j] < -tol:
-    #                     return True
-
-    #     return False
-    
-    
-    def propagate_halfspaces(self, tol: float = 1e-9) -> bool:
-        if self._halfspace_map is not None:
-            return True
-
-        if self.parent is None:
-            self._halfspace_map = {}
-        else:
-            if not self.parent.propagate_halfspaces(tol):
-                return False
-            self._halfspace_map = dict(self.parent._halfspace_map)
-
-        if self.inequalities is None:
-            return True
-
-        A = self.inequalities[:, :-1]
-        b = self.inequalities[:, -1]
-
-        for ai, bi in zip(A, b):
-            norm = np.linalg.norm(ai)
-            if norm < tol:
-                continue
-
-            a_norm = ai / norm
-            b_norm = bi / norm
-
-            if a_norm[np.argmax(np.abs(a_norm))] < 0:
-                a_norm = -a_norm
-                b_norm = -b_norm
-
-            key = tuple(np.round(a_norm / tol).astype(int))
-
-            if key in self._halfspace_map:
-                if self._halfspace_map[key] + b_norm < -tol:
-                    return False
-                self._halfspace_map[key] = min(self._halfspace_map[key], b_norm)
-            else:
-                self._halfspace_map[key] = b_norm
-
-        return True
-
-    
-    # def _cheap_infeasibility_check(
-    #     self,
-    #     A: np.ndarray,
-    #     b: np.ndarray,
-    #     tol: float = 1e-9,
-    # ) -> bool:
-    #     """
-    #     Return True if infeasible is CERTAIN.
-    #     """
-    #     if not self.propagate_bounds(A, b, tol):
-    #         return True
-
-    #     if not self.propagate_halfspaces(tol):
+    #     if not self.propagate_bounds(tol):
     #         self._feasible = False
     #         return False
 
-    #     return False
-
-
-    def random_probe_feasible(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        tol: float = 1e-9,
-        max_samples: int = 50,
-    ) -> bool:
-        lb = self.lower_bounds.copy()
-        ub = self.upper_bounds.copy()
-
-        finite = np.isfinite(lb) & np.isfinite(ub)
-        lb[~finite] = -1e3
-        ub[~finite] =  1e3
-
-        center = 0.5 * (lb + ub)
+    #     # if not self.propagate_halfspaces(tol):
+    #     #     self._feasible = False
+    #     #     return False
         
-        K = min(max_samples, 10 * A.shape[1])
+    #     A = self.cumulative_inequalities[:, :-1]
+    #     b = self.cumulative_inequalities[:, -1]
 
-        for _ in range(K):
-            x = center + (np.random.rand(len(lb)) * 2 - 1) * (ub - lb)
-            if np.all(A @ x <= b + tol):
-                return True
+    #     if self.random_probe_feasible(A, b, tol):
+    #         self._feasible = True
+    #         return True
 
-        return False
-
-
-    def _lp_feasible(
-        self,
-        A: np.ndarray,
-        b: np.ndarray,
-        tol: float = 1e-9,
-    ) -> bool:
-        """
-        Check whether the polyhedron defined by the accumulated inequalities
-        is non-empty using linear programming.
-
-        Returns
-        -------
-        bool
-            True if feasible, False otherwise.
-        """
-        n = A.shape[1]
-
-        # Dummy objective (we only care about feasibility)
-        c = np.zeros(n)
-
-        res = linprog(
-            c,
-            A_ub=A,
-            b_ub=b,
-            bounds=list(zip(self.lower_bounds, self.upper_bounds)),
-            method="highs",
-        )
-        return res.success
-    
-    def is_feasible(self, tol: float = 1e-9) -> bool:
-        if self._feasible is not None:
-            return self._feasible
-
-        if not self.propagate_bounds(tol):
-            self._feasible = False
-            return False
-
-        # if not self.propagate_halfspaces(tol):
-        #     self._feasible = False
-        #     return False
-        
-        A = self.cumulative_inequalities[:, :-1]
-        b = self.cumulative_inequalities[:, -1]
-
-        if self.random_probe_feasible(A, b, tol):
-            self._feasible = True
-            return True
-
-        self._feasible = self._lp_feasible(A, b, tol)
-        return self._feasible
-
-
-
+    #     self._feasible = self._lp_feasible(A, b, tol)
+    #     return self._feasible
 
 
 
