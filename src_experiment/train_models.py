@@ -129,7 +129,8 @@ def train_model_multiclass(
     num_classes: int = None,
     savepath: Optional[pl.Path] = None,
     SAVE_STATES: bool = False,
-    save_everyth_epoch: int = 50,
+    save_everyth_epoch: int = None,
+    save_for_epochs: list = None,
     RETURN_STATES: bool = False,
     sgd_lr=0.01,
     sgd_mom=0.9
@@ -169,6 +170,8 @@ def train_model_multiclass(
     train_accuracy = np.zeros(epochs)
     test_loss = np.zeros(epochs)
     test_accuracy = np.zeros(epochs)
+    eval_train_loss = np.zeros(epochs)
+    eval_train_accuracy = np.zeros(epochs)
     
     if num_classes is None:
         num_classes = model.num_classes
@@ -178,6 +181,9 @@ def train_model_multiclass(
 
     optimizer = torch.optim.SGD(model.parameters(), lr=sgd_lr, momentum=sgd_mom)
     loss_fn = nn.CrossEntropyLoss()  # <-- multiclass loss
+    
+    if SAVE_STATES or RETURN_STATES:
+        assert not save_everyth_epoch is not None and save_for_epochs is not None, "Either save every nth epoch or specify epoch list, not Both"
 
     for epoch in trange(epochs, desc="Training", leave=False):
         # ----------------------
@@ -192,6 +198,7 @@ def train_model_multiclass(
             optimizer.zero_grad()
 
             x = x.float()
+            # print(f"x: {x}")
             y = y.long()  # labels as integers (0,1,...,num_classes-1)
 
             y_hat = model(x)  # raw logits, shape (batch_size, num_classes)
@@ -200,6 +207,8 @@ def train_model_multiclass(
             optimizer.step()
 
             preds = y_hat.argmax(dim=1)
+            # print(f"y_hat: {y_hat}\ny: {y}\npreds: {preds}\nloss: {loss.item()}")
+            # raise ValueError
             running_loss += loss.item()
             num_correct += (preds == y).sum().item()
             total_samples += y.size(0)
@@ -208,13 +217,34 @@ def train_model_multiclass(
         train_accuracy[epoch] = num_correct / total_samples
 
         # ----------------------
-        # Validation
+        # Validation and evaluation
         # ----------------------
         model.eval()
-        running_loss = 0.0
-        num_correct = 0
-        total_samples = 0
-
+        
+        # Eval on train data
+        train_running_loss = 0.0
+        train_num_correct = 0
+        train_total_samples = 0
+        with torch.no_grad():
+            # Evaluate on training data (for GG-analysis)
+            for x, y in train_data:
+                x = x.float()
+                y = y.long()
+                
+                y_hat = model(x)
+                loss = loss_fn(y_hat, y)
+                preds = y_hat.argmax(dim=1)
+                
+                train_running_loss += loss.item()
+                train_num_correct += (preds == y).sum().item()
+                train_total_samples += y.size(0)
+        eval_train_loss[epoch] = train_running_loss / len(train_data)
+        eval_train_accuracy[epoch] = train_num_correct / train_total_samples
+            
+        # Eval on test data
+        test_running_loss = 0.0
+        test_num_correct = 0
+        test_total_samples = 0
         with torch.no_grad():
             for x, y in test_data:
                 x = x.float()
@@ -222,20 +252,24 @@ def train_model_multiclass(
 
                 y_hat = model(x)
                 loss = loss_fn(y_hat, y)
-
                 preds = y_hat.argmax(dim=1)
-                running_loss += loss.item()
-                num_correct += (preds == y).sum().item()
-                total_samples += y.size(0)
+                
+                test_running_loss += loss.item()
+                test_num_correct += (preds == y).sum().item()
+                test_total_samples += y.size(0)
 
-        test_loss[epoch] = running_loss / len(test_data)
-        test_accuracy[epoch] = num_correct / total_samples
+        test_loss[epoch] = test_running_loss / len(test_data)
+        test_accuracy[epoch] = test_num_correct / test_total_samples
 
         # ----------------------
         # Save state to memory (for later analysis)
         # ----------------------
-        if (epoch % save_everyth_epoch == 0) or (epoch == epochs-1):
-            saved_states[epoch] = copy.deepcopy(model.state_dict())
+        if save_everyth_epoch is not None:
+            if (epoch % save_everyth_epoch == 0) or (epoch == epochs-1):
+                saved_states[epoch] = copy.deepcopy(model.state_dict())
+        elif save_for_epochs is not None:
+            if epoch in save_for_epochs:
+                saved_states[epoch] = copy.deepcopy(model.state_dict())
 
     # ----------------------
     # Compile results
@@ -245,6 +279,8 @@ def train_model_multiclass(
         "train_accuracy": train_accuracy,
         "test_loss": test_loss,
         "test_accuracy": test_accuracy,
+        "eval_train_loss": eval_train_loss,
+        "eval_train_accuracy": eval_train_accuracy,
     }
     results = pd.DataFrame.from_dict(run_results)
 

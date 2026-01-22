@@ -97,15 +97,20 @@ class NeuralNet(nn.Module):
 class GaussianDropout(nn.Module):
     def __init__(self, p=0.5):
         super(GaussianDropout, self).__init__()
-        if p < 0 or p > 1:
-            raise Exception("p value should accomplish 0 <= p <= 1")
+        if not (0 <= p < 1):
+            raise ValueError("p value should be in the range [0, 1)")
         self.p = p
         
     def forward(self, x):
-        if self.training:
+        if self.training and self.p > 0:
+            # Calculate standard deviation based on p
             stddev = (self.p / (1.0 - self.p))**0.5
-            epsilon = torch.randn_like(x) * stddev
-            return x * epsilon
+            
+            # Generate noise centered at 1.0
+            # epsilon ~ N(1, stddev^2)
+            noise = torch.randn_like(x) * stddev + 1.0
+            
+            return x * noise
         else:
             return x
 
