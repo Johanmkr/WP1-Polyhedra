@@ -40,7 +40,7 @@ def train_model(
     loss_fn = nn.BCEWithLogitsLoss()
     sigmoid = nn.Sigmoid()
     
-    assert not save_everyth_epoch is not None and save_for_epochs is not None, "Either save every nth epoch or specify epoch list, not Both"
+    # assert not save_everyth_epoch is not None and save_for_epochs is not None, "Either save every nth epoch or specify epoch list, not Both"
     
 
     for epoch in trange(epochs, desc="Training", leave=False):
