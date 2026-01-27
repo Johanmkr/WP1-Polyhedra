@@ -7,7 +7,11 @@ from .tree_node import TreeNode
 import pandas as pd
 from scipy.optimize import linprog
 from typing import Dict, List, Optional, Tuple, Iterable
-
+import numpy as np
+import itertools
+from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 class RegionTree:
     """
@@ -441,6 +445,7 @@ class RegionTree:
                     next_layer_nodes.append(child)
 
             current_layer_nodes = next_layer_nodes
+    
 
 
     # ----------------------------------------------------------------------

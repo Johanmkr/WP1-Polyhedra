@@ -30,6 +30,8 @@ class NeuralNet(nn.Module):
         super().__init__()
         self.hidden_sizes = hidden_sizes
         self.dropout = dropout  
+        self.num_classes = num_classes
+        self.input_size = input_size
 
         # ------------------------------------------------------------------
         # Hidden Layers
@@ -43,7 +45,8 @@ class NeuralNet(nn.Module):
 
             setattr(self, layer_name, nn.Linear(in_features, hidden_dim))
             setattr(self, relu_name, nn.ReLU())
-            setattr(self, dropout_name, nn.Dropout(p=dropout))
+            # setattr(self, dropout_name, nn.Dropout(p=dropout))
+            setattr(self, dropout_name, GaussianDropout(p=self.dropout)) # Gaussian dropout
 
         # ------------------------------------------------------------------
         # Output Layer
@@ -89,6 +92,29 @@ class NeuralNet(nn.Module):
             init.xavier_uniform_(output_layer.weight)
             if output_layer.bias is not None:
                 init.zeros_(output_layer.bias)
+
+
+class GaussianDropout(nn.Module):
+    def __init__(self, p=0.5):
+        super(GaussianDropout, self).__init__()
+        if not (0 <= p < 1):
+            raise ValueError("p value should be in the range [0, 1)")
+        self.p = p
+        
+    def forward(self, x):
+        if self.training and self.p > 0:
+            # Calculate standard deviation based on p
+            stddev = (self.p / (1.0 - self.p))**0.5
+            
+            # Generate noise centered at 1.0
+            # epsilon ~ N(1, stddev^2)
+            noise = torch.randn_like(x) * stddev + 1.0
+            
+            return x * noise
+        else:
+            return x
+
+
 
 # ----------------------------------------------------------------------
 # Filesystem Utilities

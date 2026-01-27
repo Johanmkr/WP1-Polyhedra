@@ -1,16 +1,19 @@
 # Import necessary libraries
 # from numpy import number
 from tqdm import trange
-from src_experiment import moon_path, wbc_path, get_moons_data, get_wbc_data
-import geobin as gb
 import os
 import torch
 from pathlib import Path
+import pandas as pd
+import time
 
 try:
     import cpickle as pickle
 except ModuleNotFoundError:
     import pickle
+    
+from src_experiment import get_new_path, get_new_data
+import geobin as gb
     
 # Helper functions to read and wrtie pickle objects.
 
@@ -23,6 +26,13 @@ def open_object(filename):
         obj = pickle.load(inp)
     return obj
 
+def save_object_csv(obj, filename):
+    # index=False is usually preferred unless the index contains important data
+    df = pd.DataFrame.from_dict(obj)
+    df.to_csv(filename, index=False)
+        
+def open_object_csv(filename):
+    return pd.read_csv(filename)
 
 def find_and_store_counts(basepath: Path,
                           data: torch.utils.data.DataLoader,
@@ -30,11 +40,12 @@ def find_and_store_counts(basepath: Path,
                           overwrite=False):
 
     savepath = basepath
+    
     number_count_path = savepath/"number_counts_per_epoch.pkl"
+    # number_count_path = savepath/"number_counts_per_epoch.csv"
     
     def _run_and_save_counts():
         # trees = {} # Dict to store trees. Epoch number as keys
-        
 
         ncounts_per_epoch = {}
         inference_data = data
@@ -46,13 +57,16 @@ def find_and_store_counts(basepath: Path,
         #   3. Save tree to 
         
         for epoch in epochs:
+            print(f"Building for epoch: {epoch} in {epochs}")
             #Load state dict
             state_dict_path = savepath / "state_dicts" / f"epoch{epoch}.pth"
             state_dict = torch.load(state_dict_path)
             # Initialize tree
+            
+            start = time.time()
             tree = gb.RegionTree(state_dict)
             # Build tree
-            tree.build_tree(verbose=False)
+            tree.build_tree(verbose=True)
             # trees[epoch] = tree
             
             
@@ -63,15 +77,25 @@ def find_and_store_counts(basepath: Path,
             tree.collect_number_counts()
             ncounts = tree.get_number_counts()
             ncounts_per_epoch[epoch] = ncounts
-                
+            end = time.time()
+            dur = end - start
+            print("----------------------------------------------------")
+            print(f"Duration of ncounts for epoch {epoch}: {dur:.3f} s")
+            print("----------------------------------------------------")
+                    
                 
         # Save objects
         
         # Un-comment to save trees
         # save_object(trees, savepath/"trees.pkl")
 
-        # Save the number counts. 
+        # Save the number counts.
+        
+        # PKL saving
         save_object(ncounts_per_epoch, number_count_path)
+        
+        # CSV saving
+        # save_object_csv(ncounts_per_epoch, number_count_path)
     
     # Check if number counts exists
     
@@ -84,85 +108,41 @@ def find_and_store_counts(basepath: Path,
     else:
         print("Finding number counts...")
         _run_and_save_counts()
-
-
-# def run_moon_number_counts(
-#     model_name="small",
-#     dataset_name="new",
-#     noise_level=0.05,
-#     run_number=0
-# ):
-#     basepath = get_storage_path("moons", model_name=model_name, dataset_name=dataset_name, noise_level=noise_level, run_number=run_number)
-#     data = get_data("moons", "testing", noise=noise_level)
-#     find_and_store_counts(basepath, data, epochs=[0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,124], overwrite=True)
-    
-    
-# def run_wbc_number_counts(
-#     model_name="small",
-#     run_number=0
-# ):
-#     basepath = get_storage_path("wbc", model_name=model_name, run_number=run_number)
-#     data = get_data("breast_cancer", "testing", batch_size=75)
-#     find_and_store_counts(basepath, data, epochs=[0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300,320,340,360,380,400,420,440,460,480,499], overwrite=True)
-    
-# def run_all_moon_counts():
-#     run_numbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34]
-#     for noise in [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]:
-#         for number in run_numbers:
-#             print(f"\nNoise: {noise}\nRun {number}/{run_numbers[-1]}")
-#             run_moon_number_counts(
-#                 model_name="decreasing",
-#                 dataset_name="new",
-#                 noise_level = noise,
-#                 run_number = number,
-#         )
-   
-# def run_all_wbc_counts():
-#     run_numbers = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]
-#     for model_name in ["small", "decreasing"]:
-#         for number in run_numbers:
-#             print(f"\nModel: {model_name}\nRun {number}/{run_numbers[-1]}")
-#             run_wbc_number_counts(
-#                 model_name=model_name,
-#                 run_number = number,
-#         )  
-         
-# def test():
-#     run_wbc_number_counts(
-#         model_name="small",
-#         run_number=0
-#     )
-    
     
 def main():
-    dropouts = [0.0, 0.05, 0.1, 0.15, 0.2]
-    noises = [0.0, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8]
-    architectures = ["small", "decreasing"]
-    run_numbers = [0,2,4,5,6,8,9,10,11,12,13,14,15,18,19] # 15 runs that converge well
-    epochs = [0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,74]
-    
-    # Total runs: 5*7*2*15 = 1050 runs for both datasets
-    # Loop through data configurations first to load them as few times as possible
+    # Experiment params
+    datasets = ["moons", "wbc", "wine", "hd", "car"]
+    noises = [0.0, 0.2, 0.4]
+    dropouts = [0.0, 0.1, 0.3, 0.5]
+    run_nrs = [1,2,3,4,5]
+
+    save_for_epochs = [0,2,4,6,8,10,20,30,40,50]
     i = 1
-    tot = len(dropouts)*len(noises)*len(architectures)*len(run_numbers)
-    for noise in noises:
-        moon_data = get_moons_data(feature_noise=noise, batch_size=32)
-        wbc_data = get_wbc_data(label_noise=noise, batch_size=32)
-        moon_testing = moon_data[1] # Testing data
-        wbc_testing = wbc_data[1] # Testing data
-        # Loop over model configs
-        for arch in architectures:
+    tot = len(datasets)*len(noises)*len(dropouts)*len(run_nrs)
+
+    for dataset in datasets:
+        for noise in noises:
+            train_data, test_data = get_new_data(dataset, noise)
+            
             for dropout in dropouts:
-                for run_number in run_numbers:
-                    print(f"\nRun {i} of {tot}")
-                    print(f"Finding and storing number counts for:\narch={arch}\ndropout={dropout}\nnoise={noise}\nrun_number={run_number}")
+                for run_nr in run_nrs:
+                    # prints
+                    print(f"\nRun {i}/{tot}")
+                    print(f"Finding and storing number counts for\nDataset: {dataset}\nNoise: {noise}\nDropout: {dropout}\nRun nr: {run_nr}\n")
                     i += 1
-                    # Moons
-                    path_moon = moon_path(arch=arch, dropout=dropout, noise=noise, run_number=run_number)
-                    find_and_store_counts(path_moon, moon_testing, epochs=epochs, overwrite=False)
-                    # WBC
-                    path_wbc = wbc_path(arch=arch, dropout=dropout, noise=noise, run_number=run_number)
-                    find_and_store_counts(path_wbc, wbc_testing, epochs=epochs, overwrite=False)
+                    
+                    # Get savepath
+                    savepath = get_new_path(dataset, noise, dropout, run_nr)
+                    find_and_store_counts(
+                        basepath = savepath,
+                        data = test_data,
+                        epochs = save_for_epochs,
+                        overwrite=False,
+                    )
+                    # raise ValueError
+                    
+    
+    
     
 if __name__=="__main__":
     main()
