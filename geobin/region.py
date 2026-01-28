@@ -30,9 +30,6 @@ class Region:
                 # Constraint for -x_i <= 1 (which is x_i >= -1)
                 self.Dlw[2 * i + 1, i] = -1
             
-            
-            self.Dlw_active = self.Dlw # Active slopes
-            self.glw_active = self.glw # Active intercepts
         else:
             self.Alw = None # Slope projection matrix
             self.clw = None # Intercept projection matrix

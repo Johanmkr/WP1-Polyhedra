@@ -6,6 +6,8 @@ import importlib
 _lazy_attributes = {
     "RegionTree": ".region_tree",
     "TreeNode": ".tree_node",
+    "Region": ".region",
+    "Tree": ".tree",
 }
 
 # Dynamically generate __all__ from lazy attributes
