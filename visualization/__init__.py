@@ -8,6 +8,7 @@ _lazy_attributes = {
     "plot_training": ".plot_tools",
     "plot_training_sweep": ".plot_tools",
     "plot_average_KL": ".plot_tools",
+    "plot_epoch_layer_grid": ".polygon_plotting",
 }
 
 # Dynamically define __all__ based on lazy attributes
