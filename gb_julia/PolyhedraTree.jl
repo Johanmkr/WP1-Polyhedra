@@ -411,9 +411,7 @@ function find_active_indices(D_local, g_local, D_prev, g_prev; tol=1e-7)
             if geometric_violation > tol
                 push!(active, i)
             end
-            
-        elseif st == MOI.DUAL_INFEASIBLE
-            # Unbounded
+        elseif st == MOI.DUAL_INFEASIBLE || st == MOI.INFEASIBLE_OR_UNBOUNDED
             push!(active, i)
             is_bounded = false
         end
