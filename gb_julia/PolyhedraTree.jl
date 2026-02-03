@@ -46,14 +46,11 @@ mutable struct Region
         this.Alw = Matrix{Float64}(I, input_dim, input_dim)
         this.clw = zeros(Float64, input_dim)
         
-        # Hypercube inequalities: -1 <= x <= 1
-        this.Dlw = zeros(Float64, 2 * input_dim, input_dim)
-        this.glw = ones(Float64, 2 * input_dim)
-        
-        for i in 1:input_dim
-            this.Dlw[2*i - 1, i] = 1.0  # x_i <= 1
-            this.Dlw[2*i, i] = -1.0     # -x_i <= 1  =>  x_i >= -1
-        end
+        # Generate hypercube inequalities (|x_i| <= 1)
+        # REMOVED: Python implementation uses unbounded root region.
+        # Matching Python behavior to find all regions and avoid artificial overlaps.
+        this.Dlw = Matrix{Float64}(undef, 0, input_dim)
+        this.glw = Float64[]
         
         this.Dlw_active = this.Dlw
         this.glw_active = this.glw
@@ -267,8 +264,8 @@ function find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev,
     if layer_nr != 1
         x = get_interior_point_adaptive(Dlw_active_prev, glw_active_prev)
     else
-        # Python: np.random.random((2,1)) -> [0,1]. Root is [-1,1].
-        # [0,1] is valid.
+        # Root region is unbounded. Python uses random point in [0, 1]^d.
+        # Matching Python behavior.
         x = rand(size(Alw_prev, 2))
     end
     
