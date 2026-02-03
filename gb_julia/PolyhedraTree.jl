@@ -148,6 +148,7 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
         list_lock = ReentrantLock()
         
         # You can use Threads.@threads here if BLAS threads are set to 1
+        # Threads.@threads for parent in current_layer_nodes
         for parent in current_layer_nodes
             
             # Core solver step
