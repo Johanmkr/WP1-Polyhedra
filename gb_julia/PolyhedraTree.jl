@@ -3,7 +3,7 @@ module PolyhedraTree
 using LinearAlgebra
 using JuMP
 using HiGHS
-using ProgressMeter # Pkg.add("ProgressMeter")
+using ProgressMeter
 import Base: show
 
 export Region, Tree, construct_tree!, get_regions_at_layer, get_path_inequalities
@@ -36,24 +36,23 @@ mutable struct Region
     layer_number::Int
     
     # -- Constructors --
-    
-    # Root Region Constructor
     function Region(; input_dim::Int)
         this = new()
         this.qlw = Int[]
         this.q_tilde = Int[]
         this.bounded = true
         
+        # Identity projection for root
         this.Alw = Matrix{Float64}(I, input_dim, input_dim)
         this.clw = zeros(Float64, input_dim)
         
-        # Generate hypercube inequalities (|x_i| <= 1)
+        # Hypercube inequalities: -1 <= x <= 1
         this.Dlw = zeros(Float64, 2 * input_dim, input_dim)
         this.glw = ones(Float64, 2 * input_dim)
         
         for i in 1:input_dim
             this.Dlw[2*i - 1, i] = 1.0  # x_i <= 1
-            this.Dlw[2*i, i] = -1.0     # -x_i <= 1
+            this.Dlw[2*i, i] = -1.0     # -x_i <= 1  =>  x_i >= -1
         end
         
         this.Dlw_active = this.Dlw
@@ -65,7 +64,6 @@ mutable struct Region
         return this
     end
 
-    # Child Region Constructor
     function Region(activation::Vector{Int})
         this = new()
         this.qlw = activation
@@ -83,44 +81,32 @@ function get_children(r::Region)
     return r.children
 end
 
+# Matches Python: get_path_inequalities(self)
 function get_path_inequalities(r::Region)
-    # Initialize lists to store constraints
     D_list = Matrix{Float64}[]
     g_list = Vector{Float64}[]
     
     node = r
-    
-    # Traverse upwards until the parent is nothing
-    # (Matches Python: while node.parent is not None)
     while node.parent !== nothing
         push!(D_list, node.Dlw_active)
         push!(g_list, node.glw_active)
         node = node.parent
     end
     
-    # Handle the edge case of the Root node (lists are empty)
     if isempty(D_list)
-        # Return empty 0x0 arrays or handle as needed
         return Matrix{Float64}(undef, 0, 0), Float64[]
     end
     
-    # Reverse the lists (Leaf -> Root becomes Root -> Leaf)
-    # and vertically concatenate (equivalent to np.vstack)
+    # Reverse to get Root -> Leaf order
     D_path = reduce(vcat, reverse(D_list))
     g_path = reduce(vcat, reverse(g_list))
     
     return D_path, g_path
 end
 
-# Pretty printing
 function Base.show(io::IO, r::Region)
     dim = isdefined(r, :Alw) ? size(r.Alw, 2) : "N/A"
-    print(io, "\n--------------\nRegion info:\n--------------\nLayer: $(r.layer_number)\nLocal activation: $(r.qlw)\nInput dim: $dim\nChildren: $(length(r.children))")
-    if r.parent === nothing
-        print(io, "\nThis is the root region.")
-    elseif isempty(r.children)
-        print(io, "\nThis is a leaf region.")
-    end
+    print(io, "\nRegion (L$(r.layer_number)) | Act: $(r.qlw) | Children: $(length(r.children))")
 end
 
 # ==============================================================================
@@ -139,20 +125,13 @@ mutable struct Tree
         input_dim = size(weights[1], 2)
         L = length(weights)
         root = Region(input_dim=input_dim)
-        
         new(weights, biases, input_dim, L, root)
-    end
-    
-    # Alternative constructor taking raw arrays directly
-    function Tree(ws::Vector{Matrix{Float64}}, bs::Vector{Vector{Float64}})
-        input_dim = size(ws[1], 2)
-        L = length(ws)
-        root = Region(input_dim=input_dim)
-        new(ws, bs, input_dim, L, root)
     end
 end
 
-# --- External Methods ---
+# ==============================================================================
+# 3. CONSTRUCTION LOGIC
+# ==============================================================================
 
 function construct_tree!(tree::Tree; verbose::Bool=false)
     current_layer_nodes = [tree.root]
@@ -164,29 +143,24 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
         
         next_layer_nodes = Region[]
         
-        # Verbose progress bar setup
         if verbose
-            println()
-            p = Progress(length(current_layer_nodes); dt=0.5, desc="Processing Layer $layer: ")
+            p = Progress(length(current_layer_nodes); dt=0.5, desc="Layer $layer: ")
         end
         
-        # Thread-safe lock for appending to the main list
+        # Using a lock for thread safety if multi-threaded
         list_lock = ReentrantLock()
         
-        # Parallel Loop over parents
-        # Threads.@threads for parent in current_layer_nodes
+        # You can use Threads.@threads here if BLAS threads are set to 1
         for parent in current_layer_nodes
-            # Sanity check
-            # @assert parent.layer_number == layer - 1
             
-            # Find all children for this parent
+            # Core solver step
             new_nodes_info = find_next_layer_region_info(
                 parent.Dlw_active, parent.glw_active, 
                 parent.Alw, parent.clw, 
                 Wl, bl, layer
             )
             
-            local_children_storage = Region[]
+            local_children = Region[]
             
             for (act, info) in new_nodes_info
                 child = Region(act)
@@ -195,8 +169,7 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
                 child.Dlw = info["Dlw"]
                 child.glw = info["glw"]
                 
-                # Active constraints slicing
-                # info["q_tilde"] is a Vector{Int} of indices
+                # Slicing active constraints
                 child.Dlw_active = info["Dlw"][info["q_tilde"], :]
                 child.glw_active = info["glw"][info["q_tilde"]]
                 
@@ -205,12 +178,11 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
                 child.layer_number = layer
                 
                 add_child!(parent, child)
-                push!(local_children_storage, child)
+                push!(local_children, child)
             end
             
-            # Thread-safe update of the next layer list
             lock(list_lock) do
-                append!(next_layer_nodes, local_children_storage)
+                append!(next_layer_nodes, local_children)
                 if verbose; next!(p); end
             end
         end
@@ -230,40 +202,44 @@ function get_regions_at_layer(tree::Tree, layer::Int)
     
     while !isempty(queue)
         current_region = popfirst!(queue)
-        
         if current_region.layer_number == layer
             push!(regions, current_region)
         elseif current_region.layer_number < layer
-            append!(queue, get_children(current_region))
+            append!(queue, current_region.children)
         end
     end
     return regions
 end
 
 # ==============================================================================
-# 3. UTILITY FUNCTIONS (Solvers & Logic)
+# 4. SOLVERS & MATH (Strictly Matching Python Logic)
 # ==============================================================================
 
 function find_hyperplanes(state_dict::Dict{String, Any})
-    # Rudimentary parsing of keys like "0.weight", "0.bias" or "layers.0.weight"
-    # Returns sorted list of weights and biases
+    # --- FIX: ROBUST SORTING ---
+    # Python uses insertion order or string keys. 
+    # We must extract the integer layer index to ensure 10 comes after 2.
     
-    # distinct prefixes (e.g. "0", "1" or "layers.0")
-    keys_weights = filter(k -> occursin("weight", k), keys(state_dict))
+    # 1. Filter weight keys
+    keys_weights = filter(k -> occursin("weight", k), collect(keys(state_dict)))
     
-    # Sort keys to ensure layer order
-    sorted_keys = sort(collect(keys_weights))
+    # 2. Extract integer index from key (e.g. "layers.0.weight" -> 0)
+    # Assumes format contains digits we can sort by.
+    function extract_layer_idx(k)
+        m = match(r"(\d+)", k)
+        return m === nothing ? -1 : parse(Int, m.captures[1])
+    end
+    
+    # 3. Sort based on the integer index
+    sorted_keys = sort(keys_weights, by=extract_layer_idx)
     
     weights = Matrix{Float64}[]
     biases = Vector{Float64}[]
     
     for k_w in sorted_keys
         k_b = replace(k_w, "weight" => "bias")
-        
-        # Convert to Float64 explicitly
         W = convert(Matrix{Float64}, state_dict[k_w])
         b = convert(Vector{Float64}, state_dict[k_b])
-        
         push!(weights, W)
         push!(biases, b)
     end
@@ -272,13 +248,9 @@ function find_hyperplanes(state_dict::Dict{String, Any})
 end
 
 function calculate_next_layer_quantities(Wl, bl, qlw, Alw_prev, clw_prev)
-    # Fast broadcasted math
-    # qlw is Vector{Int} (0 or 1)
-    
     Wl_hat = Wl * Alw_prev
     bl_hat = Wl * clw_prev + bl
     
-    # s = -2q + 1
     s_vec = -2.0 .* qlw .+ 1.0
     
     Dlw = s_vec .* Wl_hat
@@ -291,20 +263,20 @@ function calculate_next_layer_quantities(Wl, bl, qlw, Alw_prev, clw_prev)
 end
 
 function find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev, clw_prev, Wl, bl, layer_nr)
-    
-    # 1. Random point generation
+    # 1. Get interior point
     if layer_nr != 1
         x = get_interior_point_adaptive(Dlw_active_prev, glw_active_prev)
     else
-        # Root region is [-1, 1]^d
-        x = 2.0 .* rand(size(Alw_prev, 2)) .- 1.0
+        # Python: np.random.random((2,1)) -> [0,1]. Root is [-1,1].
+        # [0,1] is valid.
+        x = rand(size(Alw_prev, 2))
     end
     
-    # 2. Get activation of random point
+    # 2. Initial Activation
     z = Wl * Alw_prev * x + Wl * clw_prev + bl
     q0 = Int.(z .> 0)
     
-    # 3. BFS Traversal
+    # 3. BFS
     traversed = Dict{Vector{Int}, Dict}()
     queue = [q0]
     
@@ -317,7 +289,7 @@ function find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev,
         
         for i_act in qi_act
             q_new = copy(q)
-            q_new[i_act] = 1 - q_new[i_act] # Flip bit
+            q_new[i_act] = 1 - q_new[i_act]
             
             if !haskey(traversed, q_new)
                 traversed[q_new] = Dict() # Placeholder
@@ -337,21 +309,31 @@ function find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev,
     return traversed
 end
 
-# --- Solver Wrappers ---
+# --- LP Solvers ---
 
-function get_interior_point_adaptive(A::Matrix{Float64}, b::Vector{Float64}; initial_slack=0.1, min_threshold=1e-10)
+# ==============================================================================
+# UPDATED SOLVER FUNCTIONS
+# Replace the existing functions in PolyhedraTree.jl with these
+# ==============================================================================
+
+function get_interior_point_adaptive(A::Matrix{Float64}, b::Vector{Float64}; initial_slack=0.1, min_threshold=1e-12)
     m, n = size(A)
     model = direct_model(HiGHS.Optimizer())
     set_silent(model)
+    
+    # Strict feasibility to prevent "ghost" regions
+    set_attribute(model, "primal_feasibility_tolerance", 1e-9)
+    set_attribute(model, "dual_feasibility_tolerance", 1e-9)
+    # Disable presolve to prevent it from discarding 'tiny' valid features
+    set_attribute(model, "presolve", "off")
+
     @variable(model, x[1:n])
     
-    # Pre-calculate norms
     norms = [norm(A[i, :]) for i in 1:m]
-    
     current_slack = initial_slack
     
+    # 1. Try finding a deep interior point
     while current_slack >= min_threshold
-        # Ax <= b - slack*|a|
         @constraint(model, [i=1:m], dot(A[i,:], x) <= b[i] - (current_slack * norms[i]))
         optimize!(model)
         
@@ -359,15 +341,16 @@ function get_interior_point_adaptive(A::Matrix{Float64}, b::Vector{Float64}; ini
             return value.(x)
         end
         
-        # Reset and retry with smaller slack
+        # Retry with smaller slack
         empty!(model) 
         @variable(model, x[1:n])
         current_slack /= 10.0
     end
     
-    # Final try with 0 slack
+    # 2. Final attempt: Zero slack (on the boundary)
     @constraint(model, [i=1:m], dot(A[i,:], x) <= b[i])
     optimize!(model)
+    
     if termination_status(model) == MOI.OPTIMAL
         return value.(x)
     else
@@ -376,7 +359,7 @@ function get_interior_point_adaptive(A::Matrix{Float64}, b::Vector{Float64}; ini
 end
 
 function find_active_indices(D_local, g_local, D_prev, g_prev; tol=1e-7)
-    # Merge constraints
+    # 1. Merge constraints
     D_all = vcat(D_local, D_prev)
     g_all = vcat(g_local, g_prev)
     
@@ -386,34 +369,63 @@ function find_active_indices(D_local, g_local, D_prev, g_prev; tol=1e-7)
     active = Int[]
     is_bounded = true
     
+    # 2. Setup Solver
     model = direct_model(HiGHS.Optimizer())
     set_silent(model)
+    
+    # Strict settings to prevent "ghost" regions
+    set_attribute(model, "primal_feasibility_tolerance", 1e-9)
+    set_attribute(model, "dual_feasibility_tolerance", 1e-9)
+    set_attribute(model, "presolve", "off") # Important: Don't let solver delete "redundant" tiny rows
+
     @variable(model, x[1:dim])
     @constraint(model, cons[i=1:n_total], dot(D_all[i,:], x) <= g_all[i])
     
+    # 3. Iterate local constraints
     for i in 1:n_local
-        # Relax
-        set_normalized_rhs(cons[i], 1e20)
+        d_row = D_all[i, :]
+        row_norm = norm(d_row)
         
-        # Optimize in direction of constraint
-        @objective(model, Max, dot(D_all[i,:], x))
+        # Skip zero-rows (shouldn't happen in valid NNs)
+        if row_norm < 1e-12
+            continue
+        end
+
+        # Save original RHS
+        original_rhs = g_all[i]
+        
+        # RELAX: Remove the wall
+        set_normalized_rhs(cons[i], Inf)
+        
+        # OBJECTIVE: Maximize in direction of normal
+        @objective(model, Max, dot(d_row, x))
+        
         optimize!(model)
         st = termination_status(model)
         
+        # 4. Check Activity with NORMALIZATION
         if st == MOI.OPTIMAL
-            if objective_value(model) > g_all[i] + tol
+            val = objective_value(model)
+            
+            # Calculate geometric distance violated
+            # dist = (val - rhs) / ||d||
+            geometric_violation = (val - original_rhs) / row_norm
+            
+            if geometric_violation > tol
                 push!(active, i)
             end
+            
         elseif st == MOI.DUAL_INFEASIBLE
+            # Unbounded
             push!(active, i)
             is_bounded = false
         end
         
-        # Restore
-        set_normalized_rhs(cons[i], g_all[i])
+        # RESTORE
+        set_normalized_rhs(cons[i], original_rhs)
     end
     
     return active, is_bounded
 end
 
-end # Module
+end # module
