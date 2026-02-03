@@ -258,11 +258,11 @@ def calculate_next_layer_quantities(Wl, bl, qlw, Alw_prev, clw_prev):
     
     # Ensure inputs are numpy arrays
     return _jit_core_logic(
-        np.asarray(Wl, dtype=np.float64), 
-        np.asarray(bl, dtype=np.float64), 
-        np.asarray(qlw, dtype=np.float64), 
-        np.asarray(Alw_prev, dtype=np.float64), 
-        np.asarray(clw_prev, dtype=np.float64)
+        np.ascontiguousarray(Wl, dtype=np.float64),
+        np.ascontiguousarray(bl, dtype=np.float64),
+        np.ascontiguousarray(qlw, dtype=np.float64),
+        np.ascontiguousarray(Alw_prev, dtype=np.float64),
+        np.ascontiguousarray(clw_prev, dtype=np.float64)
     )
 
 def find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev, clw_prev, Wl, bl, layer_nr, verbose=False):    
