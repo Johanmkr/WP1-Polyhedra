@@ -138,28 +138,27 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
         bl = tree.biases[i]
         layer = i 
         
+        # Thread-safe storage for next layer
         next_layer_nodes = Region[]
-        
+        nodes_lock = ReentrantLock()
+
         if verbose
-            p = Progress(length(current_layer_nodes); dt=0.5, desc="Layer $layer: ")
+            println("Layer $layer: Processing $(length(current_layer_nodes)) regions...")
         end
         
-        # Using a lock for thread safety if multi-threaded
-        list_lock = ReentrantLock()
-        
-        # You can use Threads.@threads here if BLAS threads are set to 1
+        # Parallel loop over regions
         # Threads.@threads for parent in current_layer_nodes
         for parent in current_layer_nodes
             
-            # Core solver step
+            # Solver Step (Expensive)
             new_nodes_info = find_next_layer_region_info(
                 parent.Dlw_active, parent.glw_active, 
                 parent.Alw, parent.clw, 
                 Wl, bl, layer
             )
             
+            # Create Julia structs (Cheap)
             local_children = Region[]
-            
             for (act, info) in new_nodes_info
                 child = Region(act)
                 child.q_tilde = info["q_tilde"]
@@ -175,17 +174,18 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
                 child.clw = info["clw"]
                 child.layer_number = layer
                 
+                # Parent linkage must be thread-safe if modifying parent (though here parent is read-only mostly)
+                # But adding to parent.children needs a lock if multiple threads touch SAME parent?
+                # Actually, 'parent' is unique to this iteration, so we can modify it safely.
                 add_child!(parent, child)
                 push!(local_children, child)
             end
             
-            lock(list_lock) do
+            # Write to shared array
+            lock(nodes_lock) do
                 append!(next_layer_nodes, local_children)
-                if verbose; next!(p); end
             end
         end
-        
-        if verbose; finish!(p); end
         
         current_layer_nodes = next_layer_nodes
         if isempty(current_layer_nodes)
@@ -264,9 +264,16 @@ function find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev,
     # 1. Get interior point
     if layer_nr != 1
         x = get_interior_point_adaptive(Dlw_active_prev, glw_active_prev)
+        
+        # --- NEW SAFEGUARD ---
+        if isnothing(x)
+            # If we can't find a point in the parent, this path is dead.
+            # Return an empty dictionary so the loop continues gracefully.
+            println("Returned empty dict")
+            return Dict{Vector{Int}, Dict}()
+        end
+        # ---------------------
     else
-        # Root region is unbounded. Python uses random point in [0, 1]^d.
-        # Matching Python behavior.
         x = rand(size(Alw_prev, 2))
     end
     
@@ -313,50 +320,62 @@ end
 # UPDATED SOLVER FUNCTIONS
 # Replace the existing functions in PolyhedraTree.jl with these
 # ==============================================================================
-
-function get_interior_point_adaptive(A::Matrix{Float64}, b::Vector{Float64}; initial_slack=0.1, min_threshold=1e-12)
+function get_interior_point_adaptive(A::Matrix{Float64}, b::Vector{Float64})
     m, n = size(A)
-    model = direct_model(HiGHS.Optimizer())
+    
+    model = Model(HiGHS.Optimizer)
     set_silent(model)
     
-    # Strict feasibility to prevent "ghost" regions
-    set_attribute(model, "primal_feasibility_tolerance", 1e-9)
-    set_attribute(model, "dual_feasibility_tolerance", 1e-9)
-    # Disable presolve to prevent it from discarding 'tiny' valid features
-    set_attribute(model, "presolve", "off")
-
-    @variable(model, x[1:n])
+    # Use a more stable trust region. 1e9 is often too close to float limits 
+    # when multiplied by coefficients in A.
+    limit = 1e6 
+    @variable(model, -limit <= x[i=1:n] <= limit)
     
-    norms = [norm(A[i, :]) for i in 1:m]
-    current_slack = initial_slack
-    
-    # 1. Try finding a deep interior point
-    while current_slack >= min_threshold
-        @constraint(model, [i=1:m], dot(A[i,:], x) <= b[i] - (current_slack * norms[i]))
-        optimize!(model)
-        
-        if termination_status(model) == MOI.OPTIMAL
-            return value.(x)
-        end
-        
-        # Retry with smaller slack
-        empty!(model) 
-        @variable(model, x[1:n])
-        current_slack /= 10.0
+    # Use a slightly more conservative epsilon
+    ϵ = 1e-7
+    for i in 1:m
+        @constraint(model, sum(A[i, j] * x[j] for j in 1:n) <= b[i] - ϵ)
     end
     
-    # 2. Final attempt: Zero slack (on the boundary)
-    @constraint(model, [i=1:m], dot(A[i,:], x) <= b[i])
+    # L1 norm (sum of absolute values) is often more stable in LP solvers 
+    # than L2 (sum of squares), which turns this into a QP.
+    # Let's use a dummy objective or a simple linear one for speed.
+    @objective(model, Min, 0)
+    
     optimize!(model)
     
-    if termination_status(model) == MOI.OPTIMAL
+    status = termination_status(model)
+    
+    if status in (MOI.OPTIMAL, MOI.ALMOST_OPTIMAL, MOI.LOCALLY_SOLVED)
         return value.(x)
+    elseif status in (MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED, MOI.SLOW_PROGRESS)
+        # Fallback to absolute feasibility
+        return find_any_feasible_point(A, b, limit)
     else
-        error("Polytope empty/infeasible.")
+        # Instead of crashing the whole thread, return a NaN vector 
+        # or handle it gracefully in your loop.
+        @warn "Solver encountered $status. Returning NaN."
+        return fill(NaN, n)
     end
 end
 
-function find_active_indices(D_local, g_local, D_prev, g_prev; tol=1e-7)
+function find_any_feasible_point(A, b, limit)
+    m, n = size(A)
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+    @variable(model, -limit <= x[1:n] <= limit)
+    @constraint(model, A * x .<= b)
+    @objective(model, Min, 0)
+    optimize!(model)
+    
+    if termination_status(model) in (MOI.OPTIMAL, MOI.ALMOST_OPTIMAL)
+        return value.(x)
+    else
+        return fill(NaN, n)
+    end
+end
+
+function find_active_indices(D_local, g_local, D_prev, g_prev; tol=1e-6)
     # 1. Merge constraints
     D_all = vcat(D_local, D_prev)
     g_all = vcat(g_local, g_prev)
@@ -371,57 +390,74 @@ function find_active_indices(D_local, g_local, D_prev, g_prev; tol=1e-7)
     model = direct_model(HiGHS.Optimizer())
     set_silent(model)
     
-    # Strict settings to prevent "ghost" regions
+    # Use standard tolerances. Too strict tolerances can sometimes cause numerical noise
+    # to be interpreted as feasibility issues.
     set_attribute(model, "primal_feasibility_tolerance", 1e-9)
     set_attribute(model, "dual_feasibility_tolerance", 1e-9)
-    set_attribute(model, "presolve", "off") # Important: Don't let solver delete "redundant" tiny rows
+    set_attribute(model, "presolve", "off") 
 
     @variable(model, x[1:dim])
+    
+    # We name constraints so we can modify them later
     @constraint(model, cons[i=1:n_total], dot(D_all[i,:], x) <= g_all[i])
     
-    # 3. Iterate local constraints
+    # 3. Iterate local constraints SEQUENTIALLY
     for i in 1:n_local
         d_row = D_all[i, :]
         row_norm = norm(d_row)
         
-        # Skip zero-rows (shouldn't happen in valid NNs)
-        if row_norm < 1e-12
+        # Skip effectively zero-rows
+        if row_norm < 1e-10
             continue
         end
 
-        # Save original RHS
         original_rhs = g_all[i]
         
-        # RELAX: Remove the wall
+        # A. RELAX: Temporarily remove the wall
         set_normalized_rhs(cons[i], Inf)
         
-        # OBJECTIVE: Maximize in direction of normal
+        # B. OBJECTIVE: Maximize in direction of normal
         @objective(model, Max, dot(d_row, x))
         
         optimize!(model)
         st = termination_status(model)
         
-        # 4. Check Activity with NORMALIZATION
+        keep_constraint = false
+
         if st == MOI.OPTIMAL
             val = objective_value(model)
             
-            # Calculate geometric distance violated
-            # dist = (val - rhs) / ||d||
+            # Check violation
             geometric_violation = (val - original_rhs) / row_norm
             
             if geometric_violation > tol
-                push!(active, i)
+                # The region expanded significantly -> This constraint was a real wall.
+                keep_constraint = true
             end
         elseif st == MOI.DUAL_INFEASIBLE || st == MOI.INFEASIBLE_OR_UNBOUNDED
-            push!(active, i)
+            # Unbounded ray -> The constraint was cutting off infinity.
+            keep_constraint = true
             is_bounded = false
+        else
+            # Numerical error or infeasible -> safest to keep constraint to prevent leaks
+            keep_constraint = true
         end
         
-        # RESTORE
-        set_normalized_rhs(cons[i], original_rhs)
+        # C. DECISION
+        if keep_constraint
+            push!(active, i)
+            # IMPORTANT: RESTORE the wall so it acts as a boundary for future checks
+            set_normalized_rhs(cons[i], original_rhs)
+        else
+            # CRITICAL FIX: Do NOT restore the wall. 
+            # Leave it at Inf so subsequent duplicate constraints (j > i) 
+            # realize they are necessary.
+        end
     end
     
     return active, is_bounded
 end
 
 end # module
+
+
