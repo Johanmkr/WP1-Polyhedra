@@ -12,7 +12,7 @@ import Base: show
 export Region, Tree, construct_tree!, get_regions_at_layer, get_path_inequalities
 
 # ==============================================================================
-# 1. REGION CLASS (Unchanged mostly, just ensure volume is Float64)
+# 1. REGION CLASS
 # ==============================================================================
 
 mutable struct Region
