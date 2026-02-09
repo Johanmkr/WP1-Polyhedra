@@ -1,36 +1,8 @@
-# mypackage/__init__.py
+from .region import Region
+from .tree import Tree
+from .construction import construct_tree
+from .geometry import get_interior_point_adaptive
+from .utils import find_hyperplanes
+from .verification import verify_volume_conservation, check_point_partition
 
-import importlib
-
-# Mapping of public names to their source submodules
-_lazy_attributes = {
-    "RegionTree": ".region_tree",
-    "TreeNode": ".tree_node",
-    "Region": ".region",
-    "Tree": ".tree",
-}
-
-# Dynamically generate __all__ from lazy attributes
-__all__ = list(_lazy_attributes.keys())
-
-
-def __getattr__(name):
-    """
-    Lazily import attributes from submodules on access.
-    """
-    if name in _lazy_attributes:
-        module = importlib.import_module(
-            _lazy_attributes[name],
-            package=__name__
-        )
-        value = getattr(module, name)
-        globals()[name] = value  # cache in module namespace
-        return value
-    raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-def __dir__():
-    """
-    Include lazily-loaded attributes in dir() calls.
-    """
-    return sorted(set(globals()) | set(_lazy_attributes))
+__all__ = ["Region", "Tree", "construct_tree", "get_interior_point_adaptive", "find_hyperplanes", "verify_volume_conservation", "check_point_partition"]
