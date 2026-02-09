@@ -1,4 +1,4 @@
-module PolyhedraTree
+module Geobin
 
 using LinearAlgebra
 using JuMP
