@@ -1,4 +1,17 @@
-# Verification logic
+module Verification
+
+using ..Regions
+using ..Trees
+using ..Geometry
+using LinearAlgebra
+using JuMP
+using HiGHS
+using Polyhedra
+using CDDLib
+using ProgressMeter
+using Printf
+
+export get_region_volume, verify_volume_conservation, check_point_partition, scan_all_overlaps_strict
 
 # ==============================================================================
 # 1. VOLUME CALCULATION & BOUNDING
@@ -185,3 +198,5 @@ function scan_all_overlaps_strict(tree, layer_idx)
         println("❌ Found $overlaps overlapping pairs.")
     end
 end
+
+end # module

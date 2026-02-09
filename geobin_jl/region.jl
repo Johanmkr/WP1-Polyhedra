@@ -1,4 +1,8 @@
-# Region struct
+module Regions
+
+using LinearAlgebra
+
+export Region, add_child!, get_children, get_path_inequalities
 
 mutable struct Region
     qlw::Vector{Int}
@@ -78,3 +82,5 @@ function Base.show(io::IO, r::Region)
     vol_str = r.volume == Inf ? "Inf" : string(round(r.volume, digits=4))
     print(io, "\nRegion (L$(r.layer_number)) | Vol: $vol_str | Act: $(r.qlw) | Children: $(length(r.children))")
 end
+
+end # module

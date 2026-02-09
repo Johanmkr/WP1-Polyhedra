@@ -1,4 +1,9 @@
-# Tree struct
+module Trees
+
+using ..Regions
+using ..Utils
+
+export Tree, get_regions_at_layer
 
 mutable struct Tree
     weights::Vector{Matrix{Float64}}
@@ -29,3 +34,5 @@ function get_regions_at_layer(tree::Tree, layer::Int)
     end
     return regions
 end
+
+end # module

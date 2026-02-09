@@ -1,7 +1,7 @@
 import numpy as np
-from .region import Region
-from .utils import find_hyperplanes
-from .construction import construct_tree
+from geobin_py.region import Region
+from geobin_py.utils import find_hyperplanes
+from geobin_py.construction import construct_tree
 
 class Tree:
     def __init__(self, state_dict):

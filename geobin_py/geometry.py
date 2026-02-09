@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import linprog
 from numba import njit
-from .utils import to_tuple
+from geobin_py.utils import to_tuple
 
 @njit(cache=True, fastmath=True)
 def _jit_core_logic(Wl, bl, qlw, Alw_prev, clw_prev):
