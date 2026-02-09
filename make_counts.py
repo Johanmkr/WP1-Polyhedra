@@ -13,7 +13,7 @@ except ModuleNotFoundError:
     import pickle
     
 from src_experiment import get_new_path, get_new_data
-import geobin as gb
+import geobin_py as gb
     
 # Helper functions to read and wrtie pickle objects.
 

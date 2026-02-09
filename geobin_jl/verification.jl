@@ -1,27 +1,12 @@
-module TreeVerification
-
-using ..PolyhedraTree 
-using Polyhedra
-using CDDLib
-using JuMP
-using HiGHS
-using LinearAlgebra
-using Statistics
-using Printf
-using ProgressMeter
-
-export verify_volume_conservation, 
-       check_point_partition, 
-       get_region_volume, 
-       scan_all_overlaps_strict
+# Verification logic
 
 # ==============================================================================
 # 1. VOLUME CALCULATION & BOUNDING
 # ==============================================================================
 
-function get_region_volume(region::PolyhedraTree.Region; bound::Union{Float64, Nothing}=nothing)
+function get_region_volume(region::Region; bound::Union{Float64, Nothing}=nothing)
     # 1. Get Region Constraints
-    A, b = PolyhedraTree.get_path_inequalities(region)
+    A, b = get_path_inequalities(region)
     dim = size(A, 2)
     
     # 2. Add Bounding Box Constraints if requested
@@ -76,7 +61,7 @@ function verify_volume_conservation(tree, layer_idx::Int, bound::Float64; tol=1e
     # Force GC to clean up any potential Python objects before heavy lifting
     GC.gc()
     
-    regions = PolyhedraTree.get_regions_at_layer(tree, layer_idx)
+    regions = get_regions_at_layer(tree, layer_idx)
     dim = tree.input_dim
     theo_vol = (2 * bound)^dim
     
@@ -116,12 +101,12 @@ end
 function check_point_partition(tree, layer_idx::Int, num_points::Int; bound=10.0)
     println("\n🎯 Running Point-wise Monte Carlo Check ($num_points points)...")
     
-    regions = PolyhedraTree.get_regions_at_layer(tree, layer_idx)
+    regions = get_regions_at_layer(tree, layer_idx)
     dim = tree.input_dim
     
     region_constraints = []
     for r in regions
-        push!(region_constraints, PolyhedraTree.get_path_inequalities(r))
+        push!(region_constraints, get_path_inequalities(r))
     end
     
     overlap_errors = 0
@@ -159,9 +144,9 @@ end
 # 4. STRICT PAIRWISE OVERLAP CHECK (LP Solver)
 # ==============================================================================
 
-function check_overlap_strict(r1::PolyhedraTree.Region, r2::PolyhedraTree.Region)
-    A1, b1 = PolyhedraTree.get_path_inequalities(r1)
-    A2, b2 = PolyhedraTree.get_path_inequalities(r2)
+function check_overlap_strict(r1::Region, r2::Region)
+    A1, b1 = get_path_inequalities(r1)
+    A2, b2 = get_path_inequalities(r2)
     dim = size(A1, 2)
     
     model = Model(HiGHS.Optimizer)
@@ -177,7 +162,7 @@ function check_overlap_strict(r1::PolyhedraTree.Region, r2::PolyhedraTree.Region
 end
 
 function scan_all_overlaps_strict(tree, layer_idx)
-    regions = PolyhedraTree.get_regions_at_layer(tree, layer_idx)
+    regions = get_regions_at_layer(tree, layer_idx)
     n = length(regions)
     println("\n⚔️  Strict LP Overlap Scan (Layer $layer_idx, $n regions)...")
     
@@ -200,5 +185,3 @@ function scan_all_overlaps_strict(tree, layer_idx)
         println("❌ Found $overlaps overlapping pairs.")
     end
 end
-
-end # module
