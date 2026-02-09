@@ -1,8 +1,8 @@
 import numpy as np
 from tqdm import tqdm
-from .region import Region
-from .geometry import get_interior_point_adaptive, find_active_indices, calculate_next_layer_quantities
-from .utils import to_tuple
+from geobin_py.region import Region
+from geobin_py.geometry import get_interior_point_adaptive, find_active_indices, calculate_next_layer_quantities
+from geobin_py.utils import to_tuple
 
 def construct_tree(tree, verbose=False):
     current_layer_nodes = [tree.root]

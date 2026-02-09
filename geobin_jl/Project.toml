@@ -1,0 +1,22 @@
+name = "PolyhedraTree"
+uuid = "1430b2c1-3f62-436f-870f-15570d54023c"
+authors = ["Geobin Developer"]
+version = "0.1.0"
+
+[deps]
+CDDLib = "33918073-67c1-5225-b44c-3532f50b86b7"
+HiGHS = "87dc4568-4c63-4d18-b0c0-ca432f5f58bb"
+JuMP = "4076af6c-e467-56ae-b986-b466b27495ed"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Polyhedra = "674914a7-ea9c-5793-9656-5081b7839ed0"
+Printf = "de0858da-6303-5e67-8744-51ed9e0221d4"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[compat]
+julia = "1.10"
+CDDLib = "0.7"
+HiGHS = "1.0"
+JuMP = "1.0"
+Polyhedra = "0.8"
+ProgressMeter = "1.0"

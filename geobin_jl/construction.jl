@@ -1,4 +1,13 @@
-# Construction logic
+module Construction
+
+using ..Regions
+using ..Trees
+using ..Geometry
+using LinearAlgebra
+using Statistics
+using ProgressMeter
+
+export construct_tree!
 
 function construct_tree!(tree::Tree; verbose::Bool=false)
     current_layer_nodes = [tree.root]
@@ -144,3 +153,5 @@ function find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev,
     end
     return traversed
 end
+
+end # module

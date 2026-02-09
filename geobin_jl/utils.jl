@@ -1,4 +1,6 @@
-# Utils
+module Utils
+
+export find_hyperplanes
 
 function find_hyperplanes(state_dict::Dict{String, Any})
     keys_weights = filter(k -> occursin("weight", k), collect(keys(state_dict)))
@@ -22,3 +24,5 @@ function find_hyperplanes(state_dict::Dict{String, Any})
     end
     return weights, biases
 end
+
+end # module

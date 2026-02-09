@@ -1,4 +1,12 @@
-# Geometry functions
+module Geometry
+
+using LinearAlgebra
+using JuMP
+using HiGHS
+using Polyhedra
+using CDDLib
+
+export calculate_next_layer_quantities, get_exact_geometry, find_active_indices_fast, get_interior_point_adaptive
 
 function calculate_next_layer_quantities(Wl, bl, qlw, Alw_prev, clw_prev)
     Wl_hat = Wl * Alw_prev
@@ -137,3 +145,5 @@ function find_any_feasible_point(A, b, limit)
         return fill(NaN, size(A, 2))
     end
 end
+
+end # module
