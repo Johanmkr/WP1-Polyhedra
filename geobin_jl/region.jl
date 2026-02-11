@@ -22,6 +22,7 @@ mutable struct Region
     parent::Union{Region, Nothing}
     children::Vector{Region}
     layer_number::Int
+    x::Vector{Float64}
 
     function Region(; input_dim::Int)
         this = new()
@@ -40,6 +41,7 @@ mutable struct Region
         this.parent = nothing
         this.children = Region[]
         this.layer_number = 0
+        this.x = rand(input_dim)
         return this
     end
 

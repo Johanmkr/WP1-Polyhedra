@@ -9,149 +9,171 @@ using ProgressMeter
 
 export construct_tree!
 
+# 1. Lightweight struct for intermediate calculation results
+# This avoids the overhead and messiness of Dict{String, Any}
+struct RegionCandidate
+    activation_pattern::Vector{Int}
+    # Local inequality constraints (D x <= g)
+    D::Matrix{Float64}
+    g::Vector{Float64}
+    # Affine map for the next layer (A_next x + c_next)
+    A_next::Matrix{Float64}
+    c_next::Vector{Float64}
+    # Indices of active constraints from the previous layer
+    active_indices::Vector{Int}
+end
+
 function construct_tree!(tree::Tree; verbose::Bool=false)
-    current_layer_nodes = [tree.root]
+    current_layer_regions = [tree.root]
 
-    for i in 1:tree.L
-        Wl = tree.weights[i]
-        bl = tree.biases[i]
-        layer = i
-
-        next_layer_nodes = Region[]
-        nodes_lock = ReentrantLock()
+    for layer_idx in 1:tree.L
+        W = tree.weights[layer_idx]
+        b = tree.biases[layer_idx]
 
         if verbose
-            println("Layer $layer: Processing $(length(current_layer_nodes)) regions...")
+            println("Layer $layer_idx: Processing $(length(current_layer_regions)) regions...")
         end
 
-        # Parallel loop
-        # Threads.@threads for parent in current_layer_nodes
-        for parent in current_layer_nodes
+        # Parallel map: Process each parent to find its children
+        # We use Threads.@spawn or simply @threads with a reduction. 
+        # Here is a robust map-reduce pattern that avoids locks.
+        next_layer_regions = Regions.Region[] # Pre-allocation hint if possible
+        
+        # Flatten the results of the parallel loop safely
+        results = Vector{Vector{Region}}(undef, length(current_layer_regions))
 
-            new_nodes_info = find_next_layer_region_info(
-                parent.Dlw_active, parent.glw_active,
-                parent.Alw, parent.clw,
-                Wl, bl, layer
-            )
-
-            local_children = Region[]
-            for (act, info) in new_nodes_info
-                child = Region(act)
-                child.q_tilde = info["q_tilde"]
-                child.bounded = info["bounded"]
-                child.Dlw = info["Dlw"]
-                child.glw = info["glw"]
-                child.Dlw_active = info["Dlw_active"]
-                child.glw_active = info["glw_active"]
-                child.volume = info["volume"]
-                child.Alw = info["Alw"]
-                child.clw = info["clw"]
-                child.layer_number = layer
-
-                add_child!(parent, child)
-                push!(local_children, child)
-            end
-
-            lock(nodes_lock) do
-                append!(next_layer_nodes, local_children)
-            end
+        Threads.@threads for i in eachindex(current_layer_regions)
+        # for i in eachindex(current_layer_regions)
+            parent = current_layer_regions[i]
+            results[i] = process_parent_region(parent, W, b, layer_idx)
         end
+        
+        # Combine all children found in this layer
+        next_layer_regions = reduce(vcat, results)
 
-        current_layer_nodes = next_layer_nodes
-        if isempty(current_layer_nodes)
+        # Update tree state
+        current_layer_regions = next_layer_regions
+        
+        if isempty(current_layer_regions)
+            verbose && println("Tree construction stopped early at layer $layer_idx (no valid regions).")
             break
         end
     end
+    
+    return tree
 end
 
-function find_next_layer_region_info(Dlw_active_prev, glw_active_prev, Alw_prev, clw_prev, Wl, bl, layer_nr)
-    # 1. Get interior point (Fallback mechanism kept for stability)
-    if layer_nr != 1
-        x = get_interior_point_adaptive(Dlw_active_prev, glw_active_prev)
+# 2. Helper to process a single parent (pure function logic)
+function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::Int)
+    candidates = find_region_candidates(
+        parent.Dlw_active, parent.glw_active,
+        parent.Alw, parent.clw, parent.x,
+        W, b
+    )
 
-        is_valid = false
-        if x !== nothing && !any(isnan, x)
-            if isempty(Dlw_active_prev)
-                is_valid = true
+    children = Region[]
+    for cand in candidates
+        # Solve LP/Chebyshev to find a feasible point inside the candidate region
+        # We assume `cand.D` and `cand.g` define the LOCAL constraints. 
+        # To check feasibility, we must combine them with parent constraints (usually handled inside get_feasible_point or by passing both).
+        # Assuming `cand.D` contains necessary local info.
+        
+        # Note: You might need to stack [parent.D; cand.D] depending on your `get_feasible_point` implementation
+        feasible_point = get_feasible_point([parent.Dlw_active; cand.D], [parent.glw_active; cand.g])
+
+        if !isnothing(feasible_point)
+            # Construct the Child Region
+            child = Region(cand.activation_pattern)
+            
+            # Transfer geometric data
+            child.q_tilde     = cand.active_indices
+            child.Dlw         = cand.D
+            child.glw         = cand.g
+            if isempty(cand.active_indices)
+                child.Dlw_active = cand.D 
+                child.glw_active = cand.g
             else
-                if maximum(Dlw_active_prev * x .- glw_active_prev) <= 1e-5
-                    is_valid = true
-                end
+                child.Dlw_active  = cand.D[cand.active_indices, :]
+                child.glw_active  = cand.g[cand.active_indices]
             end
-        end
+            child.Alw         = cand.A_next
+            child.clw         = cand.c_next
+            child.layer_number = layer_idx
+            child.x           = feasible_point
 
-        # GD Fallback
-        if !is_valid
-            dim = size(Alw_prev, 2)
-            x_curr = randn(dim)
-            lr = 0.05; decay = 0.99; max_iter = 500
-            for _ in 1:max_iter
-                if isempty(Dlw_active_prev); is_valid = true; x = x_curr; break; end
-                violations = Dlw_active_prev * x_curr .- glw_active_prev
-                mask = violations .> 1e-7
-                if !any(mask); x = x_curr; is_valid = true; break; end
-                grad = (Dlw_active_prev[mask, :])' * violations[mask]
-                gnorm = norm(grad)
-                if gnorm > 1e-8; x_curr .-= (lr * grad) / gnorm; else; x_curr = randn(dim); end
-                lr *= decay
-            end
+            add_child!(parent, child)
+            push!(children, child)
         end
-
-        if !is_valid
-            println("Region not valid")
-            return Dict{Vector{Int}, Dict}()
-        end
-    else
-        x = rand(size(Alw_prev, 2))
     end
+    return children
+end
 
-    # 2. Initial Activation
-    z = Wl * Alw_prev * x + Wl * clw_prev + bl
-    q0 = Int.(z .> 0)
+# 3. BFS / Enumeration Logic
+function find_region_candidates(D_prev, g_prev, A_prev, c_prev, x_start, W, b)
+    
+    # Initial Activation at the starting point
+    z_start = W * (A_prev * x_start + c_prev) + b
+    q_start = Int.(z_start .> 0)
 
-    traversed = Dict{Vector{Int}, Dict}()
-    queue = [q0]
+    # Queue for BFS
+    queue = [q_start]
+    visited = Set{Vector{Int}}([q_start])
+    
+    candidates = RegionCandidate[]
 
     while !isempty(queue)
-        q = popfirst!(queue)
+        q_curr = popfirst!(queue)
 
-        Dlw, glw, Alw, clw = calculate_next_layer_quantities(Wl, bl, q, Alw_prev, clw_prev)
+        # Calculate geometric quantities for this activation pattern
+        D, g, A_next, c_next = calculate_layer_geometry(W, b, q_curr, A_prev, c_prev)
 
-        # Use simple LP to find active constraints first (fast filter)
-        qi_act, _ = find_active_indices_fast(Dlw, glw, Dlw_active_prev, glw_active_prev)
+        # Identify active constraints (Geometric filtering)
+        # This function returns indices of D that are actually touching the region boundaries
+        active_indices, _ = find_active_indices_exact(D, g, D_prev, g_prev)
 
-        D_local_active = Dlw[qi_act, :]
-        g_local_active = glw[qi_act]
-        D_total = vcat(D_local_active, Dlw_active_prev)
-        g_total = vcat(g_local_active, glw_active_prev)
+        # Store valid candidate
+        push!(candidates, RegionCandidate(q_curr, D, g, A_next, c_next, active_indices))
 
-        # --- NEW: EXACT GEOMETRY CHECK via CDDLib ---
-        # This replaces the ambiguity of LP solvers with exact V-rep conversion
-        is_bounded, volume_val, is_feasible = get_exact_geometry(D_total, g_total)
+        # Explore neighbors
+        # We only flip bits corresponding to ACTIVE constraints. 
+        # If a constraint is not active, crossing it implies leaving the feasible set entirely or redundancy.
+        for idx in active_indices
+            q_neighbor = copy(q_curr)
+            q_neighbor[idx] = 1 - q_neighbor[idx] # Flip bit (0->1 or 1->0)
 
-        if is_feasible
-            traversed[q] = Dict(
-                "q_tilde" => qi_act,
-                "bounded" => is_bounded,
-                "volume"  => volume_val,
-                "Dlw" => Dlw,
-                "glw" => glw,
-                "Alw" => Alw,
-                "clw" => clw,
-                "Dlw_active" => D_local_active,
-                "glw_active" => g_local_active
-            )
-
-            for i_act in qi_act
-                q_new = copy(q)
-                q_new[i_act] = 1 - q_new[i_act]
-                if !haskey(traversed, q_new) && !(q_new in queue)
-                     push!(queue, q_new)
-                end
+            if !(q_neighbor in visited)
+                push!(visited, q_neighbor)
+                push!(queue, q_neighbor)
             end
         end
     end
-    return traversed
+
+    return candidates
 end
+
+# 4. Extracted Math Helper (keeps the main loop clean)
+function calculate_layer_geometry(W, b, q, A_prev, c_prev)
+    W_hat = W * A_prev
+    b_hat = W * c_prev + b
+    s_vec = -2.0 .* q .+ 1.0
+    D = s_vec .* W_hat
+    g = -(s_vec .* b_hat)
+    A = q .* W_hat
+    c = q .* b_hat 
+
+    return D, g, A, c
+end
+
+
+# function calculate_next_layer_quantities(Wl, bl, qlw, Alw_prev, clw_prev)
+#     Wl_hat = Wl * Alw_prev
+#     bl_hat = Wl * clw_prev + bl
+#     s_vec = -2.0 .* qlw .+ 1.0
+#     Dlw = s_vec .* Wl_hat
+#     glw = -(s_vec .* bl_hat)
+#     Alw = qlw .* Wl_hat
+#     clw = qlw .* bl_hat
+#     return Dlw, glw, Alw, clw
+# end
 
 end # module

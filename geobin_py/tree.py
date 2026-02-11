@@ -6,9 +6,9 @@ from geobin_py.construction import construct_tree
 class Tree:
     def __init__(self, state_dict):
         # Find the hyperplanes from the state dict
-        self.hp = find_hyperplanes(state_dict)
-        self.input_dim = self.hp[0].shape[1] - 1  # Assuming all hyperplanes have the same input dimension
-        self.L = len(self.hp)  # Number of layers
+        self.W, self.b = find_hyperplanes(state_dict)
+        self.input_dim = self.W[0].shape[1]  # Assuming all hyperplanes have the same input dimension
+        self.L = len(self.W)  # Number of layers
         
         # Initialize the root region
         self.root = Region(input_dim = self.input_dim)

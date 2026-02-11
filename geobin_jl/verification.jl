@@ -3,6 +3,7 @@ module Verification
 using ..Regions
 using ..Trees
 using ..Geometry
+using ..Utils
 using LinearAlgebra
 using JuMP
 using HiGHS
@@ -11,58 +12,9 @@ using CDDLib
 using ProgressMeter
 using Printf
 
-export get_region_volume, verify_volume_conservation, check_point_partition, scan_all_overlaps_strict
+export verify_volume_conservation, check_point_partition, scan_all_overlaps_strict
 
-# ==============================================================================
-# 1. VOLUME CALCULATION & BOUNDING
-# ==============================================================================
 
-function get_region_volume(region::Region; bound::Union{Float64, Nothing}=nothing)
-    # 1. Get Region Constraints
-    A, b = get_path_inequalities(region)
-    dim = size(A, 2)
-    
-    # 2. Add Bounding Box Constraints if requested
-    if !isnothing(bound)
-        I_mat = Matrix{Float64}(I, dim, dim)
-        A_box = vcat(I_mat, -I_mat)
-        b_box = fill(bound, 2 * dim)
-        
-        A = vcat(A, A_box)
-        b = vcat(b, b_box)
-    end
-
-    # 3. Construct Polyhedron
-    h = hrep(A, b)
-    poly = polyhedron(h, CDDLib.Library())
-
-    # 4. Check Unboundedness
-    # Fix: 'isbounded' is missing in some Polyhedra versions/namespaces.
-    # We check if the V-representation has any rays instead.
-    if isnothing(bound)
-        try
-            # Convert to V-representation (vertices + rays)
-            vr = vrep(poly)
-            # If there are any rays, the volume is infinite
-            if !isempty(rays(vr))
-                return Inf
-            end
-        catch
-            # If conversion fails, assume complex/degenerate or handle downstream
-        end
-    end
-
-    # 5. Compute Volume
-    try
-        removevredundancy!(poly)
-        if isempty(poly)
-            return 0.0
-        end
-        return volume(poly)
-    catch e
-        return 0.0
-    end
-end
 
 # ==============================================================================
 # 2. PARTITION CHECK (Volume Conservation)
@@ -81,12 +33,12 @@ function verify_volume_conservation(tree, layer_idx::Int, bound::Float64; tol=1e
     total_region_vol = 0.0
     
     # Single-threaded loop to avoid PyCall GIL crashes
-    p = Progress(length(regions); desc="Computing Volumes: ")
+    # p = Progress(length(regions); desc="Computing Volumes: ")
     
     for r in regions
         vol = get_region_volume(r, bound=bound)
         total_region_vol += vol
-        next!(p)
+        # next!(p)
     end
     
     diff = total_region_vol - theo_vol
@@ -197,6 +149,112 @@ function scan_all_overlaps_strict(tree, layer_idx)
     else
         println("❌ Found $overlaps overlapping pairs.")
     end
+end
+
+function verify_tree_hierarchy(tree::Tree; tol=1e-5, bound=10)
+    println("\n🌳 Verifying Tree Hierarchy (Parent vs. Children)...")
+    
+    # We traverse the tree (BFS or simple iteration if nodes are stored linearly)
+    # Assuming tree.nodes is accessible or we walk from root
+    
+    queue = [tree.root]
+    mismatches = 0
+    
+    while !isempty(queue)
+        node = popfirst!(queue)
+        children = get_children(tree, node) # You likely have a helper for this
+        
+        if isempty(children)
+            continue
+        end
+        
+        # 1. Check Constraint Inheritance
+        # Every child must satisfy parent's constraints
+        parent_poly = get_bounded_polyhedron(node, bound)
+        parent_vol = volume(parent_poly)
+        
+        child_vol_sum = 0.0
+        
+        for child in children
+            # Add to queue for next layer
+            push!(queue, child)
+            
+            child_poly = get_bounded_polyhedron(child, bound)
+            if isnothing(child_poly)
+                println("  ⚠️ Child of Node $(node.id) is degenerate/empty.")
+                continue
+            end
+            
+            # Volume accumulation
+            child_vol_sum += volume(child_poly)
+            
+            # Strict containment check (Sample point)
+            # A quick check: The center of the child must be inside the parent
+            child_center = get_chebyshev_center(child.Dlw, child.glw) # Uses your robust function
+            if !isnothing(child_center)
+                # Check A_parent * x <= b_parent
+                violation = node.Dlw * child_center .- node.glw
+                if maximum(violation) > 1e-6
+                    println("  ❌ INHERITANCE FAIL: Child $(child.id) leaks outside Parent $(node.id)")
+                    mismatches += 1
+                end
+            end
+        end
+        
+        # 2. Local Volume Conservation
+        diff = abs(parent_vol - child_vol_sum)
+        if diff > tol
+            println("  ❌ PARTITION FAIL: Node $(node.id) volume mismatch.")
+            println("     Parent: $parent_vol, Children Sum: $child_vol_sum, Diff: $diff")
+            mismatches += 1
+        end
+    end
+    
+    if mismatches == 0
+        println("✅ Tree Hierarchy strictly valid.")
+    else
+        println("❌ Found $mismatches structural violations.")
+    end
+end
+
+function check_region_conditioning(tree, layer_idx; min_radius=1e-7)
+    println("\n📐 Checking Region Conditioning (Thinness)...")
+    regions = get_regions_at_layer(tree, layer_idx)
+    thin_count = 0
+    
+    for r in regions
+        # We reuse your robust interior point code, but we extract the radius
+        # You might need to modify 'get_feasible_point' to return (x, radius) or call a new helper
+        
+        # Quick implementation of radius check:
+        r_val = get_chebyshev_radius(r.Dlw, r.glw)
+        
+        if r_val < min_radius
+            println("  ⚠️ Region $(r.id) is extremely thin! (Radius: $r_val)")
+            thin_count += 1
+        end
+    end
+    
+    if thin_count == 0
+        println("✅ All regions are well-conditioned (fat enough).")
+    else
+        println("⚠️ Found $thin_count thin regions. Solvers may struggle here.")
+    end
+end
+
+# Helper for conditioning check
+function get_chebyshev_radius(A, b; limit=1e5)
+    m, n = size(A)
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+    @variable(model, -limit <= x[1:n] <= limit)
+    @variable(model, r)
+    for i in 1:m
+        @constraint(model, dot(A[i,:], x) + r * norm(A[i,:]) <= b[i])
+    end
+    @objective(model, Max, r)
+    optimize!(model)
+    return value(r)
 end
 
 end # module

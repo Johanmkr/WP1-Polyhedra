@@ -7,12 +7,12 @@ from geobin_py.utils import to_tuple
 def construct_tree(tree, verbose=False):
     current_layer_nodes = [tree.root]
 
-    for i, local_hp in enumerate(tree.hp):
+    for l in range(tree.L):
 
         # Get local layer parameters
-        Wl = local_hp[:,:-1] # Local weights
-        bl = local_hp[:,-1].reshape(-1,1) # Local biases
-        layer = i+1 # local layer number
+        Wl = tree.W[l] # Local weights
+        bl = tree.b[l].reshape(-1,1) # Local biases
+        layer = l+1 # local layer number
 
         next_layer_nodes = []
         iterator = tqdm(current_layer_nodes, desc=f"Processing layer {layer}", leave=False) if verbose else current_layer_nodes

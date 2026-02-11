@@ -6,144 +6,128 @@ using HiGHS
 using Polyhedra
 using CDDLib
 
-export calculate_next_layer_quantities, get_exact_geometry, find_active_indices_fast, get_interior_point_adaptive
+export find_active_indices_exact, get_feasible_point
 
-function calculate_next_layer_quantities(Wl, bl, qlw, Alw_prev, clw_prev)
-    Wl_hat = Wl * Alw_prev
-    bl_hat = Wl * clw_prev + bl
-    s_vec = -2.0 .* qlw .+ 1.0
-    Dlw = s_vec .* Wl_hat
-    glw = -(s_vec .* bl_hat)
-    Alw = qlw .* Wl_hat
-    clw = qlw .* bl_hat
-    return Dlw, glw, Alw, clw
-end
 
-function get_exact_geometry(D, g)
-    # 1. Create H-representation
-    # We map to the library inside the hrep call to ensure type consistency
-    h = Polyhedra.hrep(D, g)
-
-    # 2. Use EXACT Arithmetic (Rational)
-    # :float is fast but crashes/fails on thin NN polytopes.
-    # :exact uses GMP (BigInt/Rational) to guarantee correctness.
-    lib = CDDLib.Library(:exact)
-
-    try
-        # Create polyhedron
-        poly = Polyhedra.polyhedron(h, lib)
-
-        # 3. Force V-Rep computation
-        # Note: In exact mode, this might take longer but won't crash on slivers
-        v = Polyhedra.vrep(poly)
-
-        # 4. Feasibility Check
-        # If it has 0 points and 0 rays, it is truly empty.
-        if Polyhedra.npoints(v) == 0 && Polyhedra.nrays(v) == 0
-            return (true, 0.0, false)
-        end
-
-        # 5. Unbounded Check
-        if Polyhedra.nrays(v) > 0
-            return (false, Inf, true)
-        end
-
-        # 6. Degeneracy Check (Volume)
-        # ONLY use this check if you are in low dimensions (d < 5).
-        # Otherwise, trust existence of vertices.
-        # Calculating exact volume in high-dim is also very expensive.
-
-        # Optimization: Skip volume calc for validity check.
-        # If npoints > 0 and bounded, it is a valid polytope.
-        return (true, 1.0, true) # Return dummy volume 1.0 to indicate "Valid/Finite"
-
-    catch e
-        # Log the error so you know if you are losing regions
-        println("\n!!! Geometry Check Error: $e")
-        println("Constraints D shape: $(size(D))")
-        return (true, 0.0, false)
-    end
-end
-
-# --- KEEPING THE FAST LP FILTER FOR INITIAL ACTIVE SET ---
-function find_active_indices_fast(D_local, g_local, D_prev, g_prev; tol=1e-5)
+function find_active_indices_exact(D_local, g_local, D_prev, g_prev)
+    # 1. Combine all constraints
     D_all = vcat(D_local, D_prev)
     g_all = vcat(g_local, g_prev)
     n_local = size(D_local, 1)
-    dim = size(D_all, 2)
+
+    # 2. Create the Polyhedron using CDDLib
+    # CDDLib is an exact vertex enumeration library. 
+    # It handles degeneracy better than standard LP solvers.
+    h = hrep(D_all, g_all)
+    poly = polyhedron(h, CDDLib.Library(:exact))
+
+    # 3. Remove Redundancy
+    # This modifies 'poly' in-place to the minimal H-representation.
+    # It solves the exact geometric problem you were trying to approximate.
+    removehredundancy!(poly)
+
+    # 4. Extract the Minimal Constraints
+    # We get the list of halfspaces (a'x <= b) that survived.
+    minimal_hrep = hrep(poly)
+    
     active_indices = Int[]
+    
+    # Helper to check if two constraints are geometrically equivalent
+    # We normalize (a, b) -> (a, b) / ||a|| to handle scaling differences
+    # e.g., 2x <= 2 is the same as x <= 1
+    function is_equivalent(a1, b1, a2, b2; tol=1e-6)
+        n1 = norm(a1)
+        n2 = norm(a2)
+        
+        # If one is zero-vector (shouldn't happen in minimal rep), skip
+        if n1 < 1e-8 || n2 < 1e-8; return false; end
+        
+        # Normalize
+        an1, bn1 = a1 ./ n1, b1 / n1
+        an2, bn2 = a2 ./ n2, b2 / n2
+        
+        # Check collinearity (dot product ~ 1) and same bound
+        # We check norm(diff) to ensure direction is identical, not opposite
+        return norm(an1 - an2) < tol && abs(bn1 - bn2) < tol
+    end
 
-    model = direct_model(HiGHS.Optimizer())
-    set_silent(model)
-    set_attribute(model, "presolve", "off")
-    @variable(model, x[1:dim])
-    @constraint(model, cons[i=1:size(D_all,1)], dot(D_all[i,:], x) <= g_all[i])
-
+    # 5. Map back to original indices
+    # We iterate through our LOCAL constraints and check if they exist 
+    # in the minimal representation.
     for i in 1:n_local
-        d_row = D_all[i, :]
-        if norm(d_row) < 1e-10; continue; end
-
-        original_rhs = g_all[i]
-        set_normalized_rhs(cons[i], 1e20)
-        @objective(model, Max, dot(d_row, x))
-        optimize!(model)
-
-        st = termination_status(model)
-        is_active = false
-        if st == MOI.DUAL_INFEASIBLE
-            is_active = true
-        elseif st == MOI.OPTIMAL
-            if objective_value(model) > original_rhs + tol
-                is_active = true
+        my_a = D_local[i, :]
+        my_b = g_local[i]
+        
+        found_match = false
+        for h in allhalfspaces(minimal_hrep)
+            if is_equivalent(my_a, my_b, h.a, h.β)
+                found_match = true
+                break
             end
         end
-
-        if is_active
+        
+        if found_match
             push!(active_indices, i)
-            set_normalized_rhs(cons[i], original_rhs)
         end
     end
-    return active_indices, true # Boundedness is checked later by CDDLib
+    # println(isempty(active_indices))
+    return active_indices, true
 end
 
 # --- LP Solvers (Unchanged helpers) ---
 
-function get_interior_point_adaptive(A::Matrix{Float64}, b::Vector{Float64})
+function get_feasible_point(A::Matrix{Float64}, b::Vector{Float64}; limit=1e5)
     m, n = size(A)
     model = Model(HiGHS.Optimizer)
     set_silent(model)
-    limit = 1e6
-    @variable(model, -limit <= x[i=1:n] <= limit)
-    ϵ = 1e-7
-    for i in 1:m
-        @constraint(model, sum(A[i, j] * x[j] for j in 1:n) <= b[i] - ϵ)
-    end
-    @objective(model, Min, 0)
-    optimize!(model)
-    st = termination_status(model)
-    if st in (MOI.OPTIMAL, MOI.ALMOST_OPTIMAL, MOI.LOCALLY_SOLVED)
-        return value.(x)
-    elseif st in (MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED, MOI.SLOW_PROGRESS)
-        val = find_any_feasible_point(A, b, limit)
-        return any(isnan, val) ? nothing : val
-    else
-        return nothing
-    end
-end
 
-function find_any_feasible_point(A, b, limit)
-    m, n = size(A)
-    model = Model(HiGHS.Optimizer)
-    set_silent(model)
+    # 1. Bounded variables to handle unbounded regions safely
     @variable(model, -limit <= x[1:n] <= limit)
-    @constraint(model, A * x .<= b)
-    @objective(model, Min, 0)
-    optimize!(model)
-    if termination_status(model) in (MOI.OPTIMAL, MOI.ALMOST_OPTIMAL)
-        return value.(x)
-    else
-        return fill(NaN, size(A, 2))
+
+    # 2. Variable Radius 'r' ( Geometric Slack )
+    # We bound r to avoid unbounded objectives if the region is open
+    @variable(model, r <= limit) 
+
+    # 3. Normalized Constraints
+    # Algebraic: a_i' * x + s <= b_i
+    # Geometric: a_i' * x + ||a_i|| * r <= b_i
+    # This ensures 'r' represents the true Euclidean distance to the boundary.
+    for i in 1:m
+        a_row = A[i, :]
+        a_norm = norm(a_row)
+        
+        if a_norm > 1e-8
+            # Normal case: impose geometric padding
+            @constraint(model, dot(a_row, x) + a_norm * r <= b[i])
+        else
+            # Degenerate row (0 vector): just check feasibility
+            if b[i] < -1e-8
+                return nothing # 0 <= negative is impossible
+            end
+            # If 0 <= positive, the constraint is trivial and ignored.
+        end
     end
+
+    # 4. Objective: Maximize the radius of the inscribed ball
+    @objective(model, Max, r)
+
+    optimize!(model)
+
+    # 5. Robust check
+    st = termination_status(model)
+    if st in (MOI.OPTIMAL, MOI.ALMOST_OPTIMAL)
+        max_r = value(r)
+        
+        # We accept:
+        #  r > 0: Strict interior point
+        #  r ≈ 0: Flat region (e.g., a line in 2D), but valid
+        # We use a small negative tolerance to allow for floating point noise on flat regions.
+        if max_r >= -1e-7
+            return value.(x)
+        end
+    end
+    
+    return nothing
 end
 
 end # module
