@@ -29,3 +29,6 @@ def get_new_path(dataset, noise, dropout, run_number):
     assert run_number in [1,2,3,4,5], "Invalid run number"
     return_path = new_data_storage / dataset / f"noise_{noise:.2f}" / f"dropout_{dropout:.2f}" / f"run_{int(run_number)}"
     return return_path
+
+def get_test_data():
+    return testing_data

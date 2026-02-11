@@ -32,6 +32,7 @@ _lazy_attributes = {
     "moon_path": ".paths",
     "wbc_path": ".paths",
     "get_new_path": ".paths",
+    "get_test_data": ".paths",
     "train_model": ".train_models",
     "train_model_multiclass": ".train_models",
     "NeuralNet": ".utils",
