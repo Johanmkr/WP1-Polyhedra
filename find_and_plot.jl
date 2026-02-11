@@ -6,7 +6,7 @@ using LinearAlgebra
 BLAS.set_num_threads(1)
 
 # 1. Load your local PolyhedraTree module
-include("gb_julia/PolyhedraTree.jl")
+include("geobin_jl/PolyhedraTree.jl")
 using .PolyhedraTree
 
 # 2. Setup Python Environment

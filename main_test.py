@@ -14,7 +14,7 @@ import time
 
 sys.path.append('.')
 
-from geobin import Region, Tree, RegionTree, TreeNode
+from geobin_py import Region, Tree, RegionTree, TreeNode
 
 
 from src_experiment import get_moons_data, train_model, NeuralNet
