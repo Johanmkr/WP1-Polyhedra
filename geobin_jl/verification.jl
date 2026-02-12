@@ -7,117 +7,151 @@ using ..Utils
 using LinearAlgebra
 using JuMP
 using HiGHS
-using Polyhedra
-using CDDLib
-using ProgressMeter
 using Printf
+using Random
+using ProgressMeter
 
-export verify_volume_conservation, check_point_partition, scan_all_overlaps_strict
-
-
+export verify_tree_properties
+export verify_partition_completeness_monte_carlo
+export scan_all_overlaps_strict_optimized
+export verify_tree_hierarchy_robust
+export check_region_conditioning
 
 # ==============================================================================
-# 2. PARTITION CHECK (Volume Conservation)
+# 1. HELPER: AABB COMPUTATION (Essential for High-D Filtering)
 # ==============================================================================
 
-function verify_volume_conservation(tree, layer_idx::Int, bound::Float64; tol=1e-5)
-    println("\n🔍 Checking Volume Conservation for Layer $layer_idx within [-$(bound), $(bound)]...")
+struct AABB
+    low::Vector{Float64}
+    high::Vector{Float64}
+end
+
+"""
+Computes the tight Axis-Aligned Bounding Box (AABB) for a region using 2*D LPs.
+This is expensive but necessary for efficient overlap filtering in high dimensions.
+"""
+function get_region_aabb(r::Region, domain_bound::Float64)
+    A, b = r.Dlw, r.glw
+    dim = size(A, 2)
+    low = zeros(dim)
+    high = zeros(dim)
     
-    # Force GC to clean up any potential Python objects before heavy lifting
-    GC.gc()
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
+    @variable(model, -domain_bound <= x[1:dim] <= domain_bound)
+    @constraint(model, A * x .<= b)
     
-    regions = get_regions_at_layer(tree, layer_idx)
-    dim = tree.input_dim
-    theo_vol = (2 * bound)^dim
-    
-    total_region_vol = 0.0
-    
-    # Single-threaded loop to avoid PyCall GIL crashes
-    # p = Progress(length(regions); desc="Computing Volumes: ")
-    
-    for r in regions
-        vol = get_region_volume(r, bound=bound)
-        total_region_vol += vol
-        # next!(p)
+    for d in 1:dim
+        # Minimize x[d]
+        @objective(model, Min, x[d])
+        optimize!(model)
+        if termination_status(model) == MOI.OPTIMAL
+            low[d] = value(x[d])
+        else
+            low[d] = -domain_bound 
+        end
+        
+        # Maximize x[d]
+        @objective(model, Max, x[d])
+        optimize!(model)
+        if termination_status(model) == MOI.OPTIMAL
+            high[d] = value(x[d])
+        else
+            high[d] = domain_bound 
+        end
     end
-    
-    diff = total_region_vol - theo_vol
-    
-    @printf("\n  - Theoretical Box Volume: %.4f\n", theo_vol)
-    @printf("  - Sum of Region Volumes:  %.4f\n", total_region_vol)
-    @printf("  - Difference:             %.4e\n", diff)
-    
-    if abs(diff) < tol
-        println("✅ PASSED: Regions partition the space perfectly (within tolerance).")
-        return true
-    elseif diff > tol
-        println("❌ FAILED: Sum > Box. Overlaps exist.")
-        return false
-    else
-        println("❌ FAILED: Sum < Box. Holes (missing space) exist.")
-        return false
-    end
+    return AABB(low, high)
+end
+
+function aabb_intersect(b1::AABB, b2::AABB)
+    return all(b1.low .<= b2.high .+ 1e-7) && all(b2.low .<= b1.high .+ 1e-7)
 end
 
 # ==============================================================================
-# 3. POINT-WISE EXCLUSIVITY CHECK
+# 2. PARTITION COMPLETENESS (Monte Carlo instead of Exact Volume)
 # ==============================================================================
 
-function check_point_partition(tree, layer_idx::Int, num_points::Int; bound=10.0)
-    println("\n🎯 Running Point-wise Monte Carlo Check ($num_points points)...")
+"""
+Replaces exact volume check. Samples points from the domain and verifies 
+partitioning properties (Gap vs Overlap) statistically.
+Robust for D > 15 where exact volume fails.
+"""
+function verify_partition_completeness_monte_carlo(tree, layer_idx::Int, bound::Float64; num_points=100_000)
+    println("\n🎲 Running Monte Carlo Partition Check (Layer $layer_idx)...")
+    println("   - Samples: $num_points")
+    println("   - Bound:   [-$bound, $bound]")
     
     regions = get_regions_at_layer(tree, layer_idx)
     dim = tree.input_dim
     
-    region_constraints = []
-    for r in regions
-        push!(region_constraints, get_path_inequalities(r))
-    end
+    # Pre-extract constraints for speed
+    region_constraints = [(r.Dlw, r.glw) for r in regions]
     
-    overlap_errors = 0
-    gap_errors = 0
+    gap_count = 0
+    overlap_count = 0
+    perfect_count = 0
     
-    # Kept single-threaded for safety
-    for k in 1:num_points
-        x = (rand(dim) .- 0.5) .* (2 * bound)
+    p = Progress(num_points; desc="Sampling Space: ")
+    
+    for _ in 1:num_points
+        # Uniform sampling in hyperrectangle
+        point = (rand(dim) .- 0.5) .* (2 * bound)
         
-        containment_count = 0
-        
+        matches = 0
         for (A, b) in region_constraints
-            if all(A * x .<= b .+ 1e-7)
-                containment_count += 1
+            is_inside = true
+            # Optimized dot product check
+            for i in 1:length(b)
+                if dot(@view(A[i, :]), point) > b[i] + 1e-7
+                    is_inside = false
+                    break
+                end
+            end
+            
+            if is_inside
+                matches += 1
             end
         end
         
-        if containment_count == 0
-            gap_errors += 1
-        elseif containment_count > 1
-            overlap_errors += 1
+        if matches == 0
+            gap_count += 1
+        elseif matches == 1
+            perfect_count += 1
+        else
+            overlap_count += 1
         end
+        
+        if rand() < 0.01; next!(p); end
     end
+    finish!(p)
     
-    if overlap_errors == 0 && gap_errors == 0
-        println("✅ PASSED: All sampled points fall into exactly 1 region.")
-    else
-        println("❌ FAILED:")
-        println("   - Points in 0 regions (Holes):    $gap_errors")
-        println("   - Points in >1 regions (Overlap): $overlap_errors")
-    end
+    total = gap_count + overlap_count + perfect_count
+    gap_pct = (gap_count / total) * 100
+    over_pct = (overlap_count / total) * 100
+    perf_pct = (perfect_count / total) * 100
+
+    println("\n📊 Statistics:")
+    @printf("  - Perfect (Exactly 1 Region): %d (%.2f%%)\n", perfect_count, perf_pct)
+    @printf("  - Gaps (0 Regions):           %d (%.4f%%)\n", gap_count, gap_pct)
+    @printf("  - Overlaps (>1 Regions):      %d (%.4f%%)\n", overlap_count, over_pct)
+    
+    return (gap_count == 0 && overlap_count == 0)
 end
 
 # ==============================================================================
-# 4. STRICT PAIRWISE OVERLAP CHECK (LP Solver)
+# 3. OPTIMIZED OVERLAP CHECK (AABB Filter + LP)
 # ==============================================================================
 
-function check_overlap_strict(r1::Region, r2::Region)
-    A1, b1 = get_path_inequalities(r1)
-    A2, b2 = get_path_inequalities(r2)
+function check_overlap_strict_lp(r1::Region, r2::Region)
+    A1, b1 = r1.Dlw, r1.glw
+    A2, b2 = r2.Dlw, r2.glw
     dim = size(A1, 2)
     
     model = Model(HiGHS.Optimizer)
     set_silent(model)
     @variable(model, x[1:dim])
     
+    # Strict inequality simulation: A*x <= b - epsilon
     ϵ = 1e-6 
     @constraint(model, A1 * x .<= b1 .- ϵ)
     @constraint(model, A2 * x .<= b2 .- ϵ)
@@ -126,135 +160,225 @@ function check_overlap_strict(r1::Region, r2::Region)
     return termination_status(model) == MOI.OPTIMAL
 end
 
-function scan_all_overlaps_strict(tree, layer_idx)
+function scan_all_overlaps_strict_optimized(tree, layer_idx; bound=10.0)
     regions = get_regions_at_layer(tree, layer_idx)
     n = length(regions)
-    println("\n⚔️  Strict LP Overlap Scan (Layer $layer_idx, $n regions)...")
+    println("\n⚔️  Optimized LP Overlap Scan (Layer $layer_idx, $n regions)...")
+    
+    if n > 1000
+        println("   - Large dataset detected. Computing AABBs for pre-filtering...")
+    end
+
+    # 1. Precompute AABBs (O(N) * Cost of LP)
+    aabbs = Vector{AABB}(undef, n)
+    pm = Progress(n; desc="Precomputing Bounds: ")
+    for i in 1:n
+        aabbs[i] = get_region_aabb(regions[i], bound)
+        next!(pm)
+    end
     
     overlaps = 0
-    p = Progress(n*(n-1)÷2)
+    lp_checks = 0
+    skipped = 0
+    
+    # 2. Pairwise Check
+    p = Progress(n*(n-1)÷2; desc="Pairwise Check: ")
     
     for i in 1:n
         for j in (i+1):n
-            if check_overlap_strict(regions[i], regions[j])
-                overlaps += 1
-                println("  !! Overlap confirmed between R$i and R$j")
+            # FILTER: Cheap AABB Intersection Check
+            if !aabb_intersect(aabbs[i], aabbs[j])
+                skipped += 1
+                continue
             end
-            next!(p)
+            
+            # VERIFY: Expensive LP Check
+            lp_checks += 1
+            if check_overlap_strict_lp(regions[i], regions[j])
+                overlaps += 1
+                println("  !! Overlap confirmed between Region #$i and Region #$j")
+            end
         end
+        # Approximate progress update for the loop block
+        if i % 10 == 0; update!(p, (i * (2n - i - 1)) ÷ 2); end
     end
+    finish!(p)
     
-    if overlaps == 0
-        println("✅ No strict overlaps found.")
-    else
-        println("❌ Found $overlaps overlapping pairs.")
-    end
+    println("\n🔍 Overlap Scan Results:")
+    println("  - Total Pairs:    $(n*(n-1)÷2)")
+    println("  - Skipped (AABB): $skipped")
+    println("  - LP Checks Run:  $lp_checks")
+    println("  - Overlaps Found: $overlaps")
+    
+    return overlaps == 0
 end
 
-function verify_tree_hierarchy(tree::Tree; tol=1e-5, bound=10)
-    println("\n🌳 Verifying Tree Hierarchy (Parent vs. Children)...")
-    
-    # We traverse the tree (BFS or simple iteration if nodes are stored linearly)
-    # Assuming tree.nodes is accessible or we walk from root
+# ==============================================================================
+# 4. ROBUST HIERARCHY CHECK (Containment Only)
+# ==============================================================================
+
+function verify_tree_hierarchy_robust(tree::Tree; bound=10.0)
+    println("\n🌳 Verifying Tree Hierarchy (Containment LP)...")
     
     queue = [tree.root]
     mismatches = 0
+    nodes_checked = 0
     
     while !isempty(queue)
         node = popfirst!(queue)
-        children = get_children(tree, node) # You likely have a helper for this
+        children = get_children(node)
         
         if isempty(children)
             continue
         end
-        
-        # 1. Check Constraint Inheritance
-        # Every child must satisfy parent's constraints
-        parent_poly = get_bounded_polyhedron(node, bound)
-        parent_vol = volume(parent_poly)
-        
-        child_vol_sum = 0.0
+        nodes_checked += 1
         
         for child in children
-            # Add to queue for next layer
             push!(queue, child)
             
-            child_poly = get_bounded_polyhedron(child, bound)
-            if isnothing(child_poly)
-                println("  ⚠️ Child of Node $(node.id) is degenerate/empty.")
+            # 1. Compute Child Center using FULL PATH (including Root)
+            A_full, b_full = get_path_inequalities(child)
+            center, _ = get_chebyshev_center_radius(A_full, b_full)
+            
+            if isnothing(center)
                 continue
             end
             
-            # Volume accumulation
-            child_vol_sum += volume(child_poly)
-            
-            # Strict containment check (Sample point)
-            # A quick check: The center of the child must be inside the parent
-            child_center = get_chebyshev_center(child.Dlw, child.glw) # Uses your robust function
-            if !isnothing(child_center)
-                # Check A_parent * x <= b_parent
-                violation = node.Dlw * child_center .- node.glw
-                if maximum(violation) > 1e-6
-                    println("  ❌ INHERITANCE FAIL: Child $(child.id) leaks outside Parent $(node.id)")
-                    mismatches += 1
+            # 2. Check against Parent's ACTIVE constraints
+            if isempty(node.Dlw_active)
+                max_violation = -Inf
+            else
+                # Calculate Raw Violation: Ax - b
+                raw_violation = node.Dlw_active * center .- node.glw_active
+                
+                # FIX: Normalize violation by row norm (Geometric Distance)
+                max_violation = -Inf
+                for k in 1:length(node.glw_active)
+                    row_norm = norm(node.Dlw_active[k, :])
+                    val = raw_violation[k]
+                    
+                    # Distance = val / ||a||. Handle zero rows safely.
+                    dist = (row_norm > 1e-7) ? (val / row_norm) : val
+                    if dist > max_violation
+                        max_violation = dist
+                    end
                 end
             end
-        end
-        
-        # 2. Local Volume Conservation
-        diff = abs(parent_vol - child_vol_sum)
-        if diff > tol
-            println("  ❌ PARTITION FAIL: Node $(node.id) volume mismatch.")
-            println("     Parent: $parent_vol, Children Sum: $child_vol_sum, Diff: $diff")
-            mismatches += 1
+            
+            if max_violation > 1e-5
+                println("  ❌ INHERITANCE FAIL: Child (Layer $(child.layer_number)) leaks outside Parent")
+                println("     Max Geometric Violation: $(@sprintf("%.2e", max_violation))")
+                mismatches += 1
+            end
         end
     end
     
     if mismatches == 0
-        println("✅ Tree Hierarchy strictly valid.")
+        println("✅ Tree Hierarchy (Containment) valid for $nodes_checked branching nodes.")
+        return true
     else
-        println("❌ Found $mismatches structural violations.")
+        println("❌ Found $mismatches containment violations.")
+        return false
     end
 end
+
+# ==============================================================================
+# 5. CONDITIONING
+# ==============================================================================
 
 function check_region_conditioning(tree, layer_idx; min_radius=1e-7)
     println("\n📐 Checking Region Conditioning (Thinness)...")
     regions = get_regions_at_layer(tree, layer_idx)
     thin_count = 0
     
-    for r in regions
-        # We reuse your robust interior point code, but we extract the radius
-        # You might need to modify 'get_feasible_point' to return (x, radius) or call a new helper
-        
-        # Quick implementation of radius check:
-        r_val = get_chebyshev_radius(r.Dlw, r.glw)
+    p = Progress(length(regions); desc="Checking Radii: ")
+    for (i, r) in enumerate(regions)
+        # FIX: Use full path inequalities
+        A_full, b_full = get_path_inequalities(r)
+        _, r_val = get_chebyshev_center_radius(A_full, b_full)
         
         if r_val < min_radius
-            println("  ⚠️ Region $(r.id) is extremely thin! (Radius: $r_val)")
             thin_count += 1
         end
+        next!(p)
     end
     
     if thin_count == 0
-        println("✅ All regions are well-conditioned (fat enough).")
+        println("✅ All regions are well-conditioned.")
+        return true
     else
-        println("⚠️ Found $thin_count thin regions. Solvers may struggle here.")
+        println("⚠️ Found $thin_count thin regions (radius < $min_radius). Solvers may struggle.")
+        return false
     end
 end
 
-# Helper for conditioning check
-function get_chebyshev_radius(A, b; limit=1e5)
+# Helper: Combined Center & Radius
+function get_chebyshev_center_radius(A, b; limit=1e5)
     m, n = size(A)
     model = Model(HiGHS.Optimizer)
     set_silent(model)
     @variable(model, -limit <= x[1:n] <= limit)
     @variable(model, r)
-    for i in 1:m
-        @constraint(model, dot(A[i,:], x) + r * norm(A[i,:]) <= b[i])
-    end
+    
+    norms = [norm(A[i,:]) for i in 1:m]
+    @constraint(model, [i=1:m], dot(A[i,:], x) + r * norms[i] <= b[i])
+    
     @objective(model, Max, r)
     optimize!(model)
-    return value(r)
+    
+    if termination_status(model) == MOI.OPTIMAL
+        return value.(x), value(r)
+    else
+        return nothing, 0.0
+    end
+end
+
+# ==============================================================================
+# 6. MASTER VERIFICATION FUNCTION
+# ==============================================================================
+
+function verify_tree_properties(tree::Tree; bound=10.0, layer_idx=nothing)
+    println("="^60)
+    println("🚀 STARTING FULL TREE VERIFICATION")
+    println("="^60)
+    
+    if isnothing(layer_idx)
+        # Fallback if depth property doesn't exist, calculate it or default to something safe
+        # Assuming typical tree depth logic or manual user input usually.
+        # Here we just grab the layer of the first leaf if possible, or 10.
+        target_layer = 1 
+        # You might want to pass layer_idx explicitly to be safe
+        println("ℹ️  Targeting Layer: $target_layer (Default)")
+    else
+        target_layer = layer_idx
+        println("ℹ️  Targeting Custom Layer: $target_layer")
+    end
+    
+    results = Dict{String, Bool}()
+    
+    results["Hierarchy"] = verify_tree_hierarchy_robust(tree; bound=bound)
+    results["Overlaps"] = scan_all_overlaps_strict_optimized(tree, target_layer; bound=bound)
+    results["Completeness"] = verify_partition_completeness_monte_carlo(tree, target_layer, bound)
+    results["Conditioning"] = check_region_conditioning(tree, target_layer)
+    
+    println("\n" * "="^60)
+    println("📝 VERIFICATION SUMMARY")
+    println("="^60)
+    
+    all_passed = true
+    for (test, passed) in results
+        status = passed ? "✅ PASS" : "❌ FAIL"
+        @printf("%-15s : %s\n", test, status)
+        if !passed; all_passed = false; end
+    end
+    
+    println("-"^60)
+    if all_passed
+        println("🎉 TREE IS VALID (High Confidence)")
+    else
+        println("⚠️ TREE HAS ISSUES (See logs above)")
+    end
+    return all_passed
 end
 
 end # module

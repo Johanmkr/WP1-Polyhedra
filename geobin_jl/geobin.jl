@@ -32,5 +32,9 @@ export Region, Tree, construct_tree!, get_regions_at_layer, print_tree_summary, 
 export verify_volume_conservation, check_point_partition, get_region_volume, scan_all_overlaps_strict
 export find_hyperplanes
 export prune_tree!, analyze_region
-
+export verify_tree_properties
+export verify_partition_completeness_monte_carlo
+export scan_all_overlaps_strict_optimized
+export verify_tree_hierarchy_robust
+export check_region_conditioning
 end # module

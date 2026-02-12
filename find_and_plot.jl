@@ -6,8 +6,8 @@ using LinearAlgebra
 BLAS.set_num_threads(1)
 
 # 1. Load your local PolyhedraTree module
-include("geobin_jl/PolyhedraTree.jl")
-using .PolyhedraTree
+include("geobin_jl/geobin.jl")
+using .Geobin
 
 # 2. Setup Python Environment
 # Add current directory to Python path so we can find 'src_experiment'
@@ -64,16 +64,22 @@ function main()
         raw_state = torch.load(state_dict_path, map_location="cpu")
         state = convert_torch_state(raw_state)
         
+        # Force Garbage Collection to clean up PyCall objects
+        GC.gc() 
+
         start_t = time()
         println("--- Epoch $epoch ---")
         
         # New:
-        tree = PolyhedraTree.Tree(state)
-        PolyhedraTree.construct_tree!(tree, verbose=true)
+        tree = Tree(state)
+        construct_tree!(tree, verbose=true)
         trees[epoch] = tree
         
         end_t = time()
         @printf("Duration: %.2f s\n", end_t - start_t)
+
+        leaves = get_regions_at_layer(tree, tree.L)
+        println("  Found $(length(leaves)) final regions.")
     end
     
     tot_end = time()
@@ -82,15 +88,16 @@ function main()
     return trees
 end
 
-
-# Ensure multi-threading is on
-if Threads.nthreads() == 1
-    println("Warning: Running on 1 thread. Run with 'julia --threads auto main.jl' for speed.")
-end
-# println(Threads.nthreads())
+println("Running on $(Threads.nthreads()) threads")
 
 trees = main()
 
+
+# print tree info:
+for i in eachindex(trees)
+    print_tree_summary(trees[i])
+    verify_tree_properties(trees[i])
+end
 
 using Polyhedra
 using CDDLib      # The backend solver (C-library)
@@ -99,10 +106,10 @@ using Colors
 using LinearAlgebra
 
 # 1. Helper to create a bounded polyhedron from a Region
-function get_bounded_polyhedron(region; bound=2000)
+function get_bounded_polyhedron(region; bound=100)
     # Get the inequalities from your struct: Dlw * x <= glw
     # We explicitly copy them to ensure we don't mutate the tree
-    A, b = PolyhedraTree.get_path_inequalities(region)
+    A, b = Geobin.get_path_inequalities(region)
     
     # Dimensions
     dim = size(A, 2)
@@ -149,7 +156,7 @@ function plot_epoch_layer_grid(trees; bound=10)
     
     # Initialize a large plot object with subplots
     p = plot(layout = (num_layers, num_epochs), 
-             size = (num_epochs * 300, num_layers * 300),
+             size = (num_epochs * 350, num_layers * 350),
              legend = false,
              framestyle = :box)
 
@@ -178,7 +185,7 @@ function plot_epoch_layer_grid(trees; bound=10)
 
             # Get regions and plot them
             # Note: Explicitly calling PolyhedraTree module if needed
-            regions = PolyhedraTree.get_regions_at_layer(tree, layer)
+            regions = Geobin.get_regions_at_layer(tree, layer)
             
             for region in regions
                 poly = get_bounded_polyhedron(region)
@@ -188,10 +195,11 @@ function plot_epoch_layer_grid(trees; bound=10)
                     # It handles the triangulation/polygon creation automatically.
                     # Inside your plotting loop:
                     plot!(p[subplot_idx], poly, 
-                        color = rand(RGB), 
+                        color = rand(RGB),
+                        # color = "blue", 
                         alpha = 0.4,          # Lower alpha makes overlaps appear darker
                         linecolor = :black, 
-                        linewidth = 1.5)      # Thicker lines show the partition structure better
+                        linewidth = 1)      # Thicker lines show the partition structure better
                                     end
             end
         end
@@ -200,96 +208,8 @@ function plot_epoch_layer_grid(trees; bound=10)
     return p
 end
 
-# Usage:
-plt = plot_epoch_layer_grid(trees, bound=2.1)
-display(plt)
+# # Usage:
+# plt = plot_epoch_layer_grid(trees, bound=1.7)
+# display(plt)
 # savefig(plt, "grid_visualization.png")
 
-
-
-using LinearAlgebra
-using ProgressMeter
-using Statistics  # <--- This fixes the UndefVarError
-
-function check_overlaps(tree, layer_idx; method=:center, tol=1e-6)
-    println("\n--- Checking Overlaps for Layer $layer_idx ---")
-    
-    regions = PolyhedraTree.get_regions_at_layer(tree, layer_idx)
-    n = length(regions)
-    println("Found $n regions. Preparing geometry...")
-    
-    region_data = []
-    
-    @showprogress for r in regions
-        # Get full path constraints
-        A, b = PolyhedraTree.get_path_inequalities(r)
-        
-        # Calculate a representative interior point
-        poly = get_bounded_polyhedron(r, bound=10.0)
-        
-        if isnothing(poly) || isempty(poly)
-            push!(region_data, nothing)
-            continue
-        end
-        
-        verts = collect(points(vrep(poly)))
-        if isempty(verts)
-            push!(region_data, nothing)
-            continue
-        end
-        
-        # Compute centroid (average of vertices)
-        # This function now works because Statistics is loaded
-        center = mean(verts)
-        
-        push!(region_data, (A=A, b=b, center=center, id=r.qlw))
-    end
-    
-    # 2. Check for Overlaps
-    overlap_count = 0
-    overlapping_pairs = Set{Tuple{Int, Int}}()
-    
-    println("Testing intersections...")
-    
-    for i in 1:n
-        data_i = region_data[i]
-        isnothing(data_i) && continue
-        
-        center_i = data_i.center
-        
-        for j in 1:n
-            i == j && continue 
-            
-            data_j = region_data[j]
-            isnothing(data_j) && continue
-            
-            # Check: Is center_i satisfying constraints of region j?
-            violation = data_j.A * center_i - data_j.b
-            
-            # If max violation is negative, point is INSIDE
-            if maximum(violation) < -tol
-                pair = minmax(i, j)
-                if !(pair in overlapping_pairs)
-                    push!(overlapping_pairs, pair)
-                    overlap_count += 1
-                    if overlap_count <= 5
-                        println("  !! Overlap detected: Region $i and Region $j")
-                    end
-                end
-            end
-        end
-    end
-    
-    if overlap_count == 0
-        println("✅ No interior overlaps detected.")
-    else
-        println("❌ Found $overlap_count overlapping pairs!")
-    end
-    
-    return overlap_count
-end
-
-
-for layer in 1:5
-    check_overlaps(trees[0], layer) # Check epoch 0, layer 2
-end

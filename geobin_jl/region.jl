@@ -67,14 +67,23 @@ function get_path_inequalities(r::Region)
     D_list = Matrix{Float64}[]
     g_list = Vector{Float64}[]
     node = r
-    while node.parent !== nothing
-        push!(D_list, node.Dlw_active)
-        push!(g_list, node.glw_active)
+    
+    # Traverse up to the root
+    while node !== nothing
+        if !isempty(node.Dlw_active)
+            push!(D_list, node.Dlw_active)
+            push!(g_list, node.glw_active)
+        end
         node = node.parent
     end
+
     if isempty(D_list)
-        return Matrix{Float64}(undef, 0, 0), Float64[]
+        # FIX: Return (0, input_dim) instead of (0, 0)
+        # We grab the dimension from the region's internal matrices
+        input_dim = size(r.Alw, 2)
+        return Matrix{Float64}(undef, 0, input_dim), Float64[]
     end
+
     D_path = reduce(vcat, reverse(D_list))
     g_path = reduce(vcat, reverse(g_list))
     return D_path, g_path

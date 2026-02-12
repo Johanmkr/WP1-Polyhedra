@@ -63,43 +63,48 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
     return tree
 end
 
-# 2. Helper to process a single parent (pure function logic)
 function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::Int)
+    # FIX 1: Retrieve FULL ancestry constraints (Root + Grandparents + Parent)
+    D_ancestry, g_ancestry = get_path_inequalities(parent)
+
+    # FIX 2: Pass FULL ancestry to candidate finder
+    # This ensures 'active_indices' are calculated relative to the Global Space, 
+    # not just the immediate parent.
     candidates = find_region_candidates(
-        parent.Dlw_active, parent.glw_active,
+        D_ancestry, g_ancestry,       # <--- CHANGED from parent.Dlw_active, parent.glw_active
         parent.Alw, parent.clw, parent.x,
         W, b
     )
 
     children = Region[]
     for cand in candidates
-        # Solve LP/Chebyshev to find a feasible point inside the candidate region
-        # We assume `cand.D` and `cand.g` define the LOCAL constraints. 
-        # To check feasibility, we must combine them with parent constraints (usually handled inside get_feasible_point or by passing both).
-        # Assuming `cand.D` contains necessary local info.
-        
-        # Note: You might need to stack [parent.D; cand.D] depending on your `get_feasible_point` implementation
-        feasible_point = get_feasible_point([parent.Dlw_active; cand.D], [parent.glw_active; cand.g])
+        # FIX 3: Check feasibility against FULL ancestry + New Cuts
+        feasible_point = get_feasible_point([D_ancestry; cand.D], [g_ancestry; cand.g])
 
         if !isnothing(feasible_point)
-            # Construct the Child Region
             child = Region(cand.activation_pattern)
             
-            # Transfer geometric data
             child.q_tilde     = cand.active_indices
             child.Dlw         = cand.D
             child.glw         = cand.g
+            
+            # Logic for active constraints
             if isempty(cand.active_indices)
+                # If filter says "None", we can either store NONE or ALL.
+                # Storing ALL (cand.D) is safer in case of numerical filter failure.
+                # Storing NONE is more efficient if we trust the filter.
+                # Let's stick to the original "Safe" approach:
                 child.Dlw_active = cand.D 
                 child.glw_active = cand.g
             else
                 child.Dlw_active  = cand.D[cand.active_indices, :]
                 child.glw_active  = cand.g[cand.active_indices]
             end
-            child.Alw         = cand.A_next
-            child.clw         = cand.c_next
+            
+            child.Alw          = cand.A_next
+            child.clw          = cand.c_next
             child.layer_number = layer_idx
-            child.x           = feasible_point
+            child.x            = feasible_point
 
             add_child!(parent, child)
             push!(children, child)

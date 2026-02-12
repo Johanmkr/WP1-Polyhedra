@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
-from sklearn.datasets import make_moons
+from sklearn.datasets import make_moons, make_blobs, make_circles
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
@@ -167,6 +167,68 @@ def make_moons_datasets(
         to_tensor_dataset(X_train, y_train),
         to_tensor_dataset(X_test, y_test),
     )
+    
+    
+def make_blobs_datasets(
+    centers=3,
+    n_features=2,
+    random_state: int = 42,
+) -> tuple[TensorDataset, TensorDataset]:
+    
+    X, y = X, y = make_blobs(n_samples=N_SAMPLES, centers=centers, n_features=n_features, random_state=42)
+    
+    # Map labels to 0..num_classes-1
+    unique_classes = np.sort(np.unique(y))
+    class_map = {int(c): i for i, c in enumerate(unique_classes)}
+    y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
+
+    X_train, X_test, y_train, y_test = split_and_scale_moons(
+        X,
+        y,
+        test_size=0.2,
+        random_state=random_state,
+    )
+
+    return (
+        to_tensor_dataset(X_train, y_train),
+        to_tensor_dataset(X_test, y_test),
+    )
+    
+
+def make_circles_datasets(
+    feature_noise: float,
+    random_state: int = 42,
+) -> tuple[TensorDataset, TensorDataset]:
+    """
+    Create train/test moons datasets.
+
+    feature_noise controls geometric noise in the input space.
+    """
+    X, y = make_circles(
+        n_samples=N_SAMPLES,
+        noise=feature_noise,
+        random_state=random_state,
+    )
+    
+    # Map labels to 0..num_classes-1
+    unique_classes = np.sort(np.unique(y))
+    class_map = {int(c): i for i, c in enumerate(unique_classes)}
+    y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
+
+    X_train, X_test, y_train, y_test = split_and_scale_moons(
+        X,
+        y,
+        test_size=0.2,
+        random_state=random_state,
+    )
+
+    return (
+        to_tensor_dataset(X_train, y_train),
+        to_tensor_dataset(X_test, y_test),
+    )
+    
+    
+    
 
 breast_cancer = fetch_ucirepo(id=17)
 def make_wbc_datasets(
@@ -186,74 +248,17 @@ def make_wbc_datasets(
     
     return split_and_scale(X, y, label_noise)
 
-    # # Map labels to 0..num_classes-1
-    # unique_classes = np.sort(np.unique(y))
-    # class_map = {int(c): i for i, c in enumerate(unique_classes)}
-    # y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
 
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X,
-    #     y,
-    #     test_size=0.2,
-    #     random_state=random_state,
-    #     stratify=y,
-    # )
-
-    # # Inject label noise into training labels only
-    # y_train = inject_symmetric_label_noise(
-    #     y_train,
-    #     noise_ratio=label_noise,
-    #     seed=random_state,
-    # )
-
-    # # Standardize features (fit on train only)
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
-    # X_test = scaler.transform(X_test)
-
-    # return (
-    #     to_tensor_dataset(X_train, y_train),
-    #     to_tensor_dataset(X_test, y_test),
-    # )
-
-# wine_quality = fetch_ucirepo(id=186)
 wine = fetch_ucirepo(id=109) 
 def make_wine_data(
     label_noise: float,
     random_state: int = 42
 ) -> tuple[TensorDataset, TensorDataset]:
-    # X = wine_quality.data.features.to_numpy(dtype=np.float32)
-    # y = wine_quality.data.targets.to_numpy(dtype=np.int64)
+
     X = wine.data.features.to_numpy(dtype=np.float32) 
     y = wine.data.targets.to_numpy(dtype=np.int64)
 
     return split_and_scale(X, y, label_noise)
-
-    # # Map labels to 0..num_classes-1
-    # unique_classes = np.sort(np.unique(y))
-    # class_map = {int(c): i for i, c in enumerate(unique_classes)}
-    # y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
-
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X,
-    #     y,
-    #     test_size=0.2,
-    #     random_state=random_state,
-    #     stratify=y,
-    # )
-
-    # # Inject label noise into training labels only
-    # y_train = inject_symmetric_multivariate_noise(y_train, label_noise, len(unique_classes), random_state)
-
-    # # Standardize features (fit on train only)
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
-    # X_test = scaler.transform(X_test)
-
-    # return (
-    #     to_tensor_dataset(X_train, y_train),
-    #     to_tensor_dataset(X_test, y_test),
-    # )
 
 
 heart_disease = fetch_ucirepo(id=45) 
@@ -268,32 +273,6 @@ def make_hd_data(
     y[np.isnan(y)] = 0
     
     return split_and_scale(X, y, label_noise)
-    
-    # # Map labels to 0..num_classes-1
-    # unique_classes = np.sort(np.unique(y))
-    # class_map = {int(c): i for i, c in enumerate(unique_classes)}
-    # y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
-
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X,
-    #     y,
-    #     test_size=0.2,
-    #     random_state=random_state,
-    #     stratify=y,
-    # )
-
-    # # Inject label noise into training labels only
-    # y_train = inject_symmetric_multivariate_noise(y_train, label_noise, len(unique_classes), random_state)
-
-    # # Standardize features (fit on train only)
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
-    # X_test = scaler.transform(X_test)
-
-    # return (
-    #     to_tensor_dataset(X_train, y_train),
-    #     to_tensor_dataset(X_test, y_test),
-    # )
 
 
 
@@ -328,35 +307,6 @@ def make_car_data(
     
     return split_and_scale(X, y, label_noise)
     
-    # # Map labels to 0..num_classes-1
-    # unique_classes = np.sort(np.unique(y))
-    # class_map = {int(c): i for i, c in enumerate(unique_classes)}
-    # y = np.array([class_map[int(val)] for val in y], dtype=np.int64)
-
-
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X,
-    #     y,
-    #     test_size=0.2,
-    #     random_state=random_state,
-    #     stratify=y,
-    # )
-
-    # # Inject label noise into training labels only
-    # y_train = inject_symmetric_multivariate_noise(y_train, label_noise, len(unique_classes), random_state)
-
-    # # Standardize features (fit on train only)
-    # scaler = StandardScaler()
-    # X_train = scaler.fit_transform(X_train)
-    # X_test = scaler.transform(X_test)
-
-    # return (
-    #     to_tensor_dataset(X_train, y_train),
-    #     to_tensor_dataset(X_test, y_test),
-    # )
-
-
-
 
 
 
@@ -384,88 +334,16 @@ def get_moons_data(
         shuffle=False,
     )
 
-
-# def get_wbc_data(
-#     label_noise: float = 0.0,
-#     batch_size: int = DEFAULT_BATCH_SIZE,
-# ) -> DataLoader:
-#     """
-#     Return a DataLoader for the Wisconsin Breast Cancer dataset.
-
-#     dataset_type: "training" or "testing"
-#     label_noise: symmetric label noise applied to training labels only
-#     """
     
-#     train_ds, test_ds = make_wbc_datasets(label_noise=label_noise)
-
-
-#     return DataLoader(
-#         train_ds,
-#         batch_size=batch_size,
-#         shuffle=True,
-#     ), DataLoader(
-#         test_ds,
-#         batch_size=batch_size,
-#         shuffle=False,
-#     )
-    
- 
-# def get_wine_data(
-#     label_noise: float = 0.0,
-#     batch_size = DEFAULT_BATCH_SIZE,
-# ) -> DataLoader:
-    
-#     train_ds, test_ds = make_wine_data(label_noise=label_noise)
-    
-#     return DataLoader(
-#         train_ds,
-#         batch_size=batch_size,
-#         shuffle=True,
-#     ), DataLoader(
-#         test_ds,
-#         batch_size=batch_size,
-#         shuffle=False,
-#     )
-    
-# def get_hd_data(
-#     label_noise: float = 0.0,
-#     batch_size = DEFAULT_BATCH_SIZE,
-# ) -> DataLoader:
-    
-#     train_ds, test_ds = make_hd_data(label_noise=label_noise)
-    
-#     return DataLoader(
-#         train_ds,
-#         batch_size=batch_size,
-#         shuffle=True,
-#     ), DataLoader(
-#         test_ds,
-#         batch_size=batch_size,
-#         shuffle=False,
-#     )
-    
-# def get_car_data(
-#     label_noise: float = 0.0,
-#     batch_size = DEFAULT_BATCH_SIZE,
-# ) -> DataLoader:
-    
-#     train_ds, test_ds = make_car_data(label_noise=label_noise)
-    
-#     return DataLoader(
-#         train_ds,
-#         batch_size=batch_size,
-#         shuffle=True,
-#     ), DataLoader(
-#         test_ds,
-#         batch_size=batch_size,
-#         shuffle=False,
-#     )
-    
-def get_new_data(dataset, noise=0, batch_size=DEFAULT_BATCH_SIZE):
-    assert dataset in ["moons", "wbc", "wine", "hd", "car"], "Invalid dataset"
+def get_new_data(dataset, noise=0, batch_size=DEFAULT_BATCH_SIZE, **kwargs):
+    assert dataset in ["moons", "blobs", "circles", "wbc", "wine", "hd", "car"], "Invalid dataset"
     match dataset:
         case "moons":
             train_ds, test_ds = make_moons_datasets(feature_noise=noise)
+        case "blobs":
+            train_ds, test_ds = make_blobs_datasets(**kwargs)
+        case "circles":
+            train_ds, test_ds = make_circles_datasets(feature_noise=noise)
         case "wbc":
             train_ds, test_ds = make_wbc_datasets(label_noise=noise)
         case "wine":

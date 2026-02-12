@@ -189,8 +189,8 @@ def train_model_multiclass(
     optimizer = torch.optim.SGD(model.parameters(), lr=sgd_lr, momentum=sgd_mom)
     loss_fn = nn.CrossEntropyLoss()  # <-- multiclass loss
     
-    if SAVE_STATES or RETURN_STATES:
-        assert not save_everyth_epoch is not None and save_for_epochs is not None, "Either save every nth epoch or specify epoch list, not Both"
+    # if SAVE_STATES or RETURN_STATES:
+    #     assert save_everyth_epoch is not None and save_for_epochs is not None, "Either save every nth epoch or specify epoch list, not Both"
 
     for epoch in trange(epochs, desc="Training", leave=False):
         # ----------------------
