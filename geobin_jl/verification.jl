@@ -28,13 +28,20 @@ end
 
 """
 Computes the tight Axis-Aligned Bounding Box (AABB) for a region using 2*D LPs.
-This is expensive but necessary for efficient overlap filtering in high dimensions.
+Uses full path inequalities to ensure the box is correct globally.
 """
 function get_region_aabb(r::Region, domain_bound::Float64)
-    A, b = r.Dlw, r.glw
+    # FIX: Use full path inequalities (Parent + Local)
+    A, b = get_path_inequalities(r)
+    
     dim = size(A, 2)
     low = zeros(dim)
     high = zeros(dim)
+    
+    # Check if empty (degenerate region)
+    if size(A, 1) == 0
+        return AABB(fill(-domain_bound, dim), fill(domain_bound, dim))
+    end
     
     model = Model(HiGHS.Optimizer)
     set_silent(model)
@@ -45,20 +52,12 @@ function get_region_aabb(r::Region, domain_bound::Float64)
         # Minimize x[d]
         @objective(model, Min, x[d])
         optimize!(model)
-        if termination_status(model) == MOI.OPTIMAL
-            low[d] = value(x[d])
-        else
-            low[d] = -domain_bound 
-        end
+        low[d] = (termination_status(model) == MOI.OPTIMAL) ? value(x[d]) : -domain_bound
         
         # Maximize x[d]
         @objective(model, Max, x[d])
         optimize!(model)
-        if termination_status(model) == MOI.OPTIMAL
-            high[d] = value(x[d])
-        else
-            high[d] = domain_bound 
-        end
+        high[d] = (termination_status(model) == MOI.OPTIMAL) ? value(x[d]) : domain_bound
     end
     return AABB(low, high)
 end
@@ -84,8 +83,10 @@ function verify_partition_completeness_monte_carlo(tree, layer_idx::Int, bound::
     regions = get_regions_at_layer(tree, layer_idx)
     dim = tree.input_dim
     
-    # Pre-extract constraints for speed
-    region_constraints = [(r.Dlw, r.glw) for r in regions]
+    # FIX: Pre-calculate FULL constraints for all regions
+    # Accessing .Dlw directly would only check the local slab!
+    println("   - Pre-calculating path constraints for $(length(regions)) regions...")
+    region_constraints = [get_path_inequalities(r) for r in regions]
     
     gap_count = 0
     overlap_count = 0
@@ -125,7 +126,7 @@ function verify_partition_completeness_monte_carlo(tree, layer_idx::Int, bound::
     end
     finish!(p)
     
-    total = gap_count + overlap_count + perfect_count
+    total = num_points
     gap_pct = (gap_count / total) * 100
     over_pct = (overlap_count / total) * 100
     perf_pct = (perfect_count / total) * 100
@@ -143,8 +144,9 @@ end
 # ==============================================================================
 
 function check_overlap_strict_lp(r1::Region, r2::Region)
-    A1, b1 = r1.Dlw, r1.glw
-    A2, b2 = r2.Dlw, r2.glw
+    # FIX: Use full path inequalities
+    A1, b1 = get_path_inequalities(r1)
+    A2, b2 = get_path_inequalities(r2)
     dim = size(A1, 2)
     
     model = Model(HiGHS.Optimizer)
@@ -315,6 +317,12 @@ end
 # Helper: Combined Center & Radius
 function get_chebyshev_center_radius(A, b; limit=1e5)
     m, n = size(A)
+    # Handle empty constraint case
+    if m == 0
+        # Return origin and infinite radius if no constraints
+        return zeros(n), Inf
+    end
+    
     model = Model(HiGHS.Optimizer)
     set_silent(model)
     @variable(model, -limit <= x[1:n] <= limit)
@@ -343,12 +351,9 @@ function verify_tree_properties(tree::Tree; bound=10.0, layer_idx=nothing)
     println("="^60)
     
     if isnothing(layer_idx)
-        # Fallback if depth property doesn't exist, calculate it or default to something safe
-        # Assuming typical tree depth logic or manual user input usually.
-        # Here we just grab the layer of the first leaf if possible, or 10.
-        target_layer = 1 
-        # You might want to pass layer_idx explicitly to be safe
-        println("ℹ️  Targeting Layer: $target_layer (Default)")
+        # Default to leaf layer if available, or just the deepest layer
+        target_layer = tree.L
+        println("ℹ️  Targeting Layer: $target_layer (Leaves)")
     else
         target_layer = layer_idx
         println("ℹ️  Targeting Custom Layer: $target_layer")
