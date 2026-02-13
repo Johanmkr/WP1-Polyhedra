@@ -30,3 +30,9 @@ figures/
 
 # Ignore old notebooks
 old_notebooks/
+
+# Jobs scripts
+jobs/
+
+#outputs
+outputs/
