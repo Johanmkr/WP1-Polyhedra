@@ -1,0 +1,50 @@
+# --- Version Control ---
+.git/
+.gitignore
+
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Julia ---
+.julia/
+# If you have a local dev folder for Julia packages
+dev/ 
+
+# --- Experiment Outputs (Crucial) ---
+# Don't bake 10GB of results into your image!
+stored_data/
+new_stored_data/
+outputs/
+data/
+*.h5
+*.log
+*.png
+*.pdf
+
+# Notebooks
+notebooks/
+old_notebooks/
+
+# Garbage
+jobs/
+old_figures/
+figures/
+icml_figures/
+tests/
+
+
+# --- System & IDE ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# --- Docker ---
+Dockerfile
+.dockerignore

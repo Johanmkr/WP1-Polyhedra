@@ -1,3 +1,3 @@
-from geobin_py.reconstruct import Region, Tree
+from geobin_py.reconstruction import Region, Tree
 
 __all__ = ["Region", "Tree"]

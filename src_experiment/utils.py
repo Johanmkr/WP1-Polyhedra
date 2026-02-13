@@ -26,26 +26,33 @@ class NeuralNet(nn.Module):
         self.input_size = input_size
 
         # ------------------------------------------------------------------
-        # Build Layers (PyTorch applies default init here)
+        # Build Layers
         # ------------------------------------------------------------------
+        # Layers are built first (with default PyTorch init)
         self._build_layers()
 
         # ------------------------------------------------------------------
-        # Custom Initialization
+        # Custom Initialization with Safety Logic
         # ------------------------------------------------------------------
-        # If a seed is provided, we isolate the initialization in a local scope
-        # so it doesn't affect the global random state of your script.
         if seed is not None:
-            # "Fork" the RNG to create a local sandbox
-            devices = ["cpu"]
+            # 1. Determine safe devices for fork_rng.
+            # 'devices' expects a list of GPU IDs (integers). 
+            # CPU is ALWAYS included in the fork by default.
+            gpu_devices = []
             if torch.cuda.is_available():
-                devices.append("cuda")
+                gpu_devices = [torch.cuda.current_device()]
                 
-            with torch.random.fork_rng(devices=devices):
+            # 2. Fork the RNG state. 
+            # Passing gpu_devices=[] ensures we don't trigger CUDA errors on CPU-only machines.
+            with torch.random.fork_rng(devices=gpu_devices):
                 torch.manual_seed(seed)
+                if torch.cuda.is_available():
+                    torch.cuda.manual_seed_all(seed)
+                    
+                # Apply the custom initialization within this seeded scope
                 self._init_weights()
         else:
-            # Otherwise, initialize using the current global state
+            # No seed provided: initialize using the current global state
             self._init_weights()
 
     def _build_layers(self):
@@ -63,15 +70,18 @@ class NeuralNet(nn.Module):
             setattr(self, dropout_name, GaussianDropout(p=self.dropout))
 
         # Output Layer
+        # Handle case where hidden_sizes might be empty (Linear model)
+        last_dim = self.hidden_sizes[-1] if self.hidden_sizes else self.input_size
+        
         output_layer_name = f"l{len(self.hidden_sizes) + 1}"
-        setattr(self, output_layer_name, nn.Linear(self.hidden_sizes[-1], self.num_classes))
+        setattr(self, output_layer_name, nn.Linear(last_dim, self.num_classes))
 
     def _init_weights(self) -> None:
-            self.apply(self._initialization_logic)
+        self.apply(self._initialization_logic)
 
     def _initialization_logic(self, m):
         if isinstance(m, nn.Linear):
-            # Check if it's the last layer by comparing dimensions or names
+            # Check if it's the output layer by comparing output features
             if m.out_features == self.num_classes:
                 init.xavier_uniform_(m.weight)
             else:
@@ -82,11 +92,13 @@ class NeuralNet(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = x
+        # Forward pass through hidden layers
         for i in range(len(self.hidden_sizes)):
             out = getattr(self, f"l{i + 1}")(out)
             out = getattr(self, f"relu{i + 1}")(out)
             out = getattr(self, f"dropout{i + 1}")(out)
 
+        # Output layer
         out = getattr(self, f"l{len(self.hidden_sizes) + 1}")(out)
         return out
 
@@ -128,12 +140,12 @@ if __name__ == "__main__":
     print(f"Global random check before models: {initial_rand:.4f}")
 
     # 2. Initialize Model A with a specific seed (e.g., 42)
+    # Note: Architecture must handle inputs. Using logic compatible with your config.
     model_a = NeuralNet(input_size=10, hidden_sizes=[20], num_classes=2, seed=42)
     print("Initialized Model A (Seed 42)")
 
     # 3. Check Global State - IT SHOULD BE DIFFERENT (randomness consumed normally)
     # BUT IT SHOULD NOT BE RESET to 42.
-    # Because we used fork_rng, the global state continues from 999 naturally.
     mid_rand = torch.rand(1).item()
     print(f"Global random check between models: {mid_rand:.4f}")
     
