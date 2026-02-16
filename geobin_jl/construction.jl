@@ -27,8 +27,11 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
     current_layer_regions = [tree.root]
     
     # --- OPTIMIZATION: THREAD-LOCAL MODELS ---
-    # Create one HiGHS model per thread to avoid Channel locking overhead
-    models = [Model(HiGHS.Optimizer) for _ in 1:Threads.nthreads()]
+    # FIX: Use maxthreadid() instead of nthreads(). 
+    # Thread IDs can be > nthreads() (e.g., if using interactive threads or sparse pools).
+    max_tid = Threads.maxthreadid()
+    models = [Model(HiGHS.Optimizer) for _ in 1:max_tid]
+    
     for m in models
         set_silent(m)
     end
@@ -46,7 +49,8 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
         results = Vector{Vector{Region}}(undef, length(current_layer_regions))
 
         Threads.@threads for i in eachindex(current_layer_regions)
-            # Use the model dedicated to this thread
+            # Use the model dedicated to this thread ID
+            # This is now safe even if threadid() returns 17
             local_model = models[Threads.threadid()]
             
             parent = current_layer_regions[i]
@@ -128,7 +132,6 @@ function find_region_candidates(D_prev, g_prev, A_prev, c_prev, x_start, W, b, m
         D, g, A_next, c_next = calculate_layer_geometry(W, b, q_curr, A_prev, c_prev)
 
         # Use LP-based Active Set check (Faster & Robust)
-        # We assume find_active_indices_exact or find_active_indices_lp is available in Geometry
         active_indices, is_bounded, vol = Geometry.find_active_indices_exact(D, g, D_prev, g_prev)
 
         push!(candidates, RegionCandidate(q_curr, D, g, A_next, c_next, active_indices, is_bounded, vol))
