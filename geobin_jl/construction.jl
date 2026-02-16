@@ -26,19 +26,13 @@ end
 function construct_tree!(tree::Tree; verbose::Bool=false)
     current_layer_regions = [tree.root]
     
-    # --- SETUP MODEL POOL (Channel) ---
-    # We create a pool of models. Threads "borrow" one when working 
-    # and return it when done. This avoids BoundsErrors with thread IDs.
-    n_threads = Threads.nthreads()
-    model_pool = Channel{Model}(n_threads)
-    
-    # Fill the pool
-    for _ in 1:n_threads
-        m = Model(HiGHS.Optimizer)
+    # --- OPTIMIZATION: THREAD-LOCAL MODELS ---
+    # Create one HiGHS model per thread to avoid Channel locking overhead
+    models = [Model(HiGHS.Optimizer) for _ in 1:Threads.nthreads()]
+    for m in models
         set_silent(m)
-        put!(model_pool, m)
     end
-    # ---------------------------------
+    # -----------------------------------------
 
     for layer_idx in 1:tree.L
         W = tree.weights[layer_idx]
@@ -48,23 +42,15 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
             println("Layer $layer_idx: Processing $(length(current_layer_regions)) regions...")
         end
 
-        next_layer_regions = Regions.Region[]
+        # Pre-allocate results array to avoid race conditions
         results = Vector{Vector{Region}}(undef, length(current_layer_regions))
 
         Threads.@threads for i in eachindex(current_layer_regions)
-            # 1. Borrow a model from the pool (waits if none available)
-            local_model = take!(model_pool)
+            # Use the model dedicated to this thread
+            local_model = models[Threads.threadid()]
             
-            try
-                parent = current_layer_regions[i]
-                
-                # 2. Process using this model
-                results[i] = process_parent_region(parent, W, b, layer_idx, local_model)
-                
-            finally
-                # 3. ALWAYS return the model, even if code errors
-                put!(model_pool, local_model)
-            end
+            parent = current_layer_regions[i]
+            results[i] = process_parent_region(parent, W, b, layer_idx, local_model)
         end
         
         next_layer_regions = reduce(vcat, results)
@@ -80,11 +66,10 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
 end
 
 function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::Int, model::Model)
-    
-    # 1. Fetch FULL ancestry (Fix for Ghost Regions)
+    # 1. Fetch FULL ancestry
     D_ancestry, g_ancestry = get_path_inequalities(parent)
 
-    # 2. Find Candidates (Passing model for reuse if using LP check)
+    # 2. Find Candidates (Passing model for reuse)
     candidates = find_region_candidates(
         D_ancestry, g_ancestry,
         parent.Alw, parent.clw, parent.x,
@@ -94,10 +79,10 @@ function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::
 
     children = Region[]
     for cand in candidates
-        # 3. Check Feasibility (Passing model for reuse)
+        # 3. Check Feasibility
         feasible_point = get_feasible_point(
             [D_ancestry; cand.D], 
-            [g_ancestry; cand.g]; 
+            [g_ancestry; cand.g];
             model = model
         )
 
@@ -143,9 +128,8 @@ function find_region_candidates(D_prev, g_prev, A_prev, c_prev, x_start, W, b, m
         D, g, A_next, c_next = calculate_layer_geometry(W, b, q_curr, A_prev, c_prev)
 
         # Use LP-based Active Set check (Faster & Robust)
-        # Note: Ensure you have added `find_active_indices_lp` to geometry.jl
-        active_indices, is_bounded, vol = find_active_indices_exact(D, g, D_prev, g_prev)
-        # active_indices, _ = find_active_indices_lp(D, g, D_prev, g_prev; model=model)
+        # We assume find_active_indices_exact or find_active_indices_lp is available in Geometry
+        active_indices, is_bounded, vol = Geometry.find_active_indices_exact(D, g, D_prev, g_prev)
 
         push!(candidates, RegionCandidate(q_curr, D, g, A_next, c_next, active_indices, is_bounded, vol))
 
