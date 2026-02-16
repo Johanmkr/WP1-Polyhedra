@@ -4,6 +4,9 @@ using LinearAlgebra
 using YAML
 using ArgParse
 
+# Force BLAS to use 1 thread to avoid contention with Julia threads
+BLAS.set_num_threads(1)
+
 # Load your local PolyhedraTree module
 include("geobin_jl/geobin.jl")
 using .Geobin

@@ -3,6 +3,7 @@
 # Usage: ./run_pipeline.sh configs/your_config.yaml
 
 CONFIG_FILE=$1
+THREADS=$2
 
 if [ -z "$CONFIG_FILE" ]; then
     echo "Usage: $0 <path_to_config.yaml>"
@@ -46,7 +47,7 @@ echo "------------------------------------------" >> "$LOG_FILE"
 # ------------------------------------------------------------------------------
 echo "Step 2/4: Running Julia Geometry Analysis..." | tee -a "$LOG_FILE"
 
-julia --threads "auto" run_geobin.jl "$CONFIG_FILE" --overwrite 2>&1 | tee -a "$LOG_FILE"
+julia --threads $THREADS run_geobin.jl "$CONFIG_FILE" --overwrite 2>&1 | tee -a "$LOG_FILE"
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
     echo "❌ Julia analysis failed!" | tee -a "$LOG_FILE"
     exit 1
