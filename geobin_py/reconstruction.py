@@ -10,13 +10,9 @@ class Region:
         self.volume = volume
         self.is_bounded = is_bounded
         self.centroid = centroid
-        self.activation = activation  # q vector
-        
-        # Topology
+        self.activation = activation
         self.parent = None
         self.children = []
-        
-        # Geometry
         self.Alw = None 
         self.clw = None
         self.Dlw = None 
@@ -25,7 +21,6 @@ class Region:
     def get_path_inequalities(self):
         if self.Dlw is None:
             return None, None
-        
         D_list, g_list = [], []
         node = self
         while node is not None:
@@ -33,11 +28,9 @@ class Region:
                 D_list.append(node.Dlw)
                 g_list.append(node.glw)
             node = node.parent
-            
         if not D_list:
             dim = self.Alw.shape[1] if self.Alw is not None else 2
             return np.zeros((0, dim)), np.zeros(0)
-
         return np.vstack(D_list[::-1]), np.concatenate(g_list[::-1])
 
     def __repr__(self):
@@ -54,7 +47,6 @@ class Tree:
         self.input_dim = 0
         self.L = 0
         self.leaves = []
-        
         self._load_and_construct()
 
     def get_regions_at_layer(self, layer: int):
@@ -83,68 +75,71 @@ class Tree:
             g = f["epochs"][epoch_key]
             
             # --- 1. Load Weights ---
-            keys = list(g.keys())
-            weight_keys = [k for k in keys if "weight" in k]
-            
-            # Sort l1, l2...
-            def get_layer_idx(k):
-                m = re.search(r"l(\d+)\.", k)
-                return int(m.group(1)) if m else 999
-            weight_keys.sort(key=get_layer_idx)
-            
-            if not weight_keys:
-                raise ValueError("No weights found in HDF5.")
-
             self.W = []
             self.b = []
             
-            for w_key in weight_keys:
-                b_key = w_key.replace("weight", "bias")
-                self.W.append(g[w_key][:])
-                self.b.append(g[b_key][:])
+            if "model" in g:
+                g_model = g["model"]
+                w_keys = sorted([k for k in g_model.keys() if k.startswith("W_")], 
+                                key=lambda x: int(x.split('_')[1]))
+                for wk in w_keys:
+                    bk = wk.replace("W_", "b_")
+                    W_mat = g_model[wk][:]
+                    b_vec = g_model[bk][:]
+                    
+                    # FIX: Always transpose weights from Julia (Col-Major) -> Python (Row-Major)
+                    # We must rely on the source behavior, not the shape heuristic.
+                    W_mat = W_mat.T
+                    
+                    self.W.append(W_mat)
+                    self.b.append(b_vec)
+            else:
+                # Legacy fallback
+                keys = list(g.keys())
+                w_keys = sorted([k for k in keys if "weight" in k],
+                                key=lambda x: int(re.search(r"l(\d+)\.", x).group(1)) if re.search(r"l(\d+)\.", x) else 999)
+                for wk in w_keys:
+                    bk = wk.replace("weight", "bias")
+                    self.W.append(g[wk][:])
+                    self.b.append(g[bk][:])
 
-            self.L = len(self.W)
-            self.input_dim = self.W[0].shape[1]
+            if self.W:
+                self.L = len(self.W)
+                self.input_dim = self.W[0].shape[1]
             
             # --- 2. Load Topology ---
             if "parent_ids" not in g:
-                raise ValueError("Tree topology (parent_ids) missing.")
+                return
 
             parent_ids = g["parent_ids"][:]
             layer_idxs = g["layer_idxs"][:]
+            # Centroids are (N, D) in the fixed Julia script
             centroids  = g["centroids"][:] 
             qlw_flat   = g["qlw_flat"][:]
             qlw_offsets = g["qlw_offsets"][:]
             
-            # Safety Check for Array Sizes
             num_nodes = len(parent_ids)
+
+            # Safety check for orientation (just in case)
+            if centroids.shape[0] != num_nodes and centroids.shape[1] == num_nodes:
+                centroids = centroids.T
+
             if len(centroids) < num_nodes:
-                print(f"    ⚠️ WARNING: Data mismatch! parent_ids={num_nodes}, centroids={len(centroids)}")
-                print("    Truncating tree construction to match available data.")
+                print(f"    ⚠️ Data mismatch! parent_ids={num_nodes}, centroids={len(centroids)}")
                 num_nodes = len(centroids)
 
             # --- 3. Build Nodes ---
             nodes = []
             for i in range(num_nodes):
-                # Safe slicing for qlw
                 if i+1 < len(qlw_offsets):
-                    start, end = qlw_offsets[i], qlw_offsets[i+1]
-                    act = qlw_flat[start:end]
+                    act = qlw_flat[qlw_offsets[i]:qlw_offsets[i+1]]
                 else:
                     act = np.array([], dtype=int)
 
-                # Safe loading of attributes
-                vol = g["volumes"][i] if i < len(g["volumes"]) else -1
-                bnd = bool(g["bounded"][i]) if i < len(g["bounded"]) else False
+                vol = g["volumes"][i] if "volumes" in g and i < len(g["volumes"]) else -1
+                bnd = bool(g["bounded"][i]) if "bounded" in g and i < len(g["bounded"]) else False
                 
-                node = Region(
-                    idx=i,
-                    layer=layer_idxs[i],
-                    volume=vol,
-                    centroid=centroids[i],
-                    activation=act,
-                    is_bounded=bnd
-                )
+                node = Region(i, layer_idxs[i], vol, centroids[i], act, bnd)
                 nodes.append(node)
             
             # --- 4. Link ---
@@ -159,7 +154,9 @@ class Tree:
                     parent.children.append(child)
             
             self.leaves = [n for n in nodes if not n.children]
-            self._hydrate_geometry()
+            
+            if self.W:
+                self._hydrate_geometry()
 
     def _hydrate_geometry(self):
         if not self.root: return
@@ -180,14 +177,14 @@ class Tree:
             W_mat = self.W[parent.layer]
             b_vec = self.b[parent.layer]
             
-            # Z = W(Ax+c) + b
+            # Geometry Update: Z = W(Ax+c) + b
+            # Note: W_mat is already correctly oriented (Out, In) due to the fix above
             W_hat = W_mat @ parent.Alw
             b_hat = W_mat @ parent.clw + b_vec
             
             for child in parent.children:
                 q = child.activation
                 if len(q) != W_mat.shape[0]:
-                    # Activation size mismatch (geometry likely invalid/incomplete)
                     continue
 
                 s_vec = -2.0 * q + 1.0 

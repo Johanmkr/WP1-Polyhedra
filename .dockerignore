@@ -38,6 +38,7 @@ figures/
 icml_figures/
 tests/
 configs/
+outputs/
 Manifest.toml
 
 # --- System & IDE ---

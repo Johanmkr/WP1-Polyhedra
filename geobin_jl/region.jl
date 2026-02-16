@@ -24,6 +24,7 @@ mutable struct Region
     layer_number::Int
     x::Vector{Float64}
 
+    # Constructor 1: Used for Root creation (Fully initialized)
     function Region(; input_dim::Int)
         this = new()
         this.qlw = Int[]
@@ -45,11 +46,29 @@ mutable struct Region
         return this
     end
 
+    # Constructor 2: Used during reconstruction/split (Lightweight)
     function Region(activation::Vector{Int})
         this = new()
         this.qlw = activation
         this.children = Region[]
         this.volume = 0.0
+        this.q_tilde = Int[]
+        this.bounded = false
+        
+        # FIX: Initialize fields to empty defaults to prevent UndefRefError.
+        # They will be overwritten by 'hydrate_geometry!' later, 
+        # but this makes read access safe immediately.
+        this.Alw = Matrix{Float64}(undef, 0, 0)
+        this.clw = Float64[]
+        this.Dlw = Matrix{Float64}(undef, 0, 0)
+        this.glw = Float64[]
+        this.Dlw_active = this.Dlw
+        this.glw_active = this.glw
+        
+        this.parent = nothing
+        this.layer_number = -1
+        this.x = Float64[]
+        
         return this
     end
 end
@@ -70,7 +89,8 @@ function get_path_inequalities(r::Region)
     
     # Traverse up to the root
     while node !== nothing
-        if !isempty(node.Dlw_active)
+        # Safe check: only push if defined and not empty
+        if isdefined(node, :Dlw_active) && !isempty(node.Dlw_active)
             push!(D_list, node.Dlw_active)
             push!(g_list, node.glw_active)
         end
@@ -78,10 +98,9 @@ function get_path_inequalities(r::Region)
     end
 
     if isempty(D_list)
-        # FIX: Return (0, input_dim) instead of (0, 0)
-        # We grab the dimension from the region's internal matrices
-        input_dim = size(r.Alw, 2)
-        return Matrix{Float64}(undef, 0, input_dim), Float64[]
+        # Use safe fallback for dimension if Alw is valid
+        dim = isdefined(r, :Alw) ? size(r.Alw, 2) : 0
+        return Matrix{Float64}(undef, 0, dim), Float64[]
     end
 
     D_path = reduce(vcat, reverse(D_list))

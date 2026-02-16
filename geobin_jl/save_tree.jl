@@ -4,7 +4,6 @@ using HDF5
 using ..Regions
 using ..Trees
 
-# EXPORT THE NEW FUNCTION
 export save_single_tree_to_hdf5
 
 """
@@ -57,6 +56,9 @@ function save_single_tree_to_hdf5(filename::String, tree::Tree, epoch_name::Stri
         is_leaf    = Vector{Bool}(undef, n_nodes)
         volumes    = Vector{Float64}(undef, n_nodes)
         bounded    = Vector{Bool}(undef, n_nodes)
+        
+        # FIX: Allocate as (Nodes, Dim) and save directly.
+        # Python will handle the orientation check.
         centroids  = Matrix{Float64}(undef, n_nodes, tree.input_dim)
         
         qlw_flat = Int[]
@@ -72,6 +74,8 @@ function save_single_tree_to_hdf5(filename::String, tree::Tree, epoch_name::Stri
             # Metrics
             volumes[i]    = node.volume
             bounded[i]    = node.bounded
+            
+            # Fill row directly
             centroids[i, :] = node.x
             
             # Activations
@@ -82,9 +86,12 @@ function save_single_tree_to_hdf5(filename::String, tree::Tree, epoch_name::Stri
         # 4. Write Data with Compression
         function write_ds(name, data)
             dims = size(data)
+            # Chunking logic
             if ndims(data) == 1
                 chunk = (min(dims[1], 1024),)
             else
+                # Data is (Nodes, Dim)
+                # We chunk along the Nodes dimension (1)
                 chunk = (min(dims[1], 1024), dims[2]) 
             end
             ds = create_dataset(g, name, datatype(data), dataspace(data); chunk=chunk, compress=3)
@@ -96,7 +103,7 @@ function save_single_tree_to_hdf5(filename::String, tree::Tree, epoch_name::Stri
         write_ds("is_leaf", is_leaf)
         write_ds("volumes", volumes)
         write_ds("bounded", bounded)
-        write_ds("centroids", centroids)
+        write_ds("centroids", centroids) # Saved as (N, D)
         write_ds("qlw_flat", qlw_flat)
         write_ds("qlw_offsets", qlw_offsets)
     end

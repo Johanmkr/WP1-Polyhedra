@@ -25,29 +25,35 @@ end
 function construct_tree!(tree::Tree; verbose::Bool=false)
     current_layer_regions = [tree.root]
     
-    # --- CRITICAL FIX FOR CLUSTERS ---
-    # Use maxthreadid() because thread IDs are not guaranteed to be 1..N
-    max_tid = Threads.maxthreadid()
-    models = [Model(HiGHS.Optimizer) for _ in 1:max_tid]
+    # --- SETUP MODEL POOL (Channel) ---
+    n_threads = Threads.nthreads()
+    model_pool = Channel{Model}(n_threads)
     
-    for m in models
+    for _ in 1:n_threads
+        m = Model(HiGHS.Optimizer)
         set_silent(m)
+        put!(model_pool, m)
     end
 
     for layer_idx in 1:tree.L
         W = tree.weights[layer_idx]
         b = tree.biases[layer_idx]
 
-        verbose && println("Layer $layer_idx: Processing $(length(current_layer_regions)) regions...")
+        if verbose
+            println("Layer $layer_idx: Processing $(length(current_layer_regions)) regions...")
+        end
 
+        # Thread-safe result storage
         results = Vector{Vector{Region}}(undef, length(current_layer_regions))
 
         Threads.@threads for i in eachindex(current_layer_regions)
-            # Safe access using threadid() which might be > nthreads()
-            local_model = models[Threads.threadid()]
-            
-            parent = current_layer_regions[i]
-            results[i] = process_parent_region(parent, W, b, layer_idx, local_model)
+            local_model = take!(model_pool)
+            try
+                parent = current_layer_regions[i]
+                results[i] = process_parent_region(parent, W, b, layer_idx, local_model)
+            finally
+                put!(model_pool, local_model)
+            end
         end
         
         next_layer_regions = reduce(vcat, results)
@@ -120,6 +126,7 @@ function find_region_candidates(D_prev, g_prev, A_prev, c_prev, x_start, W, b, m
         q_curr = popfirst!(queue)
         D, g, A_next, c_next = calculate_layer_geometry(W, b, q_curr, A_prev, c_prev)
 
+        # Reverted to Original: No Lock, Direct Exact Check
         active_indices, is_bounded, vol = Geometry.find_active_indices_exact(D, g, D_prev, g_prev)
 
         push!(candidates, RegionCandidate(q_curr, D, g, A_next, c_next, active_indices, is_bounded, vol))

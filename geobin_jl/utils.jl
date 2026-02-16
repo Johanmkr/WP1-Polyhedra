@@ -8,7 +8,8 @@ using LinearAlgebra
 export find_hyperplanes, get_region_volume, analyze_region
 
 function find_hyperplanes(state_dict::Dict{String, Any})
-    keys_weights = filter(k -> occursin("weight", k), collect(keys(state_dict)))
+    # FIX: Support both legacy "weight" (PyTorch) and new "W_" (Julia Save) formats
+    keys_weights = filter(k -> occursin("weight", k) || startswith(k, "W_"), collect(keys(state_dict)))
 
     function extract_layer_idx(k)
         m = match(r"(\d+)", k)
@@ -21,7 +22,17 @@ function find_hyperplanes(state_dict::Dict{String, Any})
     biases = Vector{Float64}[]
 
     for k_w in sorted_keys
-        k_b = replace(k_w, "weight" => "bias")
+        # Determine corresponding bias key
+        if occursin("weight", k_w)
+            k_b = replace(k_w, "weight" => "bias")
+        else
+            k_b = replace(k_w, "W_" => "b_")
+        end
+        
+        if !haskey(state_dict, k_b)
+             error("Bias key '$k_b' not found for weight '$k_w'")
+        end
+
         W = convert(Matrix{Float64}, state_dict[k_w])
         b = convert(Vector{Float64}, state_dict[k_b])
         push!(weights, W)
@@ -45,7 +56,6 @@ function get_region_volume(region::Region; bound::Union{Float64, Nothing}=nothin
         I_mat = Matrix{Float64}(I, dim, dim)
         A_box = vcat(I_mat, -I_mat)
         b_box = fill(bound, 2 * dim)
-        
         A = vcat(A, A_box)
         b = vcat(b, b_box)
     end
@@ -55,8 +65,6 @@ function get_region_volume(region::Region; bound::Union{Float64, Nothing}=nothin
     poly = polyhedron(h, CDDLib.Library())
 
     # 4. Check Unboundedness
-    # Fix: 'isbounded' is missing in some Polyhedra versions/namespaces.
-    # We check if the V-representation has any rays instead.
     if isnothing(bound)
         try
             # Convert to V-representation (vertices + rays)
@@ -84,11 +92,11 @@ end
 
 function analyze_region(region; bound::Union{Float64, Nothing}=nothing)
     # 1. Get Path Constraints
-    A, b = Geobin.get_path_inequalities(region)
+    # FIX: Use function imported from Regions, not Geobin global
+    A, b = get_path_inequalities(region)
     dim = size(A, 2)
     
     # 2. Apply Bounding Box (if requested)
-    # If a bound is provided, the region becomes bounded by definition.
     if !isnothing(bound)
         A_box = vcat(Matrix{Float64}(I, dim, dim), -Matrix{Float64}(I, dim, dim))
         b_box = fill(bound, 2 * dim)
@@ -97,13 +105,10 @@ function analyze_region(region; bound::Union{Float64, Nothing}=nothing)
     end
 
     # 3. Construct Polyhedron
-    # CDDLib is an exact solver. It prefers Rational types for stability, 
-    # but handles Float64 by approximation.
     h = hrep(A, b)
     poly = polyhedron(h, CDDLib.Library())
 
     # 4. Check for Emptiness
-    # We remove redundancy first to get the canonical form
     removehredundancy!(poly)
     if isempty(poly)
         return (0.0, true) # Empty sets are bounded with volume 0
@@ -116,8 +121,6 @@ function analyze_region(region; bound::Union{Float64, Nothing}=nothing)
         
         # Check for Rays (Infinite directions)
         if !isempty(rays(vr))
-            # If we supplied a bound, this theoretically shouldn't happen 
-            # unless the bound was ignored or numerical error occurred.
             if !isnothing(bound)
                 @warn "Region has rays despite bounding box! Numerical instability likely."
             end
@@ -125,14 +128,12 @@ function analyze_region(region; bound::Union{Float64, Nothing}=nothing)
         end
         
         # 6. Compute Volume
-        # If we are here, there are no rays, so it is bounded.
         vol = volume(poly)
         return (vol, true)
 
     catch e
-        # Only catch specific solver errors if possible, otherwise rethrow or warn
         @warn "Volume computation failed for Region $(region.id): $e"
-        return (NaN, false) # Return NaN so you can filter it out later
+        return (NaN, false) 
     end
 end
 

@@ -1,6 +1,6 @@
-experiment_name: "mnist_01"
-dataset: "mnist"
-output_dir: "/storage/projects/geobin/outputs"
+experiment_name: "moons_test"
+dataset: "moons"
+output_dir: "outputs"
 
 # Model Architecture
 architecture: [10, 10, 10]  # Hidden layers
