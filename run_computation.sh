@@ -1,14 +1,20 @@
 #!/bin/bash
 
-# Usage: ./run_computation.sh configs/your_config.yaml
+# Usage: ./run_computation.sh configs/your_config.yaml [THREADS]
 
 CONFIG_FILE=$1
-THREADS=$2
+THREADS=${2:-16} # Default to 16 if not provided
 
 if [ -z "$CONFIG_FILE" ]; then
-    echo "Usage: $0 <path_to_config.yaml>"
+    echo "Usage: $0 <path_to_config.yaml> [threads]"
     exit 1
 fi
+
+# --- OPTIMIZATION: ENV VARIABLES ---
+# Prevent libraries from spawning their own thread pools, which fights with Julia threads.
+export OPENBLAS_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OMP_NUM_THREADS=1
 
 # 1. Extract parameters from YAML
 EXP_NAME=$(uv run python -c "import yaml; print(yaml.safe_load(open('$CONFIG_FILE'))['experiment_name'])")
@@ -27,6 +33,7 @@ echo "==========================================" > "$LOG_FILE"
 echo "  Computation Run: $EXP_NAME" >> "$LOG_FILE"
 echo "  Date:            $(date)" >> "$LOG_FILE"
 echo "  Config:          $CONFIG_FILE" >> "$LOG_FILE"
+echo "  Threads:         $THREADS" >> "$LOG_FILE"
 echo "==========================================" >> "$LOG_FILE"
 
 # ------------------------------------------------------------------------------
@@ -47,7 +54,7 @@ echo "------------------------------------------" >> "$LOG_FILE"
 # ------------------------------------------------------------------------------
 echo "Step 2/2: Running Julia Geometry Analysis..." | tee -a "$LOG_FILE"
 
-# Setting threads to auto for max performance during tree construction
+# Pass the thread count explicitly
 julia --threads $THREADS run_geobin.jl "$CONFIG_FILE" --overwrite 2>&1 | tee -a "$LOG_FILE"
 
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
