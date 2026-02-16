@@ -4,16 +4,15 @@ using YAML
 using ArgParse
 using Base.Threads
 using LinearAlgebra
-using Dates # For timing
+using Dates
 
-# 1. Force BLAS to 1 thread to avoid contention with Julia threads
-# BLAS.set_num_threads(1)
+# 1. Force BLAS to 1 thread
+BLAS.set_num_threads(1)
 
 include("geobin_jl/geobin.jl")
 using .Geobin
 
 function main()
-    # --- ARGS PARSING ---
     s = ArgParseSettings()
     @add_arg_table s begin
         "config"
@@ -28,66 +27,44 @@ function main()
     config_path = parsed_args["config"]
     overwrite = parsed_args["overwrite"]
 
-    # --- SETUP PATHS ---
     config = YAML.load_file(config_path)
     output_dir = get(config, "output_dir", ".")
     exp_name = get(config, "experiment_name", "experiment")
     
-    # The ultimate destination on Network Storage
     network_h5_path = joinpath(output_dir, exp_name, "$(exp_name).h5")
-    
-    # The temporary location on Local Storage (Node SSD)
-    # uses /tmp or the directory defined by TMPDIR env var
     temp_h5_path = joinpath(tempdir(), "$(exp_name)_$(getpid()).h5")
 
     println("="^60)
     println("🚀 GEOBIN CLUSTER RUNNER")
     println("="^60)
-    println("• Network Path: $network_h5_path")
-    println("• Local Scratch: $temp_h5_path")
-    println("• Threads:      $(Threads.nthreads())")
+    println("• Threads: $(Threads.nthreads())")
     println("-"^60)
 
-    # --- STAGING: COPY TO LOCAL ---
     if isfile(network_h5_path)
-        println("📦 Staging: Copying file to local scratch...")
-        t_copy = @elapsed cp(network_h5_path, temp_h5_path; force=true)
-        println("   └─ Done in $(round(t_copy, digits=2))s")
+        println("📦 Staging to local scratch...")
+        cp(network_h5_path, temp_h5_path; force=true)
     else
-        # If file doesn't exist (e.g. Python didn't run), create new locally
-        println("⚠️ Network file not found. Creating new local file.")
         h5open(temp_h5_path, "w") do file
             create_group(file, "epochs")
         end
     end
 
     try
-        # --- PROCESSING (ON LOCAL FILE) ---
         process_local_file(temp_h5_path, overwrite)
-
-        # --- COMMIT: COPY BACK TO NETWORK ---
-        println("\n💾 Commit: Copying results back to network storage...")
-        t_commit = @elapsed cp(temp_h5_path, network_h5_path; force=true)
-        println("   └─ Done in $(round(t_commit, digits=2))s")
-        
+        println("\n💾 Committing results...")
+        cp(temp_h5_path, network_h5_path; force=true)
     catch e
-        println("\n❌ ERROR during processing:")
+        println("\n❌ ERROR:")
         showerror(stdout, e, catch_backtrace())
         exit(1)
-        
     finally
-        # --- CLEANUP ---
-        if isfile(temp_h5_path)
-            println("🧹 Cleanup: Removing local scratch file.")
-            rm(temp_h5_path)
-        end
+        isfile(temp_h5_path) && rm(temp_h5_path)
     end
     
     println("\n✅ Execution Complete.")
 end
 
 function process_local_file(h5_path::String, overwrite::Bool)
-    # Scan for epochs inside the LOCAL file
     group_names = h5open(h5_path, "r") do file
         if !haskey(file, "epochs"); return String[]; end
         filter(k -> startswith(k, "epoch_"), keys(file["epochs"]))
@@ -97,7 +74,6 @@ function process_local_file(h5_path::String, overwrite::Bool)
     println("\nProcessing $(length(group_names)) epochs...")
 
     for g_name in group_names
-        # 1. Check if done
         already_done = false
         h5open(h5_path, "r") do file
             if haskey(file["epochs"][g_name], "centroids")
@@ -109,9 +85,7 @@ function process_local_file(h5_path::String, overwrite::Bool)
             continue
         end
 
-        println("\n  ▶ $g_name")
-        
-        # 2. Read Weights (Fast Local Read)
+        # Read Weights
         fake_state_dict = Dict{String, Any}()
         h5open(h5_path, "r") do file
             g = file["epochs"][g_name]
@@ -126,21 +100,23 @@ function process_local_file(h5_path::String, overwrite::Bool)
             end
         end
 
-        # 3. Construct Tree
+        # Construct
         t_start = time()
         tree = Tree(fake_state_dict)
         construct_tree!(tree)
         dt = time() - t_start
         
-        n_nodes = length(Geobin.get_children(tree.root)) # Approx node count check
-        println("    └─ Tree Built: $(round(dt, digits=2))s | Nodes: ~$n_nodes")
+        # --- LOGGING UPDATES ---
+        # Count total nodes and leaves
+        n_nodes = length(Geobin.get_children(tree.root))
+        # Leaves are regions at the final layer (L)
+        leaves = Geobin.get_regions_at_layer(tree, tree.L)
+        n_leaves = length(leaves)
+        
+        println("  ▶ $g_name | Time: $(round(dt, digits=2))s | Nodes: $n_nodes | Leaves: $n_leaves")
 
-        # 4. Save (Fast Local Write)
-        # Using the helper from save_tree.jl we defined earlier
         save_single_tree_to_hdf5(h5_path, tree, g_name)
-        println("    └─ Saved to disk.")
-
-        # 5. Memory Cleanup
+        
         tree = nothing
         fake_state_dict = nothing
         GC.gc() 
