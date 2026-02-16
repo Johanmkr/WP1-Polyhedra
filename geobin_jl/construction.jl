@@ -11,7 +11,6 @@ using HiGHS
 
 export construct_tree!
 
-# Data structure for candidates
 struct RegionCandidate
     activation_pattern::Vector{Int}
     D::Matrix{Float64}
@@ -26,31 +25,25 @@ end
 function construct_tree!(tree::Tree; verbose::Bool=false)
     current_layer_regions = [tree.root]
     
-    # --- OPTIMIZATION: THREAD-LOCAL MODELS ---
-    # FIX: Use maxthreadid() instead of nthreads(). 
-    # Thread IDs can be > nthreads() (e.g., if using interactive threads or sparse pools).
+    # --- CRITICAL FIX FOR CLUSTERS ---
+    # Use maxthreadid() because thread IDs are not guaranteed to be 1..N
     max_tid = Threads.maxthreadid()
     models = [Model(HiGHS.Optimizer) for _ in 1:max_tid]
     
     for m in models
         set_silent(m)
     end
-    # -----------------------------------------
 
     for layer_idx in 1:tree.L
         W = tree.weights[layer_idx]
         b = tree.biases[layer_idx]
 
-        if verbose
-            println("Layer $layer_idx: Processing $(length(current_layer_regions)) regions...")
-        end
+        verbose && println("Layer $layer_idx: Processing $(length(current_layer_regions)) regions...")
 
-        # Pre-allocate results array to avoid race conditions
         results = Vector{Vector{Region}}(undef, length(current_layer_regions))
 
         Threads.@threads for i in eachindex(current_layer_regions)
-            # Use the model dedicated to this thread ID
-            # This is now safe even if threadid() returns 17
+            # Safe access using threadid() which might be > nthreads()
             local_model = models[Threads.threadid()]
             
             parent = current_layer_regions[i]
@@ -70,10 +63,8 @@ function construct_tree!(tree::Tree; verbose::Bool=false)
 end
 
 function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::Int, model::Model)
-    # 1. Fetch FULL ancestry
     D_ancestry, g_ancestry = get_path_inequalities(parent)
 
-    # 2. Find Candidates (Passing model for reuse)
     candidates = find_region_candidates(
         D_ancestry, g_ancestry,
         parent.Alw, parent.clw, parent.x,
@@ -83,7 +74,6 @@ function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::
 
     children = Region[]
     for cand in candidates
-        # 3. Check Feasibility
         feasible_point = get_feasible_point(
             [D_ancestry; cand.D], 
             [g_ancestry; cand.g];
@@ -92,7 +82,6 @@ function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::
 
         if !isnothing(feasible_point)
             child = Region(cand.activation_pattern)
-            
             child.q_tilde     = cand.active_indices
             child.Dlw         = cand.D
             child.glw         = cand.g
@@ -131,7 +120,6 @@ function find_region_candidates(D_prev, g_prev, A_prev, c_prev, x_start, W, b, m
         q_curr = popfirst!(queue)
         D, g, A_next, c_next = calculate_layer_geometry(W, b, q_curr, A_prev, c_prev)
 
-        # Use LP-based Active Set check (Faster & Robust)
         active_indices, is_bounded, vol = Geometry.find_active_indices_exact(D, g, D_prev, g_prev)
 
         push!(candidates, RegionCandidate(q_curr, D, g, A_next, c_next, active_indices, is_bounded, vol))

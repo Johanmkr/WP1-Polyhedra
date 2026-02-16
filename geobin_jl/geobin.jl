@@ -9,18 +9,17 @@ using CDDLib
 using Statistics
 using Printf
 
-# --- FIX: Load Order Changed ---
-# Regions must be loaded first because Utils and Trees depend on it.
-include("region.jl")    # <--- Moved up
-include("geometry.jl")  # Independent
-include("utils.jl")     # Depends on Regions
-include("tree.jl")      # Depends on Regions, Utils
+# Include order
+include("region.jl")    
+include("geometry.jl")  
+include("utils.jl")     
+include("tree.jl")      
 include("construction.jl")
 include("verification.jl")
 include("pruning.jl")
 include("save_tree.jl")
 
-# Use and re-export submodules
+# Use and re-export
 using .Regions
 using .Utils
 using .Geometry
@@ -30,6 +29,7 @@ using .Verification
 using .Pruning
 using .SaveTree
 
+# EXPORT EVERYTHING
 export Region, Tree, construct_tree!, get_regions_at_layer, print_tree_summary, get_path_inequalities
 export verify_volume_conservation, check_point_partition, get_region_volume, scan_all_overlaps_strict
 export find_hyperplanes
@@ -40,6 +40,8 @@ export scan_all_overlaps_strict_optimized
 export verify_tree_hierarchy_robust
 export check_region_conditioning
 export find_active_indices_lp
-export save_trees_to_hdf5
+
+# CRITICAL FIX: Export the new save function
+export save_single_tree_to_hdf5
 
 end # module

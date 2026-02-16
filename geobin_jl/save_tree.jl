@@ -4,6 +4,7 @@ using HDF5
 using ..Regions
 using ..Trees
 
+# EXPORT THE NEW FUNCTION
 export save_single_tree_to_hdf5
 
 """
@@ -20,7 +21,6 @@ function save_single_tree_to_hdf5(filename::String, tree::Tree, epoch_name::Stri
             delete_object(file, "epochs/$epoch_name")
         end
         
-        # Create group
         # Ensure 'epochs' group exists
         if !haskey(file, "epochs")
             create_group(file, "epochs")
@@ -80,14 +80,12 @@ function save_single_tree_to_hdf5(filename::String, tree::Tree, epoch_name::Stri
         end
 
         # 4. Write Data with Compression
-        # Helper to write compressed datasets
         function write_ds(name, data)
             dims = size(data)
-            # Chunking strategy: try to chunk by ~1000 items
             if ndims(data) == 1
                 chunk = (min(dims[1], 1024),)
             else
-                chunk = (min(dims[1], 1024), dims[2]) # Chunk rows
+                chunk = (min(dims[1], 1024), dims[2]) 
             end
             ds = create_dataset(g, name, datatype(data), dataspace(data); chunk=chunk, compress=3)
             write(ds, data)
@@ -104,4 +102,4 @@ function save_single_tree_to_hdf5(filename::String, tree::Tree, epoch_name::Stri
     end
 end
 
-end #module
+end # module
