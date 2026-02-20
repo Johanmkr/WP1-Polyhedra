@@ -5,19 +5,10 @@ from typing import Dict, List, Tuple
 
 QUANTITIES_TO_ESTIMATE = ["Kullback-Leibler", "Itakura-Saito", "H(W)", "H(Y|W)"]
 
-
 class DivergenceEngine:
     """
     General-purpose engine for computing information-theoretic
     divergences from region-wise number counts.
-
-    This class is agnostic to:
-    - models
-    - datasets
-    - epochs
-    - file structure
-
-    It operates purely on a pandas DataFrame.
     """
 
     def __init__(self, frame: pd.DataFrame):
@@ -45,19 +36,9 @@ class DivergenceEngine:
         # Precompute probability masses
         self._prepare_probability_masses()
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
     def compute(self) -> Dict[str, pd.DataFrame]:
         """
         Compute all divergences and return layer-wise aggregates.
-
-        Returns
-        -------
-        Dict[str, pd.DataFrame]
-            Keys are divergence names (e.g. MI_KL),
-            values are DataFrames with one row and columns l1, l2, ...
         """
         results = {}
 
@@ -79,10 +60,6 @@ class DivergenceEngine:
 
         return results
 
-    # ------------------------------------------------------------------
-    # Internal logic
-    # ------------------------------------------------------------------
-
     def _prepare_probability_masses(self) -> None:
         n_w = self.frame["total"].to_numpy()
         n_kw = self.frame[self.classes].to_numpy()
@@ -91,23 +68,19 @@ class DivergenceEngine:
         self.m_kw = n_kw / self.N
         self.m_k = self.n_k / self.N
 
-    def _compute_individual(
-        self,
-        estimate: str,
-    ) -> np.ndarray:
+    def _compute_individual(self, estimate: str) -> np.ndarray:
         match estimate:
             case "Kullback-Leibler":
                 logterm = self.m_kw / (self.m_w @ self.m_k)
                 outterm = np.full_like(logterm, 0, dtype=float)
                 logterm = np.log(logterm, where=logterm > 0, out=outterm)
-
                 return (self.m_kw * logterm).sum(axis=1)
 
             case "Itakura-Saito":
                 term = self.m_kw / (self.m_w @ self.m_k)
                 outterm = np.full_like(term, 0, dtype=float)
                 logterm = np.log(term, where=term > 0, out=outterm)
-                return (term - logterm-1).sum(axis=1)
+                return (term - logterm - 1).sum(axis=1)
 
             case "H(W)":
                 logterm = np.log(self.m_w, where=self.m_w > 0, out=np.zeros_like(self.m_w, dtype=float))
@@ -121,26 +94,19 @@ class DivergenceEngine:
             case _:
                 raise ValueError(f"Unknown estimate: {estimate}")
 
-    def _run_consistency_check(
-        self,
-        frame: pd.DataFrame,
-    ) -> Tuple[pd.DataFrame, int, List[str], np.ndarray]:
-
-        assert frame.columns[-1] == "total"
-
+    def _run_consistency_check(self, frame: pd.DataFrame) -> Tuple[pd.DataFrame, int, List[str], np.ndarray]:
+        assert frame.columns[-1] == "total", "Last column must be 'total'"
         classes = frame.columns[2:-1].tolist()
 
-        # Row consistency
-        assert np.all(
-            frame[classes].sum(axis=1) == frame["total"]
-        )
+        # Row consistency (Sum of classes = total points in region)
+        assert np.all(frame[classes].sum(axis=1) == frame["total"])
 
-        # Layer consistency
+        # Layer consistency (Sum of points in layer = N)
         num_layers = frame["layer_idx"].nunique()
         totals_per_layer = frame.groupby("layer_idx")["total"].sum().values
-        assert np.all(totals_per_layer == totals_per_layer[0])
+        assert np.all(totals_per_layer == totals_per_layer[0]), "Point leak! A layer has fewer/more points than others."
 
-        # Class totals consistency
+        # Class totals consistency (Sum of class points across regions matches global distribution)
         n_k_ref = (
             frame.loc[frame["layer_idx"] == 1, classes]
             .sum(axis=0)
@@ -153,9 +119,6 @@ class DivergenceEngine:
                 .sum(axis=0)
                 .to_numpy()[None, :]
             )
-            assert np.all(n_k == n_k_ref)
+            assert np.all(n_k == n_k_ref), f"Class marginal mismatch at layer {layer}."
 
         return frame, num_layers, classes, n_k_ref
-    
-if __name__=="__main__":
-    pass

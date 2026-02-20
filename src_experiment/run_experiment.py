@@ -98,6 +98,8 @@ def run(config_path):
     dataset_kwargs = {}
     if "centers" in config:
         dataset_kwargs["centers"] = config["centers"]
+    if "n_features" in config:
+        dataset_kwargs["n_features"] = config["n_features"]
     
     print(f"Loading {dataset_name}...")
     train_loader, test_loader = get_new_data(
@@ -189,12 +191,19 @@ def run(config_path):
             res_grp.create_dataset(col, data=results_df[col].values)
         
         all_points = []
+        all_labels = []
         with torch.no_grad():
-            for batch in test_loader:
-                inputs = batch[0] if isinstance(batch, (list, tuple)) else batch
-                inputs = inputs.view(inputs.size(0), -1)
-                all_points.append(inputs.cpu().numpy())
+            for x, y in test_loader:
+                # Flatten the inputs (e.g., for images, or just keep 2D as 2D)
+                x = x.view(x.size(0), -1)
+                
+                # Append both to our lists
+                all_points.append(x.cpu().numpy())
+                all_labels.append(y.cpu().numpy())
+                
+        # Concatenate and save as separate datasets
         f.create_dataset("points", data=np.concatenate(all_points, axis=0))
+        f.create_dataset("labels", data=np.concatenate(all_labels, axis=0))
         
         # Save test dataloader to the file 
     print("Experiment complete.")

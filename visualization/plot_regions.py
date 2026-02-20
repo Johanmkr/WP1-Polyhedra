@@ -77,14 +77,12 @@ def compute_polygon_vertices(region: Region, bound: float, basis_matrix=None):
         return None
 
     # 2. Project High-D constraints to 2D slice if needed
-    # x = U * y  =>  D(Uy) <= g  =>  (DU)y <= g
     if basis_matrix is not None:
         D = D @ basis_matrix
     
     dim = D.shape[1] # Should be 2 now
     
     # 3. Create Bounding Box Constraints [-bound, bound]
-    # We clip the region to the view so "unbounded" regions appear to fill the screen
     I = np.eye(dim)
     D_box = np.vstack([I, -I])
     g_box = np.full(2 * dim, bound)
@@ -94,18 +92,12 @@ def compute_polygon_vertices(region: Region, bound: float, basis_matrix=None):
     b_full = np.concatenate([g, g_box])
     
     # 5. Find Interior Point (Chebyshev Center)
-    # The stored region.centroid is in High-D and might be outside the slice/box.
-    # We must find a valid point 'y' in the 2D slice for HalfspaceIntersection.
     pt = find_interior_point(A_full, b_full)
     
     if pt is None:
         return None # Region doesn't intersect our viewing slice/box
         
     # 6. Compute Intersection using Scipy
-    # Format: [A, -b] corresponds to Ax + b <= 0 -> Ax - b <= 0 ??
-    # Scipy docs: "Halfspaces defined as Ax + b <= 0"
-    # Our format: Ax <= b  =>  Ax - b <= 0. 
-    # So we pass -b_full.
     halfspaces = np.hstack([A_full, -b_full[:, None]])
     
     try:
@@ -126,21 +118,36 @@ def compute_polygon_vertices(region: Region, bound: float, basis_matrix=None):
 # 2. PLOTTING FUNCTION
 # ==============================================================================
 
-def plot_grid(h5_path, bound=4.0):
+def plot_grid(h5_path, bound=4.0, plot_points=False):
     path = Path(h5_path)
     if not path.exists():
         print(f"❌ File not found: {path}")
         return
 
-    # 1. Scan Epochs
+    # 1. Scan Epochs & Load Points
     print(f"Scanning {path.name}...")
+    points = None
     try:
         import h5py
         with h5py.File(path, 'r') as f:
             if 'epochs' not in f: raise KeyError
             all_epochs = sorted([int(k.split('_')[1]) for k in f['epochs'].keys()])
-    except Exception:
-        print("❌ Could not read epochs. Has the Julia script run?")
+            
+            # Extract points if requested
+            if plot_points:
+                if 'points' in f and 'labels' in f:
+                    points_raw = f['points'][:]
+                    labels = f['labels'][:] # <--- Load labels
+                    
+                    if len(points_raw.shape) == 2 and points_raw.shape[0] < points_raw.shape[1]:
+                        points_raw = points_raw.T
+                        
+                    points = points_raw
+                else:
+                    print("⚠️ '--points' flag was used, but 'points' or 'labels' were missing.")
+                    
+    except Exception as e:
+        print(f"❌ Could not read epochs or points. Has the Julia script run? Error: {e}")
         return
 
     if len(all_epochs) > 6:
@@ -172,6 +179,14 @@ def plot_grid(h5_path, bound=4.0):
     if input_dim > 2:
         basis = get_projection_basis(input_dim)
         slice_msg = f"Random 2D Slice of {input_dim}D Space"
+        
+    # 3. Project points to 2D slice if necessary
+    points_2d = None
+    if points is not None:
+        if input_dim > 2 and basis is not None:
+            points_2d = points @ basis
+        else:
+            points_2d = points
     
     # 4. Initialize Plot
     num_epochs = len(epochs_to_plot)
@@ -191,23 +206,17 @@ def plot_grid(h5_path, bound=4.0):
         for layer_idx in range(num_layers):
             ax = axes[layer_idx, col_idx]
             
-            # --- UPDATED TICK LOGIC ---
-            # Only show Y-ticks on the first column
+            # --- TICK LOGIC ---
             if col_idx != 0:
                 ax.set_yticklabels([])
-            
-            # Only show X-ticks on the bottom row
             if layer_idx != num_layers - 1:
                 ax.set_xticklabels([])
                 
-            # If you want to strictly hide the tick marks themselves (the little lines)
-            # but keep the labels for the outer edge, use this:
             ax.tick_params(axis='both', which='both', 
                            left=(col_idx == 0), 
                            bottom=(layer_idx == num_layers - 1),
                            labelleft=(col_idx == 0), 
                            labelbottom=(layer_idx == num_layers - 1))
-            # --------------------------
 
             # Formatting
             if layer_idx == 0:
@@ -236,17 +245,36 @@ def plot_grid(h5_path, bound=4.0):
                                     facecolors=facecolors,
                                     edgecolors='black',
                                     linewidths=0.5,
-                                    alpha=0.6)
+                                    alpha=0.6,
+                                    zorder=1) # Render regions at bottom
                 ax.add_collection(pc)
             else:
                 ax.text(0, 0, "Empty/No Slice", ha='center', va='center', fontsize=8)
 
-    fig.suptitle(f"Geometric Regions Evolution\n{slice_msg}", fontsize=16, y=1.02)
-    plt.tight_layout()
-    
-    out_file = path.parent / f"{path.stem}_regions_grid.png"
-    plt.savefig(out_file, dpi=150, bbox_inches='tight')
-    print(f"✅ Visualization saved to: {out_file}")
+            # Scatter the points if requested
+            if points_2d is not None:
+                # 1. Define distinct, high-contrast colors and shapes
+                point_colors = ['#FF0000', '#00FFFF', '#39FF14', '#FF00FF', '#FFFF00', '#FFFFFF']
+                point_markers = ['o', 's', '^', 'D', 'P', '*'] 
+                
+                unique_labels = np.unique(labels)
+                
+                # 2. Plot each class separately
+                for idx, lbl in enumerate(unique_labels):
+                    mask = (labels == lbl)
+                    
+                    color = point_colors[idx % len(point_colors)]
+                    marker = point_markers[idx % len(point_markers)]
+                    
+                    ax.scatter(points_2d[mask, 0], points_2d[mask, 1], 
+                               c=color, 
+                               marker=marker,
+                               s=1,                # <--- CHANGED: Reduced from 25 to 8
+                               alpha=0.6,          
+                               zorder=4,           
+                            #    edgecolors='black', 
+                               linewidths=0.5     # <--- CHANGED: Thinner border (was 1.0) so it doesn't swallow the color
+                    )
 
     # 6. Save
     fig.suptitle(f"Geometric Regions Evolution\n{slice_msg}", fontsize=16, y=1.02)
@@ -256,10 +284,12 @@ def plot_grid(h5_path, bound=4.0):
     plt.savefig(out_file, dpi=150, bbox_inches='tight')
     print(f"✅ Visualization saved to: {out_file}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("file", type=str, help="HDF5 file path")
     parser.add_argument("--bound", type=float, default=4.0, help="Plot view bound (default: 4.0)")
+    parser.add_argument("--points", action="store_true", help="Plot scatter points from the HDF5 file")
     args = parser.parse_args()
     
-    plot_grid(args.file, args.bound)
+    plot_grid(args.file, args.bound, args.points)

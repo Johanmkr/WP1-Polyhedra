@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 from typing import Tuple, Dict, Callable
 
-N_SAMPLES = 1000
+N_SAMPLES = 10000
 DEFAULT_BATCH_SIZE = 32
 
 # ------------------------------------------------------------------------------

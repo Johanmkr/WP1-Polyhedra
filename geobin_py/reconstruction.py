@@ -40,6 +40,8 @@ class Region:
 
         return np.vstack(D_list[::-1]), np.concatenate(g_list[::-1])
 
+    
+
     def __repr__(self):
         return f"<Region ID:{self.id} L:{self.layer}>"
 
@@ -199,6 +201,61 @@ class Tree:
                 child.clw = q * b_hat
                 
                 queue.append(child)
+                
+    def assign_points_to_regions(self, points: np.ndarray, target_layer: int) -> np.ndarray:
+        """
+        Given an array of points (N, input_dim), returns an array of shape (N,)
+        containing the Region ID that each point belongs to at the target_layer.
+        Returns -1 for points that fall into a region not present in the tree.
+        """
+        N = points.shape[0]
+        region_assignments = np.full(N, -1, dtype=int)
+        
+        if self.root is None:
+            return region_assignments
+            
+        # Queue stores tuples of: (current_node, indices_of_points_in_this_node)
+        queue = [(self.root, np.arange(N))]
+        
+        while queue:
+            node, pt_idx = queue.pop(0)
+            
+            if len(pt_idx) == 0:
+                continue
+                
+            # If we've reached the desired layer, record the region ID for these points
+            if node.layer == target_layer:
+                region_assignments[pt_idx] = node.id
+                continue
+                
+            # If we are at a leaf but haven't reached the target layer, we can't route further
+            if not node.children:
+                continue
+                
+            # To route points to the next layer, we compute their pre-activations (Z)
+            # using the affine transformation mapping (Alw, clw) from the root to this node.
+            W_mat = self.W[node.layer]
+            b_vec = self.b[node.layer]
+            
+            W_hat = W_mat @ node.Alw
+            b_hat = W_mat @ node.clw + b_vec
+            
+            # Z = X @ W_hat^T + b_hat
+            Z = points[pt_idx] @ W_hat.T + b_hat
+            
+            # Compute activation signature for these points
+            Q = (Z > 0).astype(int) # shape: (len(pt_idx), num_neurons)
+            
+            # Route points to the matching child region
+            for child in node.children:
+                # Find points whose activation signature matches this child's signature
+                match_mask = np.all(Q == child.activation, axis=1)
+                child_pt_idx = pt_idx[match_mask]
+                
+                if len(child_pt_idx) > 0:
+                    queue.append((child, child_pt_idx))
+                    
+        return region_assignments
 
 if __name__ == "__main__":
     pass
