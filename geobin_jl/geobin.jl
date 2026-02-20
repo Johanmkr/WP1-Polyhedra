@@ -19,6 +19,7 @@ include("construction.jl")
 include("verification.jl")
 include("pruning.jl")
 include("save_tree.jl")
+include("sparse_construction.jl")
 
 # Use and re-export submodules
 using .Regions
@@ -29,6 +30,7 @@ using .Construction
 using .Verification
 using .Pruning
 using .SaveTree
+using .SparseConstruction
 
 export Region, Tree, construct_tree!, get_regions_at_layer, print_tree_summary, get_path_inequalities
 export verify_volume_conservation, check_point_partition, get_region_volume, scan_all_overlaps_strict
@@ -41,5 +43,6 @@ export verify_tree_hierarchy_robust
 export check_region_conditioning
 export find_active_indices_lp
 export save_trees_to_hdf5
+export construct_tree_sparse!, construct_tree_sparse_mc!
 
 end # module
