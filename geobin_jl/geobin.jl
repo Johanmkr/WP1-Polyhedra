@@ -42,7 +42,7 @@ export scan_all_overlaps_strict_optimized
 export verify_tree_hierarchy_robust
 export check_region_conditioning
 export find_active_indices_lp
-export save_trees_to_hdf5
+export save_tree_to_h5, read_state_dict_from_h5
 export construct_tree_sparse!, construct_tree_sparse_mc!
 
 end # module
