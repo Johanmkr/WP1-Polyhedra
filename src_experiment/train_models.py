@@ -179,8 +179,8 @@ def train_model_multiclass(
                     "train_accuracy": train_accuracy[epoch],
                     "test_loss": test_loss[epoch],
                     "test_accuracy": test_accuracy[epoch],
-                    "eval_train_loss": eval_train_loss,
-                    "eval_train_accuracy": eval_train_accuracy,
+                    "eval_train_loss": eval_train_loss[epoch],
+                    "eval_train_accuracy": eval_train_accuracy[epoch],
                 }
                 on_save_callback(epoch, state, metrics)
             
