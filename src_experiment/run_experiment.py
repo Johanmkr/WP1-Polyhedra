@@ -177,7 +177,7 @@ def run(config_path):
             savepath=None,
             SAVE_STATES=False,
             RETURN_STATES=False,
-            disable_progress=True  # <--- CHANGE 2: Add this new argument
+            disable_progress=True 
         )
         
         # Safely extract results (works if return is (df,) or (df, dict))
