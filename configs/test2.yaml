@@ -1,4 +1,4 @@
-experiment_name: "moons_01"
+experiment_name: "moons_test2"
 dataset: "moons"
 output_dir: "outputs"
 
