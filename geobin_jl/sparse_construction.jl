@@ -14,7 +14,7 @@ export construct_tree_sparse!, construct_tree_sparse_mc!
 Performs a forward pass for a single point, returning the sequence of 
 activation signatures (q) for every layer.
 """
-function compute_activation_path(tree::Tree, x0::Vector{Float64})
+function compute_activation_path(tree::Tree, x0::Vector{Float32})
     q_path = Vector{Vector{Int}}(undef, tree.L)
     a = x0
     
@@ -44,7 +44,7 @@ If a region already exists, it traverses it. If not, it creates a new region
 and computes the necessary affine geometries to maintain compatibility with 
 existing downstream verification/volume tools.
 """
-function insert_path!(tree::Tree, x0::Vector{Float64}, q_path::Vector{Vector{Int}})
+function insert_path!(tree::Tree, x0::Vector{Float32}, q_path::Vector{Vector{Int}})
     current_node = tree.root
     
     for l in 1:tree.L
@@ -102,7 +102,7 @@ end
 Takes a matrix of points (size: input_dim x num_points) and builds the tree
 using a fast thread-safe parallel approach.
 """
-function construct_tree_sparse!(tree::Tree, points::Matrix{Float64})
+function construct_tree_sparse!(tree::Tree, points::Matrix{Float32})
     dim, n_points = size(points)
     @assert dim == tree.input_dim "Point dimensions do not match tree input dimension."
     

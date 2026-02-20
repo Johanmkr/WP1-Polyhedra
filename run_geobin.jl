@@ -65,6 +65,10 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false)
                 println("  Warning: No model weights found in $g_name. Skipping.")
                 continue
             end
+
+            # Read points
+            points = read(file, "points")
+            # println("Shape of points: ", size(points))
             
             # ---------------------------------------------------------
             # PHASE 2: COMPUTE TREE
@@ -72,7 +76,11 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false)
             tree = Tree(state_dict)
             
             t_start = time()
-            construct_tree!(tree, verbose=false)
+            # Exact construction
+            # construct_tree!(tree, verbose=false)
+            
+            # test sparse construction
+            construct_tree_sparse!(tree, points)
             duration = time() - t_start
             
             leaves = get_regions_at_layer(tree, tree.L)
