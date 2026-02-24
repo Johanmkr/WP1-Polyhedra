@@ -14,7 +14,7 @@ export construct_tree_sparse!, construct_tree_sparse_mc!
 Performs a forward pass for a single point, returning the sequence of 
 activation signatures (q) for every layer.
 """
-function compute_activation_path(tree::Tree, x0::Vector{Float32})
+function compute_activation_path(tree::Tree, x0::AbstractVector{Float32})
     q_path = Vector{Vector{Int}}(undef, tree.L)
     a = x0
     
@@ -44,7 +44,7 @@ If a region already exists, it traverses it. If not, it creates a new region
 and computes the necessary affine geometries to maintain compatibility with 
 existing downstream verification/volume tools.
 """
-function insert_path!(tree::Tree, x0::Vector{Float32}, q_path::Vector{Vector{Int}})
+function insert_path!(tree::Tree, x0::AbstractVector{Float32}, q_path::Vector{Vector{Int}})
     current_node = tree.root
     
     for l in 1:tree.L
@@ -116,7 +116,7 @@ function construct_tree_sparse!(tree::Tree, points::Matrix{Float32})
     
     p1 = Progress(n_points; desc="Computing Paths (Parallel): ")
     Threads.@threads for i in 1:n_points
-        paths[i] = compute_activation_path(tree, points[:, i])
+        paths[i] = compute_activation_path(tree, @view(points[:, i]))
         next!(p1)
     end
     
@@ -148,7 +148,7 @@ function construct_tree_sparse!(tree::Tree, points::Matrix{Float32})
     # so threads never have to concurrently push! to the root.
     for (q1, indices) in branch_groups
         first_idx = indices[1]
-        insert_path!(tree, points[:, first_idx], paths[first_idx])
+        insert_path!(tree, @view(points[:, first_idx]), paths[first_idx])
     end
 
     p2 = Progress(n_points; desc="Assembling Subtrees (Parallel): ")
@@ -160,7 +160,7 @@ function construct_tree_sparse!(tree::Tree, points::Matrix{Float32})
         # Process from the 2nd point onwards (1st was done sequentially)
         for i in 2:length(indices)
             idx = indices[i]
-            insert_path!(tree, points[:, idx], paths[idx])
+            insert_path!(tree, @view(points[:, idx]), paths[idx])
             next!(p2)
         end
         # Advance the progress bar for the 1st item we skipped in the loop
