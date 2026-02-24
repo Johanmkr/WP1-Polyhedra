@@ -120,12 +120,51 @@ function construct_tree_sparse!(tree::Tree, points::Matrix{Float32})
         next!(p1)
     end
     
-    # --- PHASE 2: Sequential Tree Assembly ---
-    # Sequential assembly prevents race conditions on parent.children without needing locks.
-    p2 = Progress(n_points; desc="Assembling Tree (Sequential): ")
+    # # --- PHASE 2: Sequential Tree Assembly ---
+    # # Sequential assembly prevents race conditions on parent.children without needing locks.
+    # p2 = Progress(n_points; desc="Assembling Tree (Sequential): ")
+    # for i in 1:n_points
+    #     insert_path!(tree, points[:, i], paths[i])
+    #     next!(p2)
+    # end
+
+    # --- PHASE 2: Parallel Tree Assembly via Branch Partitioning ---
+    
+    # 1. Group points by their Layer 1 activation signature
+    branch_groups = Dict{Vector{Int}, Vector{Int}}()
     for i in 1:n_points
-        insert_path!(tree, points[:, i], paths[i])
-        next!(p2)
+        q1 = paths[i][1]
+        if !haskey(branch_groups, q1)
+            branch_groups[q1] = Int[]
+        end
+        push!(branch_groups[q1], i)
+    end
+
+    println("   - Partitioned into $(length(branch_groups)) independent branches.")
+
+    # 2. PRE-SEED LAYER 1 (Sequential)
+    # Insert the first path of each branch sequentially. 
+    # This guarantees that the root node's children array is fully built
+    # so threads never have to concurrently push! to the root.
+    for (q1, indices) in branch_groups
+        first_idx = indices[1]
+        insert_path!(tree, points[:, first_idx], paths[first_idx])
+    end
+
+    p2 = Progress(n_points; desc="Assembling Subtrees (Parallel): ")
+
+    # 3. Process the REST of the points in each branch in parallel
+    # Threads now safely read from the pre-existing root and only 
+    # modify their completely isolated subtrees.
+    Threads.@threads for (q1, indices) in collect(branch_groups)
+        # Process from the 2nd point onwards (1st was done sequentially)
+        for i in 2:length(indices)
+            idx = indices[i]
+            insert_path!(tree, points[:, idx], paths[idx])
+            next!(p2)
+        end
+        # Advance the progress bar for the 1st item we skipped in the loop
+        next!(p2) 
     end
     
     println("✅ Sparse tree construction complete.")
