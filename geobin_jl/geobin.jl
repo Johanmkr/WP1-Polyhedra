@@ -20,6 +20,7 @@ include("verification.jl")
 include("pruning.jl")
 include("save_tree.jl")
 include("sparse_construction.jl")
+include("volume.jl")
 
 # Use and re-export submodules
 using .Regions
@@ -31,6 +32,7 @@ using .Verification
 using .Pruning
 using .SaveTree
 using .SparseConstruction
+using .Volume
 
 export Region, Tree, construct_tree!, get_regions_at_layer, print_tree_summary, get_path_inequalities
 export verify_volume_conservation, check_point_partition, get_region_volume, scan_all_overlaps_strict
@@ -44,5 +46,6 @@ export check_region_conditioning
 export find_active_indices_lp
 export save_tree_to_h5, read_state_dict_from_h5
 export construct_tree_sparse!, construct_tree_sparse_mc!
+export compute_volumes_parallel!, estimate_volumes_parallel!
 
 end # module
