@@ -63,38 +63,66 @@ function compute_volumes_parallel!(tree::Tree; bound::Union{Float64, Nothing}=no
 end
 
 """
-Checks if a region is unbounded by evaluating its recession cone.
-Re-uses an existing JuMP model to eliminate allocation overhead.
+Checks if a region is unbounded by evaluating its recession cone {d | Ad <= 0}.
+Uses strict row-normalization, higher tolerances, and post-solve validation to prevent 
+numerical noise from falsely classifying bounded regions as unbounded.
 """
-function is_region_unbounded_fast(A::Matrix{Float64}, model::Model)
+function is_region_unbounded_fast(A::Matrix{Float64}, model::Model; tol=1e-4)
     dim = size(A, 2)
-    # If there are no constraints, the whole space is unbounded
     if size(A, 1) == 0
         return true
     end
     
-    empty!(model) # Clears variables and constraints from previous runs
-    
-    # Bounded test vector d
-    @variable(model, -1.0 <= d[1:dim] <= 1.0)
-    # Recession cone constraint
-    @constraint(model, A * d .<= 0)
-    
-    for i in 1:dim
-        # Check if we can move infinitely in the positive direction of axis i
-        @objective(model, Max, d[i])
-        optimize!(model)
-        if termination_status(model) == MOI.OPTIMAL && objective_value(model) > 1e-6
-            return true
-        end
-        
-        # Check if we can move infinitely in the negative direction of axis i
-        @objective(model, Min, d[i])
-        optimize!(model)
-        if termination_status(model) == MOI.OPTIMAL && objective_value(model) < -1e-6
-            return true
+    # 1. Normalize A to prevent massive scaling differences from confusing the LP solver
+    A_norm = copy(A)
+    for i in 1:size(A_norm, 1)
+        row_norm = norm(A_norm[i, :])
+        if row_norm > 1e-12
+            A_norm[i, :] ./= row_norm
         end
     end
+
+    empty!(model)
+    
+    # Bounded test vector
+    @variable(model, -1.0 <= d[1:dim] <= 1.0)
+    
+    # We allow a tiny numerical violation (1e-8) during the solve, 
+    # but we will strictly verify it later.
+    @constraint(model, A_norm * d .<= 1e-8)
+    
+    for i in 1:dim
+        # --- Check positive direction ---
+        @objective(model, Max, d[i])
+        optimize!(model)
+        
+        status = termination_status(model)
+        if status in (MOI.OPTIMAL, MOI.ALMOST_OPTIMAL)
+            if objective_value(model) > tol
+                # STRICT DOUBLE CHECK: Extract the actual vector and mathematically prove it
+                d_vec = value.(d)
+                if maximum(A_norm * d_vec) <= tol && norm(d_vec) > tol
+                    return true # It is definitively unbounded
+                end
+            end
+        end
+        
+        # --- Check negative direction ---
+        @objective(model, Min, d[i])
+        optimize!(model)
+        
+        status = termination_status(model)
+        if status in (MOI.OPTIMAL, MOI.ALMOST_OPTIMAL)
+            if objective_value(model) < -tol
+                # STRICT DOUBLE CHECK: Extract the actual vector and mathematically prove it
+                d_vec = value.(d)
+                if maximum(A_norm * d_vec) <= tol && norm(d_vec) > tol
+                    return true # It is definitively unbounded
+                end
+            end
+        end
+    end
+    
     return false
 end
 
