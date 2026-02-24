@@ -13,7 +13,7 @@ Scans the HDF5 file for 'epoch_X' groups.
 If a tree has already been computed (checked via existence of 'parent_ids'), 
 it skips computation unless `overwrite` is set to true.
 """
-function process_trees_in_h5(filename::String; overwrite::Bool=false)
+function process_trees_in_h5(filename::String; overwrite::Bool=false, exact_volume::Bool=false, estimate_volume::Bool=false, verbose::Bool=false)
     if !isfile(filename)
         println("❌ Error: HDF5 file not found at: $filename")
         exit(1)
@@ -41,6 +41,9 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false)
         # Sort numerically (epoch_0, epoch_1, etc.)
         sort!(group_names, by = x -> parse(Int, split(x, "_")[2]))
 
+        # Read points
+        points = read(file, "points")
+
         for g_name in group_names
             println("\n=== Processing $g_name ===")
             g = file["epochs"][g_name]
@@ -65,10 +68,6 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false)
                 println("  Warning: No model weights found in $g_name. Skipping.")
                 continue
             end
-
-            # Read points
-            points = read(file, "points")
-            # println("Shape of points: ", size(points))
             
             # ---------------------------------------------------------
             # PHASE 2: COMPUTE TREE
@@ -85,7 +84,27 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false)
             
             leaves = get_regions_at_layer(tree, tree.L)
             @printf("  - Tree constructed in %.2fs. Leaves: %d\n", duration, length(leaves))
-            
+
+            # Compute volumes in parallel
+    
+            if exact_volume
+                t_start = time()
+                compute_volumes_parallel!(tree)
+                duration = time() - t_start
+                @printf("  - Exact volumes computed in %.2fs.\n", duration)
+            elseif estimate_volume
+                t_start = time()
+                estimate_volumes_parallel!(tree)
+                duration = time() - t_start
+                @printf("  - Estimated volumes computed in %.2fs.\n", duration)
+            end 
+
+            if verbose
+                # Optional: Print summary of the tree structure
+                print_tree_summary(tree)
+            end
+
+
             # ---------------------------------------------------------
             # PHASE 3: WRITE DATA
             # ---------------------------------------------------------
@@ -114,13 +133,26 @@ function main()
         "--overwrite"
             help = "Force re-computation even if tree data exists"
             action = :store_true
+        "--exact_volume"
+            help = "Use exact volume computation instead of estimation"
+            action = :store_true
+        "--estimate_volume"
+            help = "Use volume estimation via volesti instead of exact computation"
+            action = :store_true
+        "--verbose"
+            help = "Print detailed information during processing"
+            action = :store_true
+        
     end
     
     parsed_args = parse_args(ARGS, s)
     h5_filename = parsed_args["h5_file"]
     should_overwrite = parsed_args["overwrite"]
+    should_use_exact_volume = parsed_args["exact_volume"]
+    should_use_estimate_volume = parsed_args["estimate_volume"]
+    verbose = parsed_args["verbose"]
 
-    process_trees_in_h5(h5_filename; overwrite=should_overwrite)
+    process_trees_in_h5(h5_filename; overwrite=should_overwrite, exact_volume=should_use_exact_volume, estimate_volume=should_use_estimate_volume, verbose=verbose)
 end
 
 main()
