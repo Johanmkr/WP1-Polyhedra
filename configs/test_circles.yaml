@@ -18,7 +18,7 @@ learning_rate: 0.01
 momentum: 0.9
 
 # Data specific settings
-noise: 0.05          # Geometric noise (for moons/circles) or label noise
+noise: 0.0          # Geometric noise (for moons/circles) or label noise
 test_size: 0.2
 
 

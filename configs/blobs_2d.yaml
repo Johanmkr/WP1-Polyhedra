@@ -1,4 +1,4 @@
-experiment_name: "blob_test"
+experiment_name: "blobs_2d"
 dataset: "blobs"
 output_dir: "outputs"
 

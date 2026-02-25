@@ -1,4 +1,4 @@
-experiment_name: "blob_test"
+experiment_name: "blobs_5d"
 dataset: "blobs"
 output_dir: "outputs"
 
@@ -20,7 +20,7 @@ momentum: 0.9
 # Data specific settings
 noise: 0.0          # Geometric noise (for moons/circles) or label noise
 test_size: 0.2
-n_features: 2
+n_features: 5
 centers: 10
 
 
