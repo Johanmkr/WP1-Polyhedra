@@ -9,6 +9,9 @@ working_dir = pl.Path().resolve()
 # Path to the data storage
 data_storage = current_dir/"stored_data"
 
+# Outputs
+outputs = current_dir/"outputs"
+
 # New storage facility
 new_data_storage = current_dir/"new_stored_data"
 

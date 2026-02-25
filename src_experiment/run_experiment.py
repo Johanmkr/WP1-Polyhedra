@@ -67,7 +67,7 @@ def infer_dataset_properties(dataloader):
         
     return input_size, num_classes
 
-def run(config_path):
+def run(config_path, overwrite=False):
     # 1. Load Config
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
@@ -78,9 +78,16 @@ def run(config_path):
     
     # New specific directory for this experiment
     exp_dir = base_out_dir / exp_name
+    h5_path = exp_dir / f"{exp_name}.h5"
+    
+    if h5_path.exists() and not overwrite:
+        print(f"Error: HDF5 file {h5_path} already exists. Use --overwrite to force re-computation.")
+        return
+
+    
     exp_dir.mkdir(parents=True, exist_ok=True)
     
-    h5_path = exp_dir / f"{exp_name}.h5"
+    
     
     # --- SEEDING LOGIC ---
     # Global seed for data splitting and shuffling
