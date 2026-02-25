@@ -3,8 +3,17 @@ using Printf
 using ArgParse
 
 # Load your local PolyhedraTree module
-include("geobin_jl/geobin.jl")
-using .Geobin
+using Distributed
+
+# 1. Load LinearAlgebra everywhere
+@everywhere using LinearAlgebra 
+
+# 2. Force BLAS to use 1 thread on the master AND all worker processes
+@everywhere BLAS.set_num_threads(1) 
+
+# 3. Load your module
+@everywhere include("geobin_jl/geobin.jl")
+@everywhere using .Geobin
 
 """
     process_trees_in_h5(filename::String; overwrite::Bool=false)
