@@ -8,7 +8,7 @@ using RCall
 using JuMP
 using HiGHS
 using Distributed
-using ProgressMeter
+using LinearAlgebra
 
 export compute_volumes_parallel!, estimate_volumes_parallel!
 
