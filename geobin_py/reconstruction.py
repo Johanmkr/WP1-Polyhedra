@@ -202,60 +202,97 @@ class Tree:
                 
                 queue.append(child)
                 
-    def assign_points_to_regions(self, points: np.ndarray, target_layer: int) -> np.ndarray:
+    def perform_number_count(self, data, y=None) -> dict:
         """
-        Given an array of points (N, input_dim), returns an array of shape (N,)
-        containing the Region ID that each point belongs to at the target_layer.
-        Returns -1 for points that fall into a region not present in the tree.
+        Records the number of points per class that fall into each region at every layer.
+        
+        Args:
+            data: Either a PyTorch DataLoader yielding (X_batch, y_batch), 
+                  OR a NumPy array / PyTorch tensor of input features (X).
+            y: A NumPy array / PyTorch tensor of labels. Must be provided if `data` is X.
+            
+        Returns:
+            A nested dictionary structured as:
+            { layer_idx: { region_id: { class_label: count, ... }, ... }, ... }
         """
-        N = points.shape[0]
-        region_assignments = np.full(N, -1, dtype=int)
+        from collections import defaultdict
+        import numpy as np
+        
+        # Helper function to safely convert PyTorch tensors or lists to NumPy arrays
+        def to_numpy(tensor_or_array):
+            if hasattr(tensor_or_array, "detach"):
+                return tensor_or_array.detach().cpu().numpy()
+            return np.asarray(tensor_or_array)
+
+        # Standardize inputs into an iterable of (X_batch, y_batch)
+        if y is not None:
+            # User provided X and y directly. Treat as a single large batch.
+            batches = [(to_numpy(data), to_numpy(y).flatten())]
+        else:
+            # User provided a DataLoader. Create a generator to yield batches.
+            def batch_generator():
+                for X_batch, y_batch in data:
+                    yield to_numpy(X_batch), to_numpy(y_batch).flatten()
+            batches = batch_generator()
+
+        # Initialize counts
+        counts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
         
         if self.root is None:
-            return region_assignments
+            return dict(counts)
             
-        # Queue stores tuples of: (current_node, indices_of_points_in_this_node)
-        queue = [(self.root, np.arange(N))]
-        
-        while queue:
-            node, pt_idx = queue.pop(0)
+        # Iterate over the standardized batches
+        for X_np, y_np in batches:
+            N = X_np.shape[0]
             
-            if len(pt_idx) == 0:
-                continue
+            # Queue stores tuples of: (current_node, indices_of_points_in_this_node)
+            queue = [(self.root, np.arange(N))]
+            
+            while queue:
+                node, pt_idx = queue.pop(0)
                 
-            # If we've reached the desired layer, record the region ID for these points
-            if node.layer == target_layer:
-                region_assignments[pt_idx] = node.id
-                continue
-                
-            # If we are at a leaf but haven't reached the target layer, we can't route further
-            if not node.children:
-                continue
-                
-            # To route points to the next layer, we compute their pre-activations (Z)
-            # using the affine transformation mapping (Alw, clw) from the root to this node.
-            W_mat = self.W[node.layer]
-            b_vec = self.b[node.layer]
-            
-            W_hat = W_mat @ node.Alw
-            b_hat = W_mat @ node.clw + b_vec
-            
-            # Z = X @ W_hat^T + b_hat
-            Z = points[pt_idx] @ W_hat.T + b_hat
-            
-            # Compute activation signature for these points
-            Q = (Z > 0).astype(int) # shape: (len(pt_idx), num_neurons)
-            
-            # Route points to the matching child region
-            for child in node.children:
-                # Find points whose activation signature matches this child's signature
-                match_mask = np.all(Q == child.activation, axis=1)
-                child_pt_idx = pt_idx[match_mask]
-                
-                if len(child_pt_idx) > 0:
-                    queue.append((child, child_pt_idx))
+                if len(pt_idx) == 0:
+                    continue
                     
-        return region_assignments
+                # 1. Update the class counts for the current region/layer
+                classes, class_counts = np.unique(y_np[pt_idx], return_counts=True)
+                for cls, count in zip(classes, class_counts):
+                    counts[node.layer][node.id][cls] += int(count)
+                    
+                # 2. If we are at a leaf, we can't route points any deeper
+                if not node.children:
+                    continue
+                    
+                # 3. Route points to the next layer by computing pre-activations (Z)
+                W_mat = self.W[node.layer]
+                b_vec = self.b[node.layer]
+                
+                W_hat = W_mat @ node.Alw
+                b_hat = W_mat @ node.clw + b_vec
+                
+                # Z = X @ W_hat^T + b_hat
+                Z = X_np[pt_idx] @ W_hat.T + b_hat
+                
+                # Compute activation signature for these points
+                Q = (Z > 0).astype(int) 
+                
+                # Route points to the matching child region
+                for child in node.children:
+                    # Find points whose activation signature matches this child's signature
+                    match_mask = np.all(Q == child.activation, axis=1)
+                    child_pt_idx = pt_idx[match_mask]
+                    
+                    if len(child_pt_idx) > 0:
+                        queue.append((child, child_pt_idx))
+                        
+        # Clean up the defaultdicts into standard Python dictionaries
+        result = {}
+        for layer, regions in counts.items():
+            result[layer] = {}
+            for reg_id, class_counts in regions.items():
+                result[layer][reg_id] = dict(class_counts)
+                
+        return result
 
 if __name__ == "__main__":
     pass

@@ -36,3 +36,6 @@ jobs/
 
 #outputs
 outputs/
+
+# data
+data/

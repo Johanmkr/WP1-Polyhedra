@@ -3,7 +3,7 @@ dataset: "mnist"
 output_dir: "outputs"
 
 # Model Architecture
-architecture: [25, 25, 25]  # Hidden layers
+architecture: [1024, 1024, 1024, 1024]  # Hidden layers
 dropout: 0.0
 
 # DETERMINISM SETTINGS
@@ -19,7 +19,7 @@ momentum: 0.9
 
 # Data specific settings
 noise: 0.0          # Geometric noise (for moons/circles) or label noise
-test_size: 0.2
+# test_size: 0.2
 
 
 # SAVING STRATEGY

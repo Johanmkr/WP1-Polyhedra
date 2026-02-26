@@ -29,4 +29,4 @@ centers: 10
 save_interval: 10
 
 # 2. AND save these specific epochs (dense at the start)
-save_epochs: [0, 1, 2, 3, 4, 6, 8, 10] 
+save_epochs: [0, 1, 2, 3, 4, 6, 8, 10]

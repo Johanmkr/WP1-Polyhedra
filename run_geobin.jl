@@ -22,7 +22,7 @@ Scans the HDF5 file for 'epoch_X' groups.
 If a tree has already been computed (checked via existence of 'parent_ids'), 
 it skips computation unless `overwrite` is set to true.
 """
-function process_trees_in_h5(filename::String; overwrite::Bool=false, exact_volume::Bool=false, estimate_volume::Bool=false, verbose::Bool=false)
+function process_trees_in_h5(filename::String; overwrite::Bool=false, exact_volume::Bool=false, estimate_volume::Bool=false, verbose::Bool=false, exact_regions::Bool=false)
     if !isfile(filename)
         println("❌ Error: HDF5 file not found at: $filename")
         exit(1)
@@ -52,6 +52,7 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false, exact_volu
 
         # Read points
         points = read(file, "points")
+        sampled_points = points[:, 1:50:end]
 
         for g_name in group_names
             println("\n=== Processing $g_name ===")
@@ -85,10 +86,11 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false, exact_volu
             
             t_start = time()
             # Exact construction
-            # construct_tree!(tree, verbose=false)
-            
-            # test sparse construction
-            construct_tree_sparse!(tree, points)
+            if exact_regions
+                construct_tree!(tree, verbose=false)
+            else
+                construct_tree_sparse!(tree, sampled_points)
+            end
             duration = time() - t_start
             
             leaves = get_regions_at_layer(tree, tree.L)

@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 from typing import Tuple, Dict, Callable
+from torchvision import datasets, transforms
 
 N_SAMPLES = 10000
 DEFAULT_BATCH_SIZE = 32
@@ -141,11 +142,38 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
 
     # --- Standard Vision Datasets ---
     elif dataset_name == "mnist":
-        # Fetches 70,000 samples, 784 features.
-        # Note: This loads the entire dataset into RAM.
-        print("Fetching MNIST (OpenML)...")
-        X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False, parser='auto')
-        train_ds, test_ds = process_and_split(X, y, noise_level=noise, seed=split_seed)
+        print("Fetching MNIST (torchvision)...")
+        # Standard MNIST transformations
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,)),
+            transforms.Lambda(lambda x: torch.flatten(x)) # Flatten to 784 features
+        ])
+
+        # Load the predefined 60k train and 10k test splits
+        train_ds = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+        test_ds = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+        
+        # --- Inject Label Noise ---
+        if noise > 0.0:
+            # 1. Extract targets and convert to numpy
+            original_targets = train_ds.targets.numpy()
+            
+            # 2. Apply your existing vectorized noise function
+            noisy_targets = inject_label_noise_vectorized(
+                y=original_targets, 
+                noise_ratio=noise, 
+                n_classes=10,       # MNIST has 10 classes (0-9)
+                seed=split_seed
+            )
+            
+            # 3. Assign the corrupted targets back as a PyTorch tensor
+            train_ds.targets = torch.tensor(noisy_targets, dtype=torch.int64)
+
+        return (
+            DataLoader(train_ds, batch_size=batch_size, shuffle=True),
+            DataLoader(test_ds, batch_size=batch_size, shuffle=False)
+        )
 
     # --- UCI Datasets (Label Noise injection handled in process_and_split) ---
     elif dataset_name == "wbc":

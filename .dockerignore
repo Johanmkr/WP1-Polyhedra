@@ -48,3 +48,6 @@ tests/
 # --- Docker ---
 Dockerfile
 .dockerignore
+
+
+data/
