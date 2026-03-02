@@ -1,37 +1,31 @@
 import h5py
 import numpy as np
-import time
 import re
+from collections import defaultdict
 
 class Region:
-    def __init__(self, idx, layer, volume, centroid, activation, is_bounded):
+    def __init__(self, idx, layer, volume_ex, volume_es, centroid, activation, is_bounded, active_indices=None):
         self.id = idx
         self.layer = layer
-        self.volume = volume
+        self.volume_ex = volume_ex
+        self.volume_es = volume_es
         self.is_bounded = is_bounded
         self.centroid = centroid
-        self.activation = activation
+        self.activation = activation  # q vector (1D numpy array)
+        self.active_indices = active_indices if active_indices is not None else []
+        
+        # Topology
         self.parent = None
         self.children = []
-        self.Alw = None 
-        self.clw = None
-        self.Dlw = None 
-        self.glw = None 
 
-    def get_path_inequalities(self):
-        if self.Dlw is None:
-            return None, None
-        D_list, g_list = [], []
-        node = self
-        while node is not None:
-            if node.Dlw is not None and node.Dlw.shape[0] > 0:
-                D_list.append(node.Dlw)
-                g_list.append(node.glw)
-            node = node.parent
-        if not D_list:
-            dim = self.Alw.shape[1] if self.Alw is not None else 2
-            return np.zeros((0, dim)), np.zeros(0)
-        return np.vstack(D_list[::-1]), np.concatenate(g_list[::-1])
+    def get_activation_path(self):
+        """Traces up the tree to get the sequence of activations from Layer 1 to this region."""
+        path = []
+        curr = self
+        while curr.parent is not None and curr.layer > 0:
+            path.append(curr.activation)
+            curr = curr.parent
+        return path[::-1]
 
     def __repr__(self):
         return f"<Region ID:{self.id} L:{self.layer}>"
@@ -61,6 +55,51 @@ class Tree:
                 queue.extend(node.children)
         return regions
 
+    def get_path_inequalities(self, region: Region, active_only: bool = False):
+        """
+        Dynamically recalculates the path inequalities D*x <= g for a given region.
+        Consumes virtually zero permanent memory.
+        """
+        q_path = region.get_activation_path()
+        
+        # Handle the root node (unbounded, no constraints)
+        if not q_path:
+            return np.zeros((0, self.input_dim)), np.zeros(0)
+            
+        A_curr = np.eye(self.input_dim)
+        c_curr = np.zeros(self.input_dim)
+        
+        D_list = []
+        g_list = []
+        
+        for l, q in enumerate(q_path):
+            W = self.W[l]
+            b = self.b[l]
+            
+            W_hat = W @ A_curr
+            b_hat = W @ c_curr + b
+            
+            # s_vec is -1 if q=0, and 1 if q=1
+            s_vec = -2.0 * q + 1.0
+            
+            D_local = s_vec[:, None] * W_hat
+            g_local = -(s_vec * b_hat)
+            
+            D_list.append(D_local)
+            g_list.append(g_local)
+            
+            A_curr = q[:, None] * W_hat
+            c_curr = q * b_hat
+            
+        D_full = np.vstack(D_list)
+        g_full = np.concatenate(g_list)
+        
+        if active_only and len(region.active_indices) > 0:
+            idx = np.array(region.active_indices)
+            return D_full[idx], g_full[idx]
+            
+        return D_full, g_full
+
     def _load_and_construct(self):
         print(f"  - Loading Epoch {self.epoch}...")
         
@@ -75,6 +114,17 @@ class Tree:
             g = f["epochs"][epoch_key]
             
             # --- 1. Load Weights ---
+            keys = list(g.keys())
+            weight_keys = [k for k in keys if "weight" in k]
+            
+            def get_layer_idx(k):
+                m = re.search(r"l(\d+)\.", k)
+                return int(m.group(1)) if m else 999
+            weight_keys.sort(key=get_layer_idx)
+            
+            if not weight_keys:
+                raise ValueError("No weights found in HDF5.")
+
             self.W = []
             self.b = []
             
@@ -107,7 +157,7 @@ class Tree:
                 self.L = len(self.W)
                 self.input_dim = self.W[0].shape[1]
             
-            # --- 2. Load Topology ---
+            # --- 2. Load Topology & Attributes ---
             if "parent_ids" not in g:
                 return
 
@@ -115,31 +165,48 @@ class Tree:
             layer_idxs = g["layer_idxs"][:]
             # Centroids are (N, D) in the fixed Julia script
             centroids  = g["centroids"][:] 
-            qlw_flat   = g["qlw_flat"][:]
+            
+            # Load Activation Signatures
+            qlw_flat = g["qlw_flat"][:]
             qlw_offsets = g["qlw_offsets"][:]
+            
+            # Load Active Indices (if they exist from an Exact Tree)
+            has_active = "active_flat" in g
+            if has_active:
+                active_flat = g["active_flat"][:]
+                active_offsets = g["active_offsets"][:]
             
             num_nodes = len(parent_ids)
 
-            # Safety check for orientation (just in case)
-            if centroids.shape[0] != num_nodes and centroids.shape[1] == num_nodes:
-                centroids = centroids.T
-
-            if len(centroids) < num_nodes:
-                print(f"    ⚠️ Data mismatch! parent_ids={num_nodes}, centroids={len(centroids)}")
-                num_nodes = len(centroids)
-
-            # --- 3. Build Nodes ---
+            # --- 3. Build Lightweight Nodes ---
             nodes = []
             for i in range(num_nodes):
+                # Slice the flattened qlw array
                 if i+1 < len(qlw_offsets):
                     act = qlw_flat[qlw_offsets[i]:qlw_offsets[i+1]]
                 else:
                     act = np.array([], dtype=int)
+                    
+                # Slice the flattened active indices array
+                active_idx = []
+                if has_active and i+1 < len(active_offsets):
+                    start, end = active_offsets[i], active_offsets[i+1]
+                    active_idx = active_flat[start:end]
 
-                vol = g["volumes"][i] if "volumes" in g and i < len(g["volumes"]) else -1
-                bnd = bool(g["bounded"][i]) if "bounded" in g and i < len(g["bounded"]) else False
+                vol_ex = g["volumes_ex"][i] if i < len(g["volumes_ex"]) else -1
+                vol_es = g["volumes_es"][i] if i < len(g["volumes_es"]) else -1
+                bnd = bool(g["bounded"][i]) if i < len(g["bounded"]) else False
                 
-                node = Region(i, layer_idxs[i], vol, centroids[i], act, bnd)
+                node = Region(
+                    idx=i,
+                    layer=layer_idxs[i],
+                    volume_ex=vol_ex,
+                    volume_es=vol_es,
+                    centroid=centroids[i],
+                    activation=act,
+                    is_bounded=bnd,
+                    active_indices=active_idx
+                )
                 nodes.append(node)
             
             # --- 4. Link ---
@@ -154,48 +221,81 @@ class Tree:
                     parent.children.append(child)
             
             self.leaves = [n for n in nodes if not n.children]
-            
-            if self.W:
-                self._hydrate_geometry()
 
-    def _hydrate_geometry(self):
-        if not self.root: return
+    def perform_number_count(self, data, y=None) -> dict:
+        """
+        Records the number of points per class that fall into each region at every layer.
+        Optimized by running a standard forward pass first.
+        """
+        def to_numpy(tensor_or_array):
+            if hasattr(tensor_or_array, "detach"):
+                return tensor_or_array.detach().cpu().numpy()
+            return np.asarray(tensor_or_array)
 
-        self.root.Alw = np.eye(self.input_dim)
-        self.root.clw = np.zeros(self.input_dim)
-        self.root.Dlw = np.zeros((0, self.input_dim))
-        self.root.glw = np.zeros(0)
+        if y is not None:
+            batches = [(to_numpy(data), to_numpy(y).flatten())]
+        else:
+            def batch_generator():
+                for X_batch, y_batch in data:
+                    yield to_numpy(X_batch), to_numpy(y_batch).flatten()
+            batches = batch_generator()
+
+        counts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
         
-        queue = [self.root]
-        
-        while queue:
-            parent = queue.pop(0)
+        if self.root is None:
+            return dict(counts)
             
-            if not parent.children: continue
-            if parent.layer >= len(self.W): continue
+        for X_np, y_np in batches:
+            N = X_np.shape[0]
+            
+            # 1. Perform a highly optimized forward pass to get all activations
+            Q_path = []
+            A = X_np
+            for l in range(self.L):
+                Z = A @ self.W[l].T + self.b[l]
+                Q = (Z > 0).astype(int)
+                Q_path.append(Q)
+                A = Q * Z
                 
-            W_mat = self.W[parent.layer]
-            b_vec = self.b[parent.layer]
+            # 2. Route points through the tree
+            # Queue stores tuples of: (current_node, indices_of_points_in_this_node)
+            queue = [(self.root, np.arange(N))]
             
-            # Geometry Update: Z = W(Ax+c) + b
-            # Note: W_mat is already correctly oriented (Out, In) due to the fix above
-            W_hat = W_mat @ parent.Alw
-            b_hat = W_mat @ parent.clw + b_vec
-            
-            for child in parent.children:
-                q = child.activation
-                if len(q) != W_mat.shape[0]:
+            while queue:
+                node, pt_idx = queue.pop(0)
+                
+                if len(pt_idx) == 0:
                     continue
-
-                s_vec = -2.0 * q + 1.0 
+                    
+                # A. Update the class counts for the current region/layer
+                classes, class_counts = np.unique(y_np[pt_idx], return_counts=True)
+                for cls, count in zip(classes, class_counts):
+                    counts[node.layer][node.id][cls] += int(count)
+                    
+                # B. If we are at a leaf, we can't route points any deeper
+                if not node.children:
+                    continue
+                    
+                # C. Grab the pre-computed activations for the NEXT layer
+                next_layer_Q = Q_path[node.layer]
                 
-                child.Dlw = s_vec[:, None] * W_hat
-                child.glw = -(s_vec * b_hat)
+                # D. Route points to matching children
+                for child in node.children:
+                    # Find points whose activation signature matches this child
+                    match_mask = np.all(next_layer_Q[pt_idx] == child.activation, axis=1)
+                    child_pt_idx = pt_idx[match_mask]
+                    
+                    if len(child_pt_idx) > 0:
+                        queue.append((child, child_pt_idx))
+                        
+        # Clean up the defaultdicts into standard Python dictionaries
+        result = {}
+        for layer, regions in counts.items():
+            result[layer] = {}
+            for reg_id, class_counts in regions.items():
+                result[layer][reg_id] = dict(class_counts)
                 
-                child.Alw = q[:, None] * W_hat
-                child.clw = q * b_hat
-                
-                queue.append(child)
+        return result
 
 if __name__ == "__main__":
     pass

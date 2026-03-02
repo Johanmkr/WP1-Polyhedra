@@ -50,3 +50,6 @@ Manifest.toml
 # --- Docker ---
 Dockerfile
 .dockerignore
+
+
+data/

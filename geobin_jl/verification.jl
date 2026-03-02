@@ -28,7 +28,10 @@ struct AABB
 end
 
 function get_region_aabb(r::Region, domain_bound::Float64)
-    A, b = get_path_inequalities(r)
+    # FIX: Use full path inequalities (Parent + Local)
+    q_path = get_activation_path(r)
+    A, b = compute_path_geometry(tree.weights, tree.biases, q_path; active_indices=r.active_indices)
+    
     dim = size(A, 2)
     low = zeros(dim)
     high = zeros(dim)
@@ -71,13 +74,19 @@ function verify_partition_completeness_monte_carlo(tree, layer_idx::Int, bound::
     regions = get_regions_at_layer(tree, layer_idx)
     dim = tree.input_dim
     
-    # Pre-calculate constraints (Read-only for threads)
-    # Using a simple map here; usually fast enough to be serial
-    region_constraints = [get_path_inequalities(r) for r in regions]
-    
-    gap_count = Threads.Atomic{Int}(0)
-    overlap_count = Threads.Atomic{Int}(0)
-    perfect_count = Threads.Atomic{Int}(0)
+    # FIX: Pre-calculate FULL constraints for all regions
+    # Accessing .Dlw directly would only check the local slab!
+    println("   - Pre-calculating path constraints for $(length(regions)) regions...")
+    # region_constraints = [get_path_inequalities(r) for r in regions]
+    q_paths = [get_activation_path(r) for r in regions]
+    A_b_pairs = []
+    for (q_path, region) in zip(q_paths, regions)
+        A, b = compute_path_geometry(tree.weights, tree.biases, q_path; active_indices=region.active_indices)
+        push!(A_b_pairs, (A, b))
+    end
+    gap_count = 0
+    overlap_count = 0
+    perfect_count = 0
     
     # Parallel Sampling
     Threads.@threads for _ in 1:num_points
@@ -123,8 +132,11 @@ end
 # ==============================================================================
 
 function check_overlap_strict_lp(r1::Region, r2::Region)
-    A1, b1 = get_path_inequalities(r1)
-    A2, b2 = get_path_inequalities(r2)
+    # FIX: Use full path inequalities
+    q_path = get_activation_path(r1)
+    A1, b1 = compute_path_geometry(tree.weights, tree.biases, q_path; active_indices=r1.active_indices)
+    q_path = get_activation_path(r2)
+    A2, b2 = compute_path_geometry(tree.weights, tree.biases, q_path; active_indices=r2.active_indices)
     dim = size(A1, 2)
     
     model = Model(HiGHS.Optimizer)
@@ -205,8 +217,11 @@ function verify_tree_hierarchy_robust(tree::Tree; bound=10.0)
         
         for child in children
             push!(queue, child)
-            A_full, b_full = get_path_inequalities(child)
-            center, _ = get_chebyshev_center_radius(A_full, b_full)
+            
+            # 1. Compute Child Center using FULL PATH (including Root)
+            q_path = get_activation_path(child)
+            A, b = compute_path_geometry(tree.weights, tree.biases, q_path; active_indices=child.active_indices)
+            center, _ = get_chebyshev_center_radius(A, b)
             
             if isnothing(center); continue; end
             
@@ -246,9 +261,12 @@ function check_region_conditioning(tree, layer_idx; min_radius=1e-7)
     regions = get_regions_at_layer(tree, layer_idx)
     thin_count = Threads.Atomic{Int}(0)
     
-    Threads.@threads for r in regions
-        A_full, b_full = get_path_inequalities(r)
-        _, r_val = get_chebyshev_center_radius(A_full, b_full)
+    p = Progress(length(regions); desc="Checking Radii: ")
+    for (i, r) in enumerate(regions)
+        # FIX: Use full path inequalities
+        q_path = get_activation_path(r)
+        A, b = compute_path_geometry(tree.weights, tree.biases, q_path; active_indices=r.active_indices)
+        _, r_val = get_chebyshev_center_radius(A, b)
         
         if r_val < min_radius
             Threads.atomic_add!(thin_count, 1)

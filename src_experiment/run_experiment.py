@@ -67,7 +67,7 @@ def infer_dataset_properties(dataloader):
         
     return input_size, num_classes
 
-def run(config_path):
+def run(config_path, overwrite=False):
     # 1. Load Config
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
@@ -78,9 +78,16 @@ def run(config_path):
     
     # New specific directory for this experiment
     exp_dir = base_out_dir / exp_name
+    h5_path = exp_dir / f"{exp_name}.h5"
+    
+    if h5_path.exists() and not overwrite:
+        print(f"Error: HDF5 file {h5_path} already exists. Use --overwrite to force re-computation.")
+        return
+
+    
     exp_dir.mkdir(parents=True, exist_ok=True)
     
-    h5_path = exp_dir / f"{exp_name}.h5"
+    
     
     # --- SEEDING LOGIC ---
     # Global seed for data splitting and shuffling
@@ -98,6 +105,8 @@ def run(config_path):
     dataset_kwargs = {}
     if "centers" in config:
         dataset_kwargs["centers"] = config["centers"]
+    if "n_features" in config:
+        dataset_kwargs["n_features"] = config["n_features"]
     
     print(f"Loading {dataset_name}...")
     train_loader, test_loader = get_new_data(
@@ -177,7 +186,7 @@ def run(config_path):
             savepath=None,
             SAVE_STATES=False,
             RETURN_STATES=False,
-            disable_progress=True  # <--- CHANGE 2: Add this new argument
+            disable_progress=True 
         )
         
         # Safely extract results (works if return is (df,) or (df, dict))
@@ -187,7 +196,23 @@ def run(config_path):
         res_grp = f.create_group('training_results')
         for col in results_df.columns:
             res_grp.create_dataset(col, data=results_df[col].values)
-            
+        
+        all_points = []
+        all_labels = []
+        with torch.no_grad():
+            for x, y in test_loader:
+                # Flatten the inputs (e.g., for images, or just keep 2D as 2D)
+                x = x.view(x.size(0), -1)
+                
+                # Append both to our lists
+                all_points.append(x.cpu().numpy())
+                all_labels.append(y.cpu().numpy())
+                
+        # Concatenate and save as separate datasets
+        f.create_dataset("points", data=np.concatenate(all_points, axis=0))
+        f.create_dataset("labels", data=np.concatenate(all_labels, axis=0))
+        
+        # Save test dataloader to the file 
     print("Experiment complete.")
 
 if __name__ == "__main__":

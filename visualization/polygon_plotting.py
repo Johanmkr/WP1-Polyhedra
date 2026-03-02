@@ -1,15 +1,14 @@
-
-
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 import numpy as np
 from intvalpy import lineqs
 
 
-def find_vertices_from_regions(regions, bound=10):
+def find_vertices_from_regions(tree, regions, bound=10):
     vertices_list = []
     for region in regions:
-        D, g = region.get_path_inequalities()
+        # Fetch constraints dynamically from the tree
+        D, g = tree.get_path_inequalities(region)
         
         try:
             # Use a small tolerance or check feasibility first
@@ -21,10 +20,10 @@ def find_vertices_from_regions(regions, bound=10):
             continue
     return vertices_list
 
-def plot_epoch_layer_grid(trees,  bound=50):
+def plot_epoch_layer_grid(trees, bound=50):
     epochs = sorted(trees.keys())
     num_epochs = len(epochs)
-    num_layers = trees[0].L
+    num_layers = trees[epochs[0]].L
     # 1. Setup the figure: Rows = Layers, Cols = Epochs
     fig, axes = plt.subplots(num_layers, num_epochs, 
                              figsize=(num_epochs * 3, num_layers * 3), 
@@ -50,7 +49,7 @@ def plot_epoch_layer_grid(trees,  bound=50):
             # Access existing regions at this specific layer for this specific root
             regions = tree.get_regions_at_layer(layer=layer_idx)
             
-            vertices_list = find_vertices_from_regions(regions, bound=20000)
+            vertices_list = find_vertices_from_regions(tree, regions, bound=20000)
             
             # 4. Draw Polygons
             for vert in vertices_list:

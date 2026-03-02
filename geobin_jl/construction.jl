@@ -4,154 +4,90 @@ using ..Regions
 using ..Trees
 using ..Geometry
 using LinearAlgebra
-using Statistics
-using ProgressMeter
 using JuMP
 using HiGHS
 
 export construct_tree!
 
-struct RegionCandidate
-    activation_pattern::Vector{Int}
-    D::Matrix{Float64}
-    g::Vector{Float64}
-    A_next::Matrix{Float64}
-    c_next::Vector{Float64}
-    active_indices::Vector{Int}
-    is_bounded::Bool
-    volume::Float64
-end
-
 function construct_tree!(tree::Tree; verbose::Bool=false)
-    current_layer_regions = [tree.root]
+    A_root = Matrix{Float64}(I, tree.input_dim, tree.input_dim)
+    c_root = zeros(Float64, tree.input_dim)
+    D_root = Matrix{Float64}(undef, 0, tree.input_dim)
+    g_root = Float64[]
     
-    # --- SETUP MODEL POOL (Channel) ---
-    n_threads = Threads.nthreads()
-    model_pool = Channel{Model}(n_threads)
+    # DFS can run sequentially or in parallel batches, but sequentially is robust and memory-flat.
+    model = Model(HiGHS.Optimizer)
+    set_silent(model)
     
-    for _ in 1:n_threads
-        m = Model(HiGHS.Optimizer)
-        set_silent(m)
-        put!(model_pool, m)
-    end
-
-    for layer_idx in 1:tree.L
-        W = tree.weights[layer_idx]
-        b = tree.biases[layer_idx]
-
-        if verbose
-            println("Layer $layer_idx: Processing $(length(current_layer_regions)) regions...")
-        end
-
-        # Thread-safe result storage
-        results = Vector{Vector{Region}}(undef, length(current_layer_regions))
-
-        Threads.@threads for i in eachindex(current_layer_regions)
-            local_model = take!(model_pool)
-            try
-                parent = current_layer_regions[i]
-                results[i] = process_parent_region(parent, W, b, layer_idx, local_model)
-            finally
-                put!(model_pool, local_model)
-            end
-        end
-        
-        next_layer_regions = reduce(vcat, results)
-        current_layer_regions = next_layer_regions
-        
-        if isempty(current_layer_regions)
-            verbose && println("Tree construction stopped early at layer $layer_idx.")
-            break
-        end
-    end
-    
+    verbose && println("🚀 Starting Exact Tree Construction (DFS)...")
+    _build_dfs!(tree, tree.root, 1, A_root, c_root, D_root, g_root, model)
+    verbose && println("✅ Exact Tree Construction Complete.")
     return tree
 end
 
-function process_parent_region(parent::Region, W::Matrix, b::Vector, layer_idx::Int, model::Model)
-    D_ancestry, g_ancestry = get_path_inequalities(parent)
-
-    candidates = find_region_candidates(
-        D_ancestry, g_ancestry,
-        parent.Alw, parent.clw, parent.x,
-        W, b,
-        model
-    )
-
-    children = Region[]
-    for cand in candidates
-        feasible_point = get_feasible_point(
-            [D_ancestry; cand.D], 
-            [g_ancestry; cand.g];
-            model = model
-        )
-
-        if !isnothing(feasible_point)
-            child = Region(cand.activation_pattern)
-            child.q_tilde     = cand.active_indices
-            child.Dlw         = cand.D
-            child.glw         = cand.g
-            
-            if isempty(cand.active_indices)
-                child.Dlw_active = cand.D 
-                child.glw_active = cand.g
-            else
-                child.Dlw_active  = cand.D[cand.active_indices, :]
-                child.glw_active  = cand.g[cand.active_indices]
-            end
-            
-            child.Alw          = cand.A_next
-            child.clw          = cand.c_next
-            child.layer_number = layer_idx
-            child.x            = feasible_point
-            child.bounded       = cand.is_bounded
-            child.volume        = cand.volume
-
-            add_child!(parent, child)
-            push!(children, child)
-        end
+function _build_dfs!(tree::Tree, parent::Region, layer_idx::Int, 
+                     A_prev::Matrix{Float64}, c_prev::Vector{Float64}, 
+                     D_prev::Matrix{Float64}, g_prev::Vector{Float64}, model::Model)
+                     
+    if layer_idx > tree.L
+        return # Reached maximum depth
     end
-    return children
-end
-
-function find_region_candidates(D_prev, g_prev, A_prev, c_prev, x_start, W, b, model)
-    z_start = W * (A_prev * x_start + c_prev) + b
-    q_start = Int.(z_start .> 0)
-
-    queue = [q_start]
-    visited = Set{Vector{Int}}([q_start])
-    candidates = RegionCandidate[]
-
-    while !isempty(queue)
-        q_curr = popfirst!(queue)
-        D, g, A_next, c_next = calculate_layer_geometry(W, b, q_curr, A_prev, c_prev)
-
-        # Reverted to Original: No Lock, Direct Exact Check
-        active_indices, is_bounded, vol = Geometry.find_active_indices_exact(D, g, D_prev, g_prev)
-
-        push!(candidates, RegionCandidate(q_curr, D, g, A_next, c_next, active_indices, is_bounded, vol))
-
-        for idx in active_indices
-            q_neighbor = copy(q_curr)
-            q_neighbor[idx] = 1 - q_neighbor[idx]
-            if !(q_neighbor in visited)
-                push!(visited, q_neighbor)
-                push!(queue, q_neighbor)
-            end
-        end
-    end
-    return candidates
-end
-
-function calculate_layer_geometry(W, b, q, A_prev, c_prev)
+    
+    W = tree.weights[layer_idx]
+    b = tree.biases[layer_idx]
+    
+    # Calculate base W_hat, b_hat once for this parent node
     W_hat = W * A_prev
     b_hat = W * c_prev + b
-    s_vec = -2.0 .* q .+ 1.0
-    D = s_vec .* W_hat
-    g = -(s_vec .* b_hat)
-    A = q .* W_hat
-    c = q .* b_hat 
-    return D, g, A, c
+    
+    # Start with the feasible point from the parent
+    z_start = W_hat * parent.x + b_hat
+    q_start = BitVector(z_start .> 0)
+    
+    queue = [q_start]
+    visited = Set{BitVector}([q_start])
+    
+    while !isempty(queue)
+        q_curr = popfirst!(queue)
+        
+        # Calculate Ephemeral D, g for this specific child candidate
+        s_vec = -2.0 .* q_curr .+ 1.0
+        D_local = s_vec .* W_hat
+        g_local = -(s_vec .* b_hat)
+        
+        A_next = q_curr .* W_hat
+        c_next = q_curr .* b_hat
+        
+        # 1. Check Feasibility & Extract Active Indices
+        active_indices, is_bounded, vol = find_active_indices_exact(D_local, g_local, D_prev, g_prev)
+        feasible_point = get_feasible_point([D_prev; D_local], [g_prev; g_local]; model=model)
+        
+        if !isnothing(feasible_point)
+            child = Region(q_curr, layer_idx)
+            child.x = feasible_point
+            child.active_indices = Int32.(active_indices)
+            child.bounded = is_bounded
+            child.volume_ex = vol
+            
+            add_child!(parent, child)
+            
+            # 2. RECURSE DEEPER (Depth-First)
+            _build_dfs!(tree, child, layer_idx + 1, 
+                        A_next, c_next, 
+                        [D_prev; D_local], [g_prev; g_local], 
+                        model)
+            
+            # 3. Queue neighbors (facet-flipping) based on active indices
+            for idx in active_indices
+                q_neighbor = copy(q_curr)
+                q_neighbor[idx] = !q_neighbor[idx]
+                if !(q_neighbor in visited)
+                    push!(visited, q_neighbor)
+                    push!(queue, q_neighbor)
+                end
+            end
+        end
+    end
 end
 
 end # module
