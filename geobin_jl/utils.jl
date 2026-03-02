@@ -6,6 +6,7 @@ using CDDLib
 using LinearAlgebra
 
 export find_hyperplanes, get_region_volume, analyze_region
+export get_activation_path, compute_path_geometry
 
 function find_hyperplanes(state_dict::Dict{String, Any})
     keys_weights = filter(k -> occursin("weight", k), collect(keys(state_dict)))
@@ -30,47 +31,104 @@ function find_hyperplanes(state_dict::Dict{String, Any})
     return weights, biases
 end
 
+# ==============================================================================
+# EPHEMERAL GEOMETRY ENGINE
+# ==============================================================================
+
+"""
+Traces up the tree to get the sequence of activations from Layer 1 to this region.
+"""
+function get_activation_path(r::Region)
+    path = BitVector[]
+    curr = r
+    while curr.parent !== nothing && curr.layer_number > 0
+        push!(path, curr.qlw)
+        curr = curr.parent
+    end
+    return reverse(path)
+end
+
+"""
+Dynamically recalculates the path inequalities D*x <= g 
+for a given activation path, consuming virtually zero permanent memory.
+"""
+function compute_path_geometry(weights::Vector{Matrix{Float64}}, biases::Vector{Vector{Float64}}, q_path::Vector{BitVector}; active_indices=Int32[])
+    input_dim = size(weights[1], 2)
+    
+    # FIX: Handle the root node (empty path) safely
+    if isempty(q_path)
+        return Matrix{Float64}(undef, 0, input_dim), Float64[]
+    end
+    
+    A_curr = Matrix{Float64}(I, input_dim, input_dim)
+    c_curr = zeros(Float64, input_dim)
+    
+    D_list = Matrix{Float64}[]
+    g_list = Vector{Float64}[]
+    
+    for l in 1:length(q_path)
+        W = weights[l]
+        b = biases[l]
+        q = q_path[l]
+        
+        W_hat = W * A_curr
+        b_hat = W * c_curr + b
+        
+        # s_vec is -1 if q=0, and 1 if q=1
+        s_vec = -2.0 .* q .+ 1.0
+        
+        D_local = s_vec .* W_hat
+        g_local = -(s_vec .* b_hat)
+        
+        push!(D_list, D_local)
+        push!(g_list, g_local)
+        
+        A_curr = q .* W_hat
+        c_curr = q .* b_hat
+    end
+    
+    D_full = reduce(vcat, D_list)
+    g_full = reduce(vcat, g_list)
+    
+    # If active_indices are provided, extract only the minimal set
+    if !isempty(active_indices)
+        return D_full[active_indices, :], g_full[active_indices]
+    end
+    
+    return D_full, g_full
+end
 
 # ==============================================================================
-# 1. VOLUME CALCULATION & BOUNDING
+# VOLUME CALCULATION 
 # ==============================================================================
 
-function get_region_volume(region::Region; bound::Union{Float64, Nothing}=nothing)
-    # 1. Get Region Constraints
-    A, b = get_path_inequalities(region)
+function get_region_volume(region::Region, weights::Vector{Matrix{Float64}}, biases::Vector{Vector{Float64}}; bound::Union{Float64, Nothing}=nothing)
+    q_path = get_activation_path(region)
+    # CDDLib handles redundancy natively, so we pass the full D and g
+    A, b = compute_path_geometry(weights, biases, q_path)
     dim = size(A, 2)
     
-    # 2. Add Bounding Box Constraints if requested
     if !isnothing(bound)
         I_mat = Matrix{Float64}(I, dim, dim)
         A_box = vcat(I_mat, -I_mat)
         b_box = fill(bound, 2 * dim)
-        
         A = vcat(A, A_box)
         b = vcat(b, b_box)
     end
 
-    # 3. Construct Polyhedron
     h = hrep(A, b)
     poly = polyhedron(h, CDDLib.Library())
 
-    # 4. Check Unboundedness
-    # Fix: 'isbounded' is missing in some Polyhedra versions/namespaces.
-    # We check if the V-representation has any rays instead.
     if isnothing(bound)
         try
-            # Convert to V-representation (vertices + rays)
             vr = vrep(poly)
-            # If there are any rays, the volume is infinite
             if !isempty(rays(vr))
                 return Inf
             end
         catch
-            # If conversion fails, assume complex/degenerate or handle downstream
         end
     end
 
-    # 5. Compute Volume
     try
         removevredundancy!(poly)
         if isempty(poly)
@@ -79,60 +137,6 @@ function get_region_volume(region::Region; bound::Union{Float64, Nothing}=nothin
         return volume(poly)
     catch e
         return 0.0
-    end
-end
-
-function analyze_region(region; bound::Union{Float64, Nothing}=nothing)
-    # 1. Get Path Constraints
-    A, b = Geobin.get_path_inequalities(region)
-    dim = size(A, 2)
-    
-    # 2. Apply Bounding Box (if requested)
-    # If a bound is provided, the region becomes bounded by definition.
-    if !isnothing(bound)
-        A_box = vcat(Matrix{Float64}(I, dim, dim), -Matrix{Float64}(I, dim, dim))
-        b_box = fill(bound, 2 * dim)
-        A = vcat(A, A_box)
-        b = vcat(b, b_box)
-    end
-
-    # 3. Construct Polyhedron
-    # CDDLib is an exact solver. It prefers Rational types for stability, 
-    # but handles Float64 by approximation.
-    h = hrep(A, b)
-    poly = polyhedron(h, CDDLib.Library())
-
-    # 4. Check for Emptiness
-    # We remove redundancy first to get the canonical form
-    removehredundancy!(poly)
-    if isempty(poly)
-        return (0.0, true) # Empty sets are bounded with volume 0
-    end
-
-    # 5. Handle Unboundedness (Logic Split)
-    try
-        # Convert to V-representation (Vertices + Rays)
-        vr = vrep(poly)
-        
-        # Check for Rays (Infinite directions)
-        if !isempty(rays(vr))
-            # If we supplied a bound, this theoretically shouldn't happen 
-            # unless the bound was ignored or numerical error occurred.
-            if !isnothing(bound)
-                @warn "Region has rays despite bounding box! Numerical instability likely."
-            end
-            return (Inf, false)
-        end
-        
-        # 6. Compute Volume
-        # If we are here, there are no rays, so it is bounded.
-        vol = volume(poly)
-        return (vol, true)
-
-    catch e
-        # Only catch specific solver errors if possible, otherwise rethrow or warn
-        @warn "Volume computation failed for Region $(region.id): $e"
-        return (NaN, false) # Return NaN so you can filter it out later
     end
 end
 

@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.datasets import make_moons, make_blobs, make_circles, fetch_openml
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
 from typing import Tuple, Dict, Callable
@@ -43,10 +43,8 @@ def process_and_split(X: np.ndarray, y: np.ndarray, noise_level: float, test_siz
     Unified pipeline for splitting, scaling, and noise injection.
     """
     # 1. Encode labels to 0..K-1
-    # Ensures labels are integers 0, 1, ..., K-1 regardless of input format (strings, 1-based, etc.)
     unique_classes = np.sort(np.unique(y))
     class_map = {val: i for i, val in enumerate(unique_classes)}
-    # Handle mixed types if necessary, but generally assuming y is consistent
     y_mapped = np.array([class_map[val] for val in y], dtype=np.int64)
     n_classes = len(unique_classes)
 
@@ -56,14 +54,15 @@ def process_and_split(X: np.ndarray, y: np.ndarray, noise_level: float, test_siz
     )
 
     # 3. Inject Noise (Training labels only)
-    # Note: For synthetic data (Moons), 'noise_level' usually refers to feature noise, 
-    # handled at generation time. If you want label noise for them, uncomment below.
     y_train = inject_label_noise_vectorized(y_train, noise_level, n_classes, seed)
 
-    # 4. Scale
-    scaler = StandardScaler()
+    # 4. Scale to Unit Hypercube [0, 1]
+    scaler = MinMaxScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
+    
+    # Strictly enforce bounds on the test set in case of outliers
+    X_test = np.clip(X_test, 0.0, 1.0)
 
     # 5. Tensorize
     return (
@@ -127,7 +126,6 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
     # --- Synthetic Datasets (Feature Noise injection handled here) ---
     if dataset_name == "moons":
         X, y = make_moons(n_samples=N_SAMPLES, noise=noise, random_state=split_seed)
-        # Note: We pass noise=0.0 to process_and_split because we already applied feature noise
         train_ds, test_ds = process_and_split(X, y, noise_level=0.0, seed=split_seed) 
         
     elif dataset_name == "circles":
@@ -143,10 +141,9 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
     # --- Standard Vision Datasets ---
     elif dataset_name == "mnist":
         print("Fetching MNIST (torchvision)...")
-        # Standard MNIST transformations
+        # Standard MNIST transformations (Normalize removed to keep data in [0, 1])
         transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,)),
             transforms.Lambda(lambda x: torch.flatten(x)) # Flatten to 784 features
         ])
 
@@ -156,18 +153,42 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
         
         # --- Inject Label Noise ---
         if noise > 0.0:
-            # 1. Extract targets and convert to numpy
             original_targets = train_ds.targets.numpy()
-            
-            # 2. Apply your existing vectorized noise function
             noisy_targets = inject_label_noise_vectorized(
                 y=original_targets, 
                 noise_ratio=noise, 
-                n_classes=10,       # MNIST has 10 classes (0-9)
+                n_classes=10, 
                 seed=split_seed
             )
-            
-            # 3. Assign the corrupted targets back as a PyTorch tensor
+            train_ds.targets = torch.tensor(noisy_targets, dtype=torch.int64)
+
+        return (
+            DataLoader(train_ds, batch_size=batch_size, shuffle=True),
+            DataLoader(test_ds, batch_size=batch_size, shuffle=False)
+        )
+        
+    elif dataset_name == "mnist_minimal":
+        print("Fetching MNIST Minimal (downsampled to 7x7)...")
+        # Transformations for minimal MNIST
+        transform = transforms.Compose([
+            transforms.ToTensor(), 
+            transforms.Lambda(lambda x: torch.nn.functional.avg_pool2d(x, kernel_size=4)),
+            transforms.Lambda(lambda x: torch.flatten(x)) 
+        ])
+
+        # Load the predefined 60k train and 10k test splits
+        train_ds = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+        test_ds = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+        
+        # --- Inject Label Noise ---
+        if noise > 0.0:
+            original_targets = train_ds.targets.numpy()
+            noisy_targets = inject_label_noise_vectorized(
+                y=original_targets, 
+                noise_ratio=noise, 
+                n_classes=10, 
+                seed=split_seed
+            )
             train_ds.targets = torch.tensor(noisy_targets, dtype=torch.int64)
 
         return (

@@ -52,7 +52,7 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false, exact_volu
 
         # Read points
         points = read(file, "points")
-        sampled_points = points[:, 1:50:end]
+        # points = points[:, 1:50:end]
 
         for g_name in group_names
             println("\n=== Processing $g_name ===")
@@ -89,7 +89,7 @@ function process_trees_in_h5(filename::String; overwrite::Bool=false, exact_volu
             if exact_regions
                 construct_tree!(tree, verbose=false)
             else
-                construct_tree_sparse!(tree, sampled_points)
+                construct_tree_sparse!(tree, points)
             end
             duration = time() - t_start
             
@@ -153,6 +153,9 @@ function main()
         "--verbose"
             help = "Print detailed information during processing"
             action = :store_true
+        "--exact_regions"
+            help = "Use exact tree construction instead of sparse construction"
+            action = :store_true    
         
     end
     
@@ -162,8 +165,9 @@ function main()
     should_use_exact_volume = parsed_args["exact_volume"]
     should_use_estimate_volume = parsed_args["estimate_volume"]
     verbose = parsed_args["verbose"]
+    exact_regions = parsed_args["exact_regions"]
 
-    process_trees_in_h5(h5_filename; overwrite=should_overwrite, exact_volume=should_use_exact_volume, estimate_volume=should_use_estimate_volume, verbose=verbose)
+    process_trees_in_h5(h5_filename; overwrite=should_overwrite, exact_volume=should_use_exact_volume, estimate_volume=should_use_estimate_volume, verbose=verbose, exact_regions=exact_regions)
 end
 
 main()

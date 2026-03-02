@@ -1,9 +1,9 @@
-experiment_name: "wbc_big"
-dataset: "wbc"
+experiment_name: "mnist_minimal_test"
+dataset: "mnist_minimal"
 output_dir: "outputs"
 
 # Model Architecture
-architecture: [1024,1024,1024,1024]  # Hidden layers
+architecture: [1024, 1024, 1024, 1024]  # Hidden layers
 dropout: 0.0
 
 # DETERMINISM SETTINGS
@@ -19,9 +19,7 @@ momentum: 0.9
 
 # Data specific settings
 noise: 0.0          # Geometric noise (for moons/circles) or label noise
-test_size: 0.2
-n_features: 30  
-centers: 10
+# test_size: 0.2
 
 
 # SAVING STRATEGY
@@ -29,4 +27,4 @@ centers: 10
 save_interval: 10
 
 # 2. AND save these specific epochs (dense at the start)
-save_epochs: [0, 1, 2, 3, 4, 6, 8, 10] 
+save_epochs: [0, 1, 2, 3, 4, 6, 8, 10]

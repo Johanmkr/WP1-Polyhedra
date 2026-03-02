@@ -3,7 +3,7 @@ dataset: "moons"
 output_dir: "outputs"
 
 # Model Architecture
-architecture: [10, 10, 10]  # Hidden layers
+architecture: [25,25,25,25]  # Hidden layers
 dropout: 0.0
 
 # DETERMINISM SETTINGS
@@ -11,7 +11,7 @@ global_seed: 42    # Controls the Train/Test split and Shuffle order
 model_seed: 101    # Controls ONLY the weight initialization
 
 # Training Hyperparameters
-epochs: 51
+epochs: 71
 batch_size: 32
 optimizer: "SGD"
 learning_rate: 0.01

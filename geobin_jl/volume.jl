@@ -2,7 +2,7 @@ module Volume
 
 using ..Regions
 using ..Trees
-using ..Utils: get_region_volume
+using ..Utils   
 using ProgressMeter
 using RCall
 using JuMP
@@ -56,7 +56,7 @@ function compute_volumes_parallel!(tree::Tree; bound::Union{Float64, Nothing}=no
     
     # Assign the calculated volumes back to the main tree
     for i in 1:n_regions
-        all_regions[i].volume = volumes[i]
+        all_regions[i].volume_es = volumes[i]
     end
     
     return tree
@@ -127,13 +127,14 @@ function is_region_unbounded_fast(A::Matrix{Float64}, model::Model; tol=1e-4)
 end
 
 """
-    estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200)
+    estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200, hypercube_bounds::Tuple{Float64, Float64}=(0.0, 1.0))
 
 Estimates the volume of every region using `volesti` in R.
+Bounds the space to a hypercube (default [0, 1]^d) before estimation.
 Optimized using a thread-safe JuMP model pool for recession cone checks, 
 minimizing allocation overhead while keeping memory usage strictly bounded.
 """
-function estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200)
+function estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200, hypercube_bounds::Tuple{Float64, Float64}=(0.0, 1.0))
     # 1. Flatten tree
     all_regions = Region[]
     queue = [tree.root]
@@ -148,7 +149,6 @@ function estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200)
     n_threads = Threads.nthreads()
     
     # --- SETUP JUMP MODEL POOL ---
-    # Creates one model per thread to avoid allocation bottlenecks
     model_pool = Channel{Model}(n_threads)
     for _ in 1:n_threads
         m = Model(HiGHS.Optimizer)
@@ -168,6 +168,7 @@ function estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200)
     """
     
     p = Progress(n_regions; desc="Estimating Volumes: ")
+    lower_bnd, upper_bnd = hypercube_bounds
 
     # 2. Iterate in chunks
     for chunk_start in 1:chunk_size:n_regions
@@ -179,22 +180,37 @@ function estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200)
         b_list = Vector{Vector{Float64}}(undef, batch_size)
         is_bounded_flags = zeros(Bool, batch_size)
         
-        # --- PHASE A: Multi-threaded Julia LP Checks ---
+        # --- PHASE A: Multi-threaded Julia LP Checks & Bounding ---
         Threads.@threads for local_idx in 1:batch_size
             region = current_batch[local_idx]
-            A, b = get_path_inequalities(region)
+            q_path = get_activation_path(region)
+            A, b = compute_path_geometry(tree.weights, tree.biases, q_path; active_indices=region.active_indices)
+            
+            dim = size(A, 2)
+            
+            # Apply Hypercube Bounds
+            if dim > 0
+                I_mat = Matrix{Float64}(I, dim, dim)
+                # Append constraints: I*x <= upper_bnd and -I*x <= -lower_bnd
+                A = vcat(A, I_mat, -I_mat)
+                b = vcat(b, fill(upper_bnd, dim), fill(-lower_bnd, dim))
+            end
+
             A_list[local_idx] = A
             b_list[local_idx] = b
             
             if size(A, 1) == 0
-                region.volume = Inf
+                region.volume_es = Inf
                 region.bounded = false
             else
                 local_model = take!(model_pool)
                 try
+                    # Note: Because we added the hypercube bounds, this will effectively 
+                    # always return false (bounded), but keeping it acts as a safe geometric check
+                    # in case the resulting intersection is mathematically degenerate.
                     unbounded = is_region_unbounded_fast(A, local_model)
                     if unbounded
-                        region.volume = Inf
+                        region.volume_es = Inf
                         region.bounded = false
                     else
                         region.bounded = true
@@ -243,7 +259,7 @@ function estimate_volumes_parallel!(tree::Tree; chunk_size::Int=200)
             @rget est_vols_chunk
             
             for (k, local_idx) in enumerate(valid_local_indices)
-                current_batch[local_idx].volume = est_vols_chunk[k]
+                current_batch[local_idx].volume_es = est_vols_chunk[k]
             end
         end
         

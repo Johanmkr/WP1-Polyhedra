@@ -66,13 +66,13 @@ def get_projection_basis(input_dim):
     
     return np.vstack([u, v]).T
 
-def compute_polygon_vertices(region: Region, bound: float, basis_matrix=None):
+def compute_polygon_vertices(tree: Tree, region: Region, min_bound: float, max_bound: float, basis_matrix=None):
     """
-    Computes vertices of the region intersected with the viewing box [-bound, bound]^2.
+    Computes vertices of the region intersected with the viewing box [min_bound, max_bound]^2.
     Handles High-D inputs by projecting constraints onto the basis_matrix.
     """
-    # 1. Get Inequalities: D * x <= g
-    D, g = region.get_path_inequalities()
+    # 1. Get Inequalities dynamically from the Tree: D * x <= g
+    D, g = tree.get_path_inequalities(region)
     if D is None or D.shape[0] == 0:
         return None
 
@@ -82,10 +82,12 @@ def compute_polygon_vertices(region: Region, bound: float, basis_matrix=None):
     
     dim = D.shape[1] # Should be 2 now
     
-    # 3. Create Bounding Box Constraints [-bound, bound]
+    # 3. Create Bounding Box Constraints [min_bound, max_bound]
+    # x <= max_bound  ==>  I * x <= max_bound
+    # x >= min_bound  ==> -I * x <= -min_bound
     I = np.eye(dim)
     D_box = np.vstack([I, -I])
-    g_box = np.full(2 * dim, bound)
+    g_box = np.concatenate([np.full(dim, max_bound), np.full(dim, -min_bound)])
     
     # 4. Combine: Region AND Box
     A_full = np.vstack([D, D_box])
@@ -118,7 +120,7 @@ def compute_polygon_vertices(region: Region, bound: float, basis_matrix=None):
 # 2. PLOTTING FUNCTION
 # ==============================================================================
 
-def plot_grid(h5_path, bound=4.0, plot_points=False):
+def plot_grid(h5_path, min_bound=0.0, max_bound=1.0, plot_points=False):
     path = Path(h5_path)
     if not path.exists():
         print(f"❌ File not found: {path}")
@@ -127,6 +129,7 @@ def plot_grid(h5_path, bound=4.0, plot_points=False):
     # 1. Scan Epochs & Load Points
     print(f"Scanning {path.name}...")
     points = None
+    labels = None
     try:
         import h5py
         with h5py.File(path, 'r') as f:
@@ -224,8 +227,9 @@ def plot_grid(h5_path, bound=4.0, plot_points=False):
             if col_idx == 0:
                 ax.set_ylabel(f"Layer {layer_idx + 1}", fontsize=12, fontweight='bold')
             
-            ax.set_xlim(-bound, bound)
-            ax.set_ylim(-bound, bound)
+            # Apply Min/Max Bounds to Axis Limits
+            ax.set_xlim(min_bound, max_bound)
+            ax.set_ylim(min_bound, max_bound)
             ax.set_aspect('equal')
             
             # Fetch Regions
@@ -235,7 +239,7 @@ def plot_grid(h5_path, bound=4.0, plot_points=False):
             facecolors = []
             
             for i, region in enumerate(regions):
-                verts = compute_polygon_vertices(region, bound=bound, basis_matrix=basis)
+                verts = compute_polygon_vertices(tree, region, min_bound=min_bound, max_bound=max_bound, basis_matrix=basis)
                 if verts is not None:
                     polys.append(verts)
                     facecolors.append(cmap(i % 20))
@@ -249,10 +253,12 @@ def plot_grid(h5_path, bound=4.0, plot_points=False):
                                     zorder=1) # Render regions at bottom
                 ax.add_collection(pc)
             else:
-                ax.text(0, 0, "Empty/No Slice", ha='center', va='center', fontsize=8)
+                ax.text(min_bound + (max_bound - min_bound)/2, 
+                        min_bound + (max_bound - min_bound)/2, 
+                        "Empty/No Slice", ha='center', va='center', fontsize=8)
 
             # Scatter the points if requested
-            if points_2d is not None:
+            if points_2d is not None and labels is not None:
                 # 1. Define distinct, high-contrast colors and shapes
                 point_colors = ['#FF0000', '#00FFFF', '#39FF14', '#FF00FF', '#FFFF00', '#FFFFFF']
                 point_markers = ['o', 's', '^', 'D', 'P', '*'] 
@@ -269,11 +275,10 @@ def plot_grid(h5_path, bound=4.0, plot_points=False):
                     ax.scatter(points_2d[mask, 0], points_2d[mask, 1], 
                                c=color, 
                                marker=marker,
-                               s=1,                # <--- CHANGED: Reduced from 25 to 8
+                               s=1,                
                                alpha=0.6,          
                                zorder=4,           
-                            #    edgecolors='black', 
-                               linewidths=0.5     # <--- CHANGED: Thinner border (was 1.0) so it doesn't swallow the color
+                               linewidths=0.5     
                     )
 
     # 6. Save
@@ -288,8 +293,9 @@ def plot_grid(h5_path, bound=4.0, plot_points=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("file", type=str, help="HDF5 file path")
-    parser.add_argument("--bound", type=float, default=4.0, help="Plot view bound (default: 4.0)")
+    parser.add_argument("--min_bound", type=float, default=0.0, help="Minimum plot view bound (default: 0.0)")
+    parser.add_argument("--max_bound", type=float, default=1.0, help="Maximum plot view bound (default: 1.0)")
     parser.add_argument("--points", action="store_true", help="Plot scatter points from the HDF5 file")
     args = parser.parse_args()
     
-    plot_grid(args.file, args.bound, args.points)
+    plot_grid(args.file, args.min_bound, args.max_bound, args.points)
