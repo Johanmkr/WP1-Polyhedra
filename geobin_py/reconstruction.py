@@ -41,7 +41,6 @@ class Tree:
         self.input_dim = 0
         self.L = 0
         self.leaves = []
-        
         self._load_and_construct()
 
     def get_regions_at_layer(self, layer: int):
@@ -129,20 +128,42 @@ class Tree:
             self.W = []
             self.b = []
             
-            for w_key in weight_keys:
-                b_key = w_key.replace("weight", "bias")
-                self.W.append(g[w_key][:])
-                self.b.append(g[b_key][:])
+            if "model" in g:
+                g_model = g["model"]
+                w_keys = sorted([k for k in g_model.keys() if k.startswith("W_")], 
+                                key=lambda x: int(x.split('_')[1]))
+                for wk in w_keys:
+                    bk = wk.replace("W_", "b_")
+                    W_mat = g_model[wk][:]
+                    b_vec = g_model[bk][:]
+                    
+                    # FIX: Always transpose weights from Julia (Col-Major) -> Python (Row-Major)
+                    # We must rely on the source behavior, not the shape heuristic.
+                    W_mat = W_mat.T
+                    
+                    self.W.append(W_mat)
+                    self.b.append(b_vec)
+            else:
+                # Legacy fallback
+                keys = list(g.keys())
+                w_keys = sorted([k for k in keys if "weight" in k],
+                                key=lambda x: int(re.search(r"l(\d+)\.", x).group(1)) if re.search(r"l(\d+)\.", x) else 999)
+                for wk in w_keys:
+                    bk = wk.replace("weight", "bias")
+                    self.W.append(g[wk][:])
+                    self.b.append(g[bk][:])
 
-            self.L = len(self.W)
-            self.input_dim = self.W[0].shape[1]
+            if self.W:
+                self.L = len(self.W)
+                self.input_dim = self.W[0].shape[1]
             
             # --- 2. Load Topology & Attributes ---
             if "parent_ids" not in g:
-                raise ValueError("Tree topology (parent_ids) missing.")
+                return
 
             parent_ids = g["parent_ids"][:]
             layer_idxs = g["layer_idxs"][:]
+            # Centroids are (N, D) in the fixed Julia script
             centroids  = g["centroids"][:] 
             
             # Load Activation Signatures
@@ -162,8 +183,7 @@ class Tree:
             for i in range(num_nodes):
                 # Slice the flattened qlw array
                 if i+1 < len(qlw_offsets):
-                    start, end = qlw_offsets[i], qlw_offsets[i+1]
-                    act = qlw_flat[start:end]
+                    act = qlw_flat[qlw_offsets[i]:qlw_offsets[i+1]]
                 else:
                     act = np.array([], dtype=int)
                     

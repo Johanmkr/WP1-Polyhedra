@@ -1,6 +1,12 @@
 using HDF5
 using Printf
 using ArgParse
+using Base.Threads
+using LinearAlgebra
+using Dates
+
+# 1. Force BLAS to 1 thread
+BLAS.set_num_threads(1)
 
 # Load your local PolyhedraTree module
 using Distributed
@@ -142,7 +148,7 @@ function main()
             required = true
             arg_type = String
         "--overwrite"
-            help = "Force re-computation even if tree data exists"
+            help = "Force re-computation"
             action = :store_true
         "--exact_volume"
             help = "Use exact volume computation instead of estimation"
@@ -158,7 +164,6 @@ function main()
             action = :store_true    
         
     end
-    
     parsed_args = parse_args(ARGS, s)
     h5_filename = parsed_args["h5_file"]
     should_overwrite = parsed_args["overwrite"]

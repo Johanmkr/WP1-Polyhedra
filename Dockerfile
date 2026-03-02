@@ -1,9 +1,13 @@
 # Use a modern Python base
-FROM python:3.12-slim-bookworm
+FROM python:3.13-slim-bookworm
 
 # 1. Install System Dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates libgomp1 \
+    curl \
+    ca-certificates \
+    libgomp1 \
+    build-essential \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Install Julia
@@ -13,20 +17,32 @@ RUN curl -sSL "https://julialang-s3.julialang.org/bin/linux/x64/${JULIA_VERSION%
 ENV PATH="/opt/julia-${JULIA_VERSION}/bin:${PATH}"
 
 # 3. Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uv/bin/
-ENV PATH="/app/.venv/bin:$PATH"
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+ENV PATH="/root/.local/bin/:$PATH"
 
 WORKDIR /app
 
-# 4. Install Dependencies (Leverage caching)
-COPY pyproject.toml uv.lock Project.toml Manifest.toml ./
+# 4. Install Dependencies
+# Copy only the files needed for installation first
+# REMOVED Manifest.toml from this list because we want to generate a fresh one
+COPY pyproject.toml uv.lock Project.toml ./
+
+# FIX: Remove the local Manifest.toml (if it existed) and instantiate
 RUN uv sync --frozen --no-dev && \
+    rm -f Manifest.toml && \
     julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
 
-# 5. Copy the source code (Logic is baked in, data/configs stay out)
+# 5. Copy the source code
+# (With .dockerignore, this won't overwrite the fresh Manifest)
 COPY . .
 
+# FIX: Set permissions so you don't need 'chmod +x' manually
+RUN chmod +x *.sh
+
+# FIX: Tell Julia to ALWAYS use the project in the current directory
+# This prevents the "Package HDF5 not found" error when running scripts
+ENV JULIA_PROJECT=@.
+
 # 6. NO DEFAULT EXECUTION
-# This ensures that if you just 'run' the container, it doesn't start training.
-# It waits for your job script to tell it what to do.
 CMD ["/bin/bash"]

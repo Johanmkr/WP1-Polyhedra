@@ -37,7 +37,9 @@ old_figures/
 figures/
 icml_figures/
 tests/
-
+configs/
+outputs/
+Manifest.toml
 
 # --- System & IDE ---
 .DS_Store

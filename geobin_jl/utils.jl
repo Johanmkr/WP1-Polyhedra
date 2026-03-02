@@ -9,7 +9,8 @@ export find_hyperplanes, get_region_volume, analyze_region
 export get_activation_path, compute_path_geometry
 
 function find_hyperplanes(state_dict::Dict{String, Any})
-    keys_weights = filter(k -> occursin("weight", k), collect(keys(state_dict)))
+    # FIX: Support both legacy "weight" (PyTorch) and new "W_" (Julia Save) formats
+    keys_weights = filter(k -> occursin("weight", k) || startswith(k, "W_"), collect(keys(state_dict)))
 
     function extract_layer_idx(k)
         m = match(r"(\d+)", k)
@@ -22,7 +23,17 @@ function find_hyperplanes(state_dict::Dict{String, Any})
     biases = Vector{Float64}[]
 
     for k_w in sorted_keys
-        k_b = replace(k_w, "weight" => "bias")
+        # Determine corresponding bias key
+        if occursin("weight", k_w)
+            k_b = replace(k_w, "weight" => "bias")
+        else
+            k_b = replace(k_w, "W_" => "b_")
+        end
+        
+        if !haskey(state_dict, k_b)
+             error("Bias key '$k_b' not found for weight '$k_w'")
+        end
+
         W = convert(Matrix{Float64}, state_dict[k_w])
         b = convert(Vector{Float64}, state_dict[k_b])
         push!(weights, W)

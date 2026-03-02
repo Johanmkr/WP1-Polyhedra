@@ -9,12 +9,11 @@ using CDDLib
 using Statistics
 using Printf
 
-# --- FIX: Load Order Changed ---
-# Regions must be loaded first because Utils and Trees depend on it.
-include("region.jl")    # <--- Moved up
-include("geometry.jl")  # Independent
-include("utils.jl")     # Depends on Regions
-include("tree.jl")      # Depends on Regions, Utils
+# Include order
+include("region.jl")    
+include("geometry.jl")  
+include("utils.jl")     
+include("tree.jl")      
 include("construction.jl")
 include("verification.jl")
 include("pruning.jl")
@@ -22,7 +21,7 @@ include("save_tree.jl")
 include("sparse_construction.jl")
 include("volume.jl")
 
-# Use and re-export submodules
+# Use and re-export
 using .Regions
 using .Utils
 using .Geometry
@@ -34,6 +33,7 @@ using .SaveTree
 using .SparseConstruction
 using .Volume
 
+# EXPORT EVERYTHING
 export Region, Tree, construct_tree!, get_regions_at_layer, print_tree_summary, get_path_inequalities
 export verify_volume_conservation, check_point_partition, get_region_volume, scan_all_overlaps_strict
 export find_hyperplanes
