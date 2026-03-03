@@ -1,0 +1,5 @@
+- ++output_dir=outputs/blobs_capacity
+- ++experiment_name=_features_
+- architecture=[3,3,3]
+- ++dataset=blobs
+- ++n_features=2

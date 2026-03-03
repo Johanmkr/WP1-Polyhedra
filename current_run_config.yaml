@@ -1,0 +1,25 @@
+architecture:
+- 25
+- 25
+- 25
+batch_size: 32
+dataset: blobs
+dropout: 0.0
+epochs: 101
+experiment_name: 15_features_[25, 25, 25]
+global_seed: 42
+learning_rate: 0.001
+model_seed: 101
+momentum: 0.9
+n_features: 15
+output_dir: outputs/blobs_capacity
+save_epochs:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 6
+- 8
+- 10
+save_interval: 10

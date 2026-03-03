@@ -1,0 +1,26 @@
+# conf/config.yaml
+
+# These are standard parameters, not Config Groups
+# dataset: "moons"
+architecture: [5, 5, 5]
+
+# Training Hyperparameters (from your original experiment config)
+epochs: 101
+batch_size: 32
+learning_rate: 0.001
+momentum: 0.9
+dropout: 0.0
+global_seed: 42
+model_seed: 101
+
+# Saving Strategy (from your original experiment config)
+save_interval: 10
+save_epochs: [0, 1, 2, 3, 4, 6, 8, 10]
+
+# Dynamic naming
+experiment_name: "${dataset}_${architecture}"
+output_dir: "outputs"
+
+hydra:
+  run:
+    dir: ${output_dir}/${experiment_name}
