@@ -56,13 +56,13 @@ def process_and_split(X: np.ndarray, y: np.ndarray, noise_level: float, test_siz
     # 3. Inject Noise (Training labels only)
     y_train = inject_label_noise_vectorized(y_train, noise_level, n_classes, seed)
 
-    # 4. Scale to Unit Hypercube [0, 1]
-    scaler = MinMaxScaler()
+    # 4. Scale to Unit Hypercube [-1, 1]
+    scaler = MinMaxScaler(feature_range=(-1, 1))
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
     
     # Strictly enforce bounds on the test set in case of outliers
-    X_test = np.clip(X_test, 0.0, 1.0)
+    X_test = np.clip(X_test, -1.0, 1.0)
 
     # 5. Tensorize
     return (

@@ -293,7 +293,7 @@ def plot_grid(h5_path, min_bound=0.0, max_bound=1.0, plot_points=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("file", type=str, help="HDF5 file path")
-    parser.add_argument("--min_bound", type=float, default=0.0, help="Minimum plot view bound (default: 0.0)")
+    parser.add_argument("--min_bound", type=float, default=-1.0, help="Minimum plot view bound (default: -1.0)")
     parser.add_argument("--max_bound", type=float, default=1.0, help="Maximum plot view bound (default: 1.0)")
     parser.add_argument("--points", action="store_true", help="Plot scatter points from the HDF5 file")
     args = parser.parse_args()

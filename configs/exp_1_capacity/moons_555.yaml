@@ -1,9 +1,9 @@
-experiment_name: "moons_15_01"
+experiment_name: "moons_555"
 dataset: "moons"
-output_dir: "/storage/projects/geobin/outputs"
+output_dir: "outputs/exp_1_capacity"
 
 # Model Architecture
-architecture: [15, 15, 15]  # Hidden layers
+architecture: [5, 5, 5]  # Hidden layers
 dropout: 0.0
 
 # DETERMINISM SETTINGS
@@ -11,14 +11,14 @@ global_seed: 42    # Controls the Train/Test split and Shuffle order
 model_seed: 101    # Controls ONLY the weight initialization
 
 # Training Hyperparameters
-epochs: 51
+epochs: 151
 batch_size: 32
 optimizer: "SGD"
-learning_rate: 0.01
+learning_rate: 0.001
 momentum: 0.9
 
 # Data specific settings
-noise: 0.2          # Geometric noise (for moons/circles) or label noise
+noise: 0.1          # Geometric noise (for moons/circles) or label noise
 test_size: 0.2
 
 
