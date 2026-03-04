@@ -1,0 +1,5 @@
+- ++output_dir=outputs/wbc_capacity
+- ++dataset=wbc
+- ++target_dim=10
+- architecture=[7,7,7]
+- ++experiment_name=$\{n_features\}_features_$\{architecture\}

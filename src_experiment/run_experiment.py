@@ -107,6 +107,8 @@ def run(config_path, overwrite=False):
         dataset_kwargs["centers"] = config["centers"]
     if "n_features" in config:
         dataset_kwargs["n_features"] = config["n_features"]
+    if "target_dim" in config:
+        dataset_kwargs["target_dim"] = config["target_dim"]
     
     print(f"Loading {dataset_name}...")
     train_loader, test_loader = get_new_data(

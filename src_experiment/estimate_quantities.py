@@ -4,7 +4,7 @@ import pandas as pd
 import h5py
 import sys
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, Union, Optional, List
 
 # Make sure geobin_py is available
 project_root = Path(__file__).resolve().parent.parent
@@ -19,179 +19,195 @@ except ImportError:
 
 class ExperimentEvaluator:
     """
-    Evaluates a single experiment (.h5 file). 
-    Reconstructs the trees, assigns points to regions, 
-    and directly computes Mutual Information (Kullback-Leibler divergence).
+    Evaluates an entire experiment. 
+    Loads data, discovers all epochs, reconstructs the trees, routes points, 
+    and estimates empirical Mutual Information I(Y;W) and I(X;W) in bits.
     """
 
-    def __init__(self, h5_path: Union[str, Path], volume_key: Optional[str] = None):
-        """
-        Args:
-            h5_path: Path to the .h5 experiment file.
-            volume_key: If provided (e.g., "volume_ex" or "volume_es"), the MI calculation 
-                        will reweight the region probabilities P(W) by their geometric volume 
-                        instead of their empirical point counts.
-        """
+    def __init__(self, h5_path: Union[str, Path]):
         self.h5_path = Path(h5_path)
-        self.volume_key = volume_key
-        self.estimates: Dict[str, List[pd.DataFrame]] = {
-            "Mutual Information": []
-        }
         
+        # Data attributes
+        self.points: Optional[np.ndarray] = None
+        self.labels: Optional[np.ndarray] = None
+        self.N_total: int = 0
+        self.unique_classes: Optional[np.ndarray] = None
+        self.epochs: List[int] = []
+        
+        # Results
+        self.results_df: Optional[pd.DataFrame] = None
+
+    def load_data(self) -> None:
+        """Loads points, labels, and discovers available epochs from the HDF5 file."""
         if not self.h5_path.exists():
             raise FileNotFoundError(f"HDF5 file not found: {self.h5_path}")
             
-        self._evaluate()
-
-    def _evaluate(self) -> None:
-        print(f"Evaluating {self.h5_path.name}...")
-        
-        # 1. Load points and labels
         with h5py.File(self.h5_path, "r") as f:
             if "points" not in f:
                 raise KeyError(f"No 'points' found in {self.h5_path.name}")
                 
             points = f["points"][:]
+            
+            # Fix Julia column-major shape if necessary
             if len(points.shape) == 2 and points.shape[0] < points.shape[1]:
-                points = points.T  # Fix Julia column-major shape
+                points = points.T
                 
             labels = f["labels"][:] if "labels" in f else np.zeros(len(points))
             
-            # Determine available epochs
-            epochs = sorted([int(k.split("_")[1]) for k in f.get("epochs", {}).keys()])
+            # Discover available epochs
+            if "epochs" in f:
+                self.epochs = sorted([int(k.split("_")[1]) for k in f["epochs"].keys()])
+            else:
+                print("⚠️ No 'epochs' group found in HDF5 file.")
+            
+        self.points = points
+        self.labels = labels
+        self.N_total = len(points)
+        self.unique_classes = np.unique(labels)
+        
+        print(f"Loaded {self.N_total} points. Found {len(self.epochs)} epochs.")
 
-        unique_classes = np.unique(labels)
-        N_total = len(points)
+    def _build_tree(self, epoch: int) -> Optional['Tree']:
+        """Instantiates the geobin_py Tree for a specific epoch."""
+        tree = Tree(str(self.h5_path), epoch=epoch)
+        if getattr(tree, 'root', None) is None:
+            return None
+        return tree
 
-        # 2. Iterate through epochs
-        for ep in epochs:
-            try:
-                tree = Tree(str(self.h5_path), epoch=ep)
-                if getattr(tree, 'root', None) is None:
-                    continue # Tree not computed yet
-
-                # Fetch volumes from HDF5 if a volume_key was specified
-                volumes = None
-                if self.volume_key:
-                    with h5py.File(self.h5_path, "r") as f:
-                        g = f["epochs"][f"epoch_{ep}"]
-                        if self.volume_key in g:
-                            volumes = g[self.volume_key][:]
-                        else:
-                            print(f"  ⚠️ Volume key '{self.volume_key}' not found in epoch {ep}. Using empirical counts.")
-
-                # Compute point counts using optimized routing
-                df_counts = self._compute_region_counts(tree, points, labels, unique_classes, volumes)
-                
-                # Directly compute Mutual Information (KL Divergence)
-                if not df_counts.empty:
-                    mi_df = self._compute_mutual_information(df_counts, N_total, unique_classes)
-                    mi_df.insert(0, "epoch", ep)
-                    self.estimates["Mutual Information"].append(mi_df)
-                    
-            except Exception as e:
-                print(f"  ⚠️ Skipping epoch {ep}: {e}")
-
-        # 3. Concatenate all epochs into unified DataFrames
-        for key, frames in self.estimates.items():
-            if frames:
-                self.estimates[key] = (
-                    pd.concat(frames, ignore_index=True)
-                    .rename_axis(None, axis=1)
-                )
-
-    def _compute_region_counts(self, tree: Tree, points: np.ndarray, labels: np.ndarray, unique_classes: np.ndarray, volumes: Optional[np.ndarray] = None) -> pd.DataFrame:
+    def _compute_region_counts(self, tree: 'Tree') -> pd.DataFrame:
         """
-        Uses the Tree's optimized perform_number_count to route points 
-        and formats the output, appending volume data if provided.
+        Routes points through the tree and aggregates counts per region per class.
         """
+        counts_dict = tree.perform_number_count(self.points, y=self.labels)
         all_layer_data = []
-        
-        # 1. Call the highly optimized routing engine
-        counts_dict = tree.perform_number_count(points, y=labels)
-        
-        # 2. Reformat the nested dictionary into a list of row dictionaries
+
         for layer_idx, regions in counts_dict.items():
             if layer_idx == 0:
                 continue 
                 
             for r_id, class_counts in regions.items():
-                row_data = {
-                    "layer_idx": layer_idx,
-                    "region_idx": r_id,
-                }
+                total_in_region = sum(class_counts.values())
                 
-                total_in_region = 0
-                for cls in unique_classes:
-                    count = class_counts.get(cls, 0)
-                    row_data[str(int(cls))] = count
-                    total_in_region += count
-                    
-                row_data["total"] = total_in_region
-                
-                if volumes is not None and r_id < len(volumes):
-                    row_data["volume"] = volumes[r_id]
-                
-                # Only append regions that actually contain points
+                # We only care about populated regions
                 if total_in_region > 0:
+                    row_data = {
+                        "layer_idx": layer_idx,
+                        "region_idx": r_id,
+                        "total": total_in_region
+                    }
+                    # Add individual class counts dynamically
+                    for cls in self.unique_classes:
+                        row_data[str(int(cls))] = class_counts.get(cls, 0)
+                        
                     all_layer_data.append(row_data)
 
         return pd.DataFrame(all_layer_data)
 
-    def _compute_mutual_information(self, df_counts: pd.DataFrame, N: int, unique_classes: np.ndarray) -> pd.DataFrame:
+    def _estimate_mi_y_w(self, df_counts: pd.DataFrame) -> Dict[int, float]:
         """
-        Computes the Mutual Information I(Y; W) layer by layer.
-        I(Y; W) = sum_{y, w} P(y, w) * log(P(y, w) / (P(y) * P(w)))
+        Estimates I(Y;W): The predictive capacity of the regions (in Bits).
         """
-        class_cols = [str(int(c)) for c in unique_classes]
-        results = {}
-        
-        has_volumes = "volume" in df_counts.columns
+        class_cols = [str(int(c)) for c in self.unique_classes]
+        mi_per_layer = {}
         
         for layer_idx, group in df_counts.groupby("layer_idx"):
-            
-            if has_volumes:
-                # ---------------------------------------------------------
-                # VOLUME-BASED PROBABILITIES (Bounded [0,1]^n Space)
-                # ---------------------------------------------------------
-                V_w = group["volume"].to_numpy()
-                
-                # Normalize so probabilities sum to 1 over the populated regions.
-                # If no regions are empty, V_w.sum() will inherently be 1.0.
-                P_w = V_w / V_w.sum() if V_w.sum() > 0 else np.zeros_like(V_w)
-                
-                # P(Y|W) remains the empirical ratio within the region: N_{y,w} / N_w
-                P_y_given_w = group[class_cols].to_numpy() / group["total"].to_numpy()[:, None]
-                
-                # Joint P(Y, W) = P(Y|W) * P_w
-                P_yw = P_y_given_w * P_w[:, None]
-                
-            else:
-                # ---------------------------------------------------------
-                # EMPIRICAL PROBABILITIES (Standard)
-                # ---------------------------------------------------------
-                # Joint probability P(Y=y, W=w) based strictly on points
-                P_yw = group[class_cols].to_numpy() / N
-                
-                # Marginal probability P(W=w) based strictly on points
-                P_w = group["total"].to_numpy() / N
-            
-            # Marginal probability P(Y=y)
+            P_yw = group[class_cols].to_numpy() / self.N_total
+            P_w = group["total"].to_numpy() / self.N_total
             P_y = P_yw.sum(axis=0)
             
-            # Product of marginals P(Y=y) * P(W=w)
             denominator = P_w[:, None] * P_y[None, :]
-            
-            # Mask out zeros to avoid log(0)
             mask = P_yw > 0
             
             kl_terms = np.zeros_like(P_yw)
-            kl_terms[mask] = P_yw[mask] * np.log(P_yw[mask] / denominator[mask])
+            kl_terms[mask] = P_yw[mask] * np.log2(P_yw[mask] / denominator[mask])
             
-            mi = kl_terms.sum()
-            results[f"l{layer_idx}"] = mi
+            mi_per_layer[layer_idx] = kl_terms.sum()
             
-        return pd.DataFrame([results])
+        return mi_per_layer
 
-    def get_estimates(self) -> Dict[str, pd.DataFrame]:
-        return self.estimates
+    def _estimate_mi_x_w(self, df_counts: pd.DataFrame) -> Dict[int, float]:
+        """
+        Estimates I(X;W): The memorization capacity of the regions (in Bits).
+        Since H(W|X) = 0 for deterministic mappings, I(X;W) = H(W).
+        """
+        mi_per_layer = {}
+        
+        for layer_idx, group in df_counts.groupby("layer_idx"):
+            P_w = group["total"].to_numpy() / self.N_total
+            
+            mask = P_w > 0
+            entropy_terms = np.zeros_like(P_w)
+            entropy_terms[mask] = -P_w[mask] * np.log2(P_w[mask])
+            
+            mi_per_layer[layer_idx] = entropy_terms.sum()
+            
+        return mi_per_layer
+
+    def evaluate_all(self) -> pd.DataFrame:
+        """
+        Runs the entire pipeline across all epochs discovered in the HDF5 file.
+        Returns a DataFrame containing MI estimates per epoch and per layer.
+        """
+        if self.points is None:
+            self.load_data()
+            
+        all_results = []
+
+        for ep in self.epochs:
+            print(f"Processing epoch {ep}...")
+            try:
+                # 1. Build the tree
+                tree = self._build_tree(ep)
+                if tree is None:
+                    print(f"  ⚠️ Skipping epoch {ep}: Tree could not be built.")
+                    continue
+                
+                # 2. Route the points once
+                df_counts = self._compute_region_counts(tree)
+                if df_counts.empty:
+                    print(f"  ⚠️ Skipping epoch {ep}: No regions populated.")
+                    continue
+                
+                # 3. Compute both MIs
+                mi_yw = self._estimate_mi_y_w(df_counts)
+                mi_xw = self._estimate_mi_x_w(df_counts)
+                
+                # 4. Store layer-by-layer results
+                for layer_idx in mi_yw.keys():
+                    all_results.append({
+                        "epoch": ep,
+                        "layer_idx": layer_idx,
+                        "I(Y;W)": mi_yw.get(layer_idx, 0.0),
+                        "I(X;W)": mi_xw.get(layer_idx, 0.0)
+                    })
+                    
+            except Exception as e:
+                print(f"  ⚠️ Error evaluating epoch {ep}: {e}")
+
+        # Consolidate into a clean Pandas DataFrame
+        self.results_df = pd.DataFrame(all_results)
+        print("Evaluation complete.")
+        return self.results_df
+
+
+# ==========================================
+# Example Usage:
+# ==========================================
+if __name__ == "__main__":
+    h5_path = "path/to/your/experiment.h5"
+    
+    # 1. Initialize with just the file path
+    evaluator = ExperimentEvaluator(h5_path)
+    
+    # 2. Run the evaluation across all epochs
+    df_results = evaluator.evaluate_all()
+    
+    # 3. Output the results dataframe
+    print("\nFinal Results DataFrame:")
+    print(df_results.head(15))
+    
+    # Bonus: You can now easily plot this using seaborn or matplotlib!
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+    # sns.lineplot(data=df_results, x="epoch", y="I(X;W)", hue="layer_idx")
+    # plt.show()
