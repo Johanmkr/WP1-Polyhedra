@@ -1,0 +1,7 @@
+- epochs=151
+- ++output_dir=outputs/mnist_capacity
+- ++dataset=mnist
+- ++model_seed=105
+- ++target_dim=15
+- architecture=[50,50,50]
+- ++experiment_name=$\{target_dim\}_dim_$\{architecture\}

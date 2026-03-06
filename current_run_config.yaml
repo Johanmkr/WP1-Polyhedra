@@ -1,17 +1,17 @@
 architecture:
-- 50
-- 50
-- 50
+- 100
+- 100
+- 100
 batch_size: 32
-dataset: wbc
+dataset: mnist
 dropout: 0.0
 epochs: 151
-experiment_name: 15_dim_[50, 50, 50]
+experiment_name: 20_dim_[100, 100, 100]
 global_seed: 42
 learning_rate: 0.001
-model_seed: 101
+model_seed: 105
 momentum: 0.9
-output_dir: outputs/wbc_capacity
+output_dir: outputs/mnist_capacity
 save_epochs:
 - 0
 - 1
@@ -22,4 +22,4 @@ save_epochs:
 - 8
 - 10
 save_interval: 10
-target_dim: 15
+target_dim: 20
