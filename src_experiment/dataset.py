@@ -106,6 +106,33 @@ def _map_car_data(X_raw, y_raw):
     y = y_raw.iloc[:, 0].map(target_mapping)
     return X, y
 
+def _make_composite_data(n_samples: int, seed: int) -> Tuple[np.ndarray, np.ndarray]:
+    """Generates the custom moons/circles/blobs composite dataset."""
+    # Proportional splits based on the requested n_samples
+    n_moons = int(n_samples * 0.4) 
+    n_circles = int(n_samples * 0.4) 
+    n_blobs = n_samples - n_moons - n_circles 
+    
+    # 1. Moons
+    data_moons, labels_moons = make_moons(n_samples=n_moons, shuffle=True, noise=0.10, random_state=seed)
+    data_moons = data_moons + 0.5
+
+    # 2. Circles
+    data_circles, labels_circles = make_circles(n_samples=n_circles, shuffle=True, noise=0.05, factor=0.75, random_state=seed)
+    data_circles = data_circles * 3.0 + 1
+    labels_circles += 2
+
+    # 3. Blobs
+    centers = [[-2, 4], [3, -3], [5, 4]]
+    data_blobs, labels_blobs = make_blobs(n_samples=n_blobs, cluster_std=0.3, centers=centers, random_state=seed)
+    labels_blobs += 4
+
+    # 4. Combine
+    X = np.concatenate([data_moons, data_circles, data_blobs], axis=0)
+    y = np.concatenate([labels_moons, labels_circles, labels_blobs])
+    
+    return X, y
+
 # ------------------------------------------------------------------------------
 #       3. The Registry (Factory Pattern)
 # ------------------------------------------------------------------------------
@@ -130,6 +157,11 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
         centers = kwargs.get("centers", 3)
         n_features = kwargs.get("n_features", 2)
         X, y = make_blobs(n_samples=N_SAMPLES, centers=centers, n_features=n_features, random_state=split_seed)
+        train_ds, test_ds = process_and_split(X, y, noise_level=0.0, seed=split_seed, target_dim=target_dim)
+        
+    elif dataset_name == "composite":
+        X, y = _make_composite_data(n_samples=N_SAMPLES, seed=split_seed)
+        # We pass noise_level=0.0 to the pipeline since the feature noise is already baked into the shapes
         train_ds, test_ds = process_and_split(X, y, noise_level=0.0, seed=split_seed, target_dim=target_dim)
 
     # --- Standard Vision Datasets (Modified for Eager PCA Support) ---

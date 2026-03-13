@@ -33,6 +33,7 @@ _lazy_attributes = {
     "wbc_path": ".paths",
     "get_new_path": ".paths",
     "get_test_data": ".paths",
+    "neurips_figpath": ".pahts",
     "train_model": ".train_models",
     "train_model_multiclass": ".train_models",
     "NeuralNet": ".utils",

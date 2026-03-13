@@ -21,7 +21,8 @@ class ExperimentEvaluator:
     """
     Evaluates an entire experiment. 
     Loads data, discovers all epochs, reconstructs the trees, routes points, 
-    and estimates empirical Mutual Information I(Y;W) and I(X;W) in bits.
+    estimates empirical Mutual Information I(Y;W) and I(X;W) in bits,
+    and tracks the total number of regions.
     """
 
     def __init__(self, h5_path: Union[str, Path]):
@@ -146,7 +147,7 @@ class ExperimentEvaluator:
     def evaluate_all(self) -> pd.DataFrame:
         """
         Runs the entire pipeline across all epochs discovered in the HDF5 file.
-        Returns a DataFrame containing MI estimates per epoch and per layer.
+        Returns a DataFrame containing MI estimates and region counts per epoch and per layer.
         """
         if self.points is None:
             self.load_data()
@@ -174,11 +175,22 @@ class ExperimentEvaluator:
                 
                 # 4. Store layer-by-layer results
                 for layer_idx in mi_yw.keys():
+                    
+                    # --- NEW: Get region counts ---
+                    # Total instantiated regions at this layer
+                    total_regions = len(tree.get_regions_at_layer(layer_idx))
+                    
+                    # Number of regions that actually contain data points
+                    layer_data = df_counts[df_counts["layer_idx"] == layer_idx]
+                    populated_regions = len(layer_data)
+                    
                     all_results.append({
                         "epoch": ep,
                         "layer_idx": layer_idx,
                         "I(Y;W)": mi_yw.get(layer_idx, 0.0),
-                        "I(X;W)": mi_xw.get(layer_idx, 0.0)
+                        "I(X;W)": mi_xw.get(layer_idx, 0.0),
+                        "total_regions": total_regions,
+                        "populated_regions": populated_regions
                     })
                     
             except Exception as e:
