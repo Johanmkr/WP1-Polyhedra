@@ -1,0 +1,25 @@
+architecture:
+- 3
+- 3
+- 3
+epochs: 251
+batch_size: 32
+learning_rate: 0.01
+momentum: 0.9
+dropout: 0.0
+global_seed: 42
+model_seed: 105
+save_interval: 10
+save_epochs:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 6
+- 8
+- 10
+experiment_name: dim${target_dim}_${architecture}_lr${learning_rate}
+output_dir: outputs/wbc_nr_regions
+dataset: wbc
+target_dim: 3

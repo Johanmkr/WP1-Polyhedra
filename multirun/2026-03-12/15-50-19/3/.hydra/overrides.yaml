@@ -1,0 +1,6 @@
+- epochs=251
+- learning_rate=0.01
+- ++output_dir=outputs/composite_data_test
+- ++dataset=composite
+- architecture=[6,6,6]
+- ++experiment_name=$\{architecture\}_lr$\{learning_rate\}

@@ -1,0 +1,8 @@
+- epochs=251
+- learning_rate=0.01
+- ++output_dir=outputs/wbc_nr_regions
+- ++dataset=wbc
+- ++model_seed=104
+- ++target_dim=3
+- architecture=[6,6,6]
+- ++experiment_name=dim$\{target_dim\}_$\{architecture\}_lr$\{learning_rate\}
