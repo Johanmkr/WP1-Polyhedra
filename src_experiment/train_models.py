@@ -65,11 +65,10 @@ def train_model_multiclass(
     sgd_mom=0.9,
     on_save_callback: Optional[Callable[[int, Dict, Dict], None]] = None,
     disable_progress: bool = False,
-    use_geo_penalty: bool = False,               # NEW: Toggle Geometric Penalty
-    final_layer_name: Optional[str] = None,      # NEW: Required if use_geo_penalty is True
-    geo_alpha: float = 0.1,                      # NEW: Geometric Penalty hyperparams
+    use_geo_penalty: bool = True,          # NEW: Toggle Geometric Penalty
+    geo_alpha: float = 0.1,                 # NEW: Geometric Penalty hyperparams
     geo_beta: float = 0.1,
-    geo_margin: float = 10.0,
+    geo_margin: float = 1.0,
     geo_steepness: float = 10.0
 ) -> Any:
     
@@ -89,29 +88,29 @@ def train_model_multiclass(
     loss_fn = nn.CrossEntropyLoss()
 
     # ----------------------
-    # Setup Geometric Penalty
+    # Setup Geometric Penalty (Optional)
     # ----------------------
     captured_activations = {}
     hook_handles = []
     
     if use_geo_penalty:
-        if final_layer_name is None:
-            raise ValueError("You must provide `final_layer_name` when `use_geo_penalty` is True.")
-            
+        # Initialize penalty and move to the same device as the model
+        device = next(model.parameters()).device
         geo_penalty = GeometricPenalty(
             alpha=geo_alpha, 
             beta=geo_beta, 
             margin=geo_margin, 
             sigmoid_steepness=geo_steepness
-        ).to(next(model.parameters()).device) # Ensure it's on the same device
+        ).to(device)
         
         def get_activation(name):
             def hook(model, input, output):
                 captured_activations[name] = output
             return hook
 
+        # Attach hooks to ALL linear and convolutional layers dynamically
         for name, module in model.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)) and name != final_layer_name:
+            if isinstance(module, (nn.Linear, nn.Conv2d)):
                 handle = module.register_forward_hook(get_activation(name))
                 hook_handles.append(handle)
 
@@ -137,8 +136,13 @@ def train_model_multiclass(
             y_hat = model(x)  
             loss = loss_fn(y_hat, y)
             
-            # Apply custom loss if toggled
-            if use_geo_penalty:
+            # Apply geometric penalty to hidden layers if toggled
+            if use_geo_penalty and len(captured_activations) > 0:
+                # Dynamically identify and remove the final layer's output
+                last_layer_key = list(captured_activations.keys())[-1]
+                captured_activations.pop(last_layer_key)
+                
+                # Apply penalty to all remaining hidden layers
                 for layer_name, pre_acts in captured_activations.items():
                     loss += geo_penalty(pre_acts, y)
                     
@@ -171,7 +175,9 @@ def train_model_multiclass(
                 y_hat = model(x)
                 loss = loss_fn(y_hat, y)
                 
-                if use_geo_penalty:
+                if use_geo_penalty and len(captured_activations) > 0:
+                    last_layer_key = list(captured_activations.keys())[-1]
+                    captured_activations.pop(last_layer_key)
                     for layer_name, pre_acts in captured_activations.items():
                         loss += geo_penalty(pre_acts, y)
                 
@@ -198,7 +204,9 @@ def train_model_multiclass(
                 y_hat = model(x)
                 loss = loss_fn(y_hat, y)
                 
-                if use_geo_penalty:
+                if use_geo_penalty and len(captured_activations) > 0:
+                    last_layer_key = list(captured_activations.keys())[-1]
+                    captured_activations.pop(last_layer_key)
                     for layer_name, pre_acts in captured_activations.items():
                         loss += geo_penalty(pre_acts, y)
                         
@@ -236,10 +244,11 @@ def train_model_multiclass(
                 saved_states[epoch] = state
 
     # ----------------------
-    # Cleanup Hooks
+    # Cleanup Hooks (Optional)
     # ----------------------
-    for handle in hook_handles:
-        handle.remove()
+    if use_geo_penalty:
+        for handle in hook_handles:
+            handle.remove()
 
     # ----------------------
     # Compile results
