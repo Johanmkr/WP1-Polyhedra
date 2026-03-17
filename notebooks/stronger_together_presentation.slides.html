@@ -7442,7 +7442,7 @@ main {
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div align="center">
-<h1 id="Useful-Linear-Regions-from-Neural-Network">Useful Linear Regions from Neural Network<a class="anchor-link" href="#Useful-Linear-Regions-from-Neural-Network">¶</a></h1><p>What can we learn from the convex tesselations arising from Continuous Piecewise linear (CPWL) neural networks?</p>
+<h1 id="Useful-Linear-Regions-from-Neural-Network">Useful Linear Regions from Neural Network<a class="anchor-link" href="#Useful-Linear-Regions-from-Neural-Network">¶</a></h1><p>What can we learn from the convex partitions arising from Continuous Piecewise linear (CPWL) neural networks?</p>
 <p><strong>Presented by:</strong> Johan Mylius-Kroken</p>
 <p><strong>Date:</strong> March 2026</p>
 </div>
@@ -7659,7 +7659,8 @@ where</p>
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h3 id="Problem?">Problem?<a class="anchor-link" href="#Problem?">¶</a></h3><div align="center">
 <img alt="No description has been provided for this image" src="dummy_figs/MI_wbc_lowdim.png" style="width: 100%; height: 300px; object-fit: contain;"/>
-</div><div align="center">
+</div>
+<div align="center">
 <img alt="No description has been provided for this image" src="dummy_figs/MI_wbc_mediumdim.png" style="width: 100%; height: 300px; object-fit: contain;"/>
 </div>
 </div>
@@ -7686,7 +7687,7 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 </div>
 </div>
 </div>
-</div>
+</div></section></section><section><section>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bf5cc15a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
@@ -7697,7 +7698,7 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 </div>
 </div>
 </div>
-</div>
+</div></section></section><section><section>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=102e20b5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
@@ -7708,7 +7709,7 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 </div>
 </div>
 </div>
-</div>
+</div></section></section><section><section>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=31669e91">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
@@ -7719,6 +7720,59 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 <li>For large networks, training data is in its own region throughout all of training.</li>
 <li>Hamming distance between regions with points.</li>
 </ul>
+</div>
+</div>
+</div>
+</div></section></section><section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=00c7210a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h1 id="How-does-the-regions-change-during-training?">How does the regions change during training?<a class="anchor-link" href="#How-does-the-regions-change-during-training?">¶</a></h1>
+</div>
+</div>
+</div>
+</div></section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e5c6ffee">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>MLP with [5,5,5] configuration - exact regions - $lr=0.001$</p>
+<video controls="" height="750" width="1000">
+<source src="../outputs/composite_data_anim/[5, 5, 5]_lr0.001/seed_101_animation_exact_no_points.mp4" type="video/mp4"/>
+</video>
+</div>
+</div>
+</div>
+</div></section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=01e51e2c">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>MLP with [5,5,5] configuration - sparse regions - $lr=0.001$ - data overlay</p>
+<video controls="" height="750" width="1000">
+<source src="../outputs/composite_data_anim/[5, 5, 5]_lr0.001/seed_102_animation_sparse_w_points.mp4" type="video/mp4"/>
+</video>
+</div>
+</div>
+</div>
+</div></section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cf13e031">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>MLP with [5,5,5] configuration - exact regions - $lr=0.001$ - data overlay</p>
+<video controls="" height="750" width="1000">
+<source src="../outputs/composite_data_anim/[5, 5, 5]_lr0.001/seed_103_animation_exact_w_points.mp4" type="video/mp4"/>
+</video>
 </div>
 </div>
 </div>
