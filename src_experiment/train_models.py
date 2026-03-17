@@ -3,12 +3,47 @@ import pathlib as pl
 from typing import Dict, Tuple, List, Optional, Any, Callable
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import trange
-import pandas as pd
 from .utils import createfolders
+
+# ================================================================
+# Geometric Penalty Module
+# ================================================================
+
+class GeometricPenalty(nn.Module):
+    def __init__(self, alpha=0.1, beta=0.1, margin=10.0, sigmoid_steepness=10.0):
+        super(GeometricPenalty, self).__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.margin = margin
+        self.steepness = sigmoid_steepness
+
+    def forward(self, pre_activations, labels):
+        # Flatten spatial dimensions for Conv2d layers (B, C, H, W) -> (B, C*H*W)
+        if pre_activations.dim() > 2:
+            pre_activations = pre_activations.view(pre_activations.size(0), -1)
+            
+        soft_activations = torch.sigmoid(pre_activations * self.steepness)
+        distances = torch.cdist(soft_activations, soft_activations, p=1)
+        
+        labels_equal = (labels.unsqueeze(0) == labels.unsqueeze(1)).float()
+        labels_not_equal = 1.0 - labels_equal
+        
+        eye = torch.eye(labels.size(0), device=labels.device)
+        labels_equal = labels_equal - eye
+        
+        num_intra = labels_equal.sum()
+        intra_loss = (distances * labels_equal).sum() / (num_intra + 1e-8)
+        
+        num_inter = labels_not_equal.sum()
+        inter_loss = (F.relu(self.margin - distances) * labels_not_equal).sum() / (num_inter + 1e-8)
+        
+        return (self.alpha * intra_loss) + (self.beta * inter_loss)
 
 
 # ================================================================
@@ -29,44 +64,15 @@ def train_model_multiclass(
     sgd_lr=0.01,
     sgd_mom=0.9,
     on_save_callback: Optional[Callable[[int, Dict, Dict], None]] = None,
-    disable_progress: bool = False
+    disable_progress: bool = False,
+    use_geo_penalty: bool = False,               # NEW: Toggle Geometric Penalty
+    final_layer_name: Optional[str] = None,      # NEW: Required if use_geo_penalty is True
+    geo_alpha: float = 0.1,                      # NEW: Geometric Penalty hyperparams
+    geo_beta: float = 0.1,
+    geo_margin: float = 10.0,
+    geo_steepness: float = 10.0
 ) -> Any:
-    """
-    Train a PyTorch model for multiclass classification.
-
-    Parameters:
-        model: nn.Module
-            The PyTorch model to train. Output layer should have `num_classes` units.
-        train_data: DataLoader
-            Training data.
-        test_data: DataLoader
-            Validation/test data.
-        epochs: int
-            Number of training epochs.
-        num_classes: int
-            Number of classes.
-        savepath: Optional[pathlib.Path]
-            Path to save run summary and state_dicts (if using legacy disk saving).
-        SAVE_STATES: bool
-            Whether to save model states to disk internally (legacy behavior).
-        save_everyth_epoch: int
-            Interval of epochs to save state (e.g., every 50 epochs).
-        save_for_epochs: list
-            Specific list of epochs to save (e.g., [0, 1, 2, 5, 10]).
-        RETURN_STATES: bool
-            Whether to return saved model states in memory.
-        sgd_lr: float
-            Learning rate for SGD.
-        sgd_mom: float
-            Momentum for SGD.
-        on_save_callback: Callable[[int, Dict, Dict], None]
-            Optional callback function(epoch, state_dict, metrics) to handle incremental saving 
-            (e.g., writing to HDF5 during training).
     
-    Returns:
-        Tuple of (results_df,) or (results_df, saved_states)
-    """
-
     train_loss = np.zeros(epochs)
     train_accuracy = np.zeros(epochs)
     test_loss = np.zeros(epochs)
@@ -82,10 +88,39 @@ def train_model_multiclass(
     optimizer = torch.optim.SGD(model.parameters(), lr=sgd_lr, momentum=sgd_mom)
     loss_fn = nn.CrossEntropyLoss()
 
+    # ----------------------
+    # Setup Geometric Penalty
+    # ----------------------
+    captured_activations = {}
+    hook_handles = []
+    
+    if use_geo_penalty:
+        if final_layer_name is None:
+            raise ValueError("You must provide `final_layer_name` when `use_geo_penalty` is True.")
+            
+        geo_penalty = GeometricPenalty(
+            alpha=geo_alpha, 
+            beta=geo_beta, 
+            margin=geo_margin, 
+            sigmoid_steepness=geo_steepness
+        ).to(next(model.parameters()).device) # Ensure it's on the same device
+        
+        def get_activation(name):
+            def hook(model, input, output):
+                captured_activations[name] = output
+            return hook
+
+        for name, module in model.named_modules():
+            if isinstance(module, (nn.Linear, nn.Conv2d)) and name != final_layer_name:
+                handle = module.register_forward_hook(get_activation(name))
+                hook_handles.append(handle)
+
+    # ----------------------
+    # Training Loop
+    # ----------------------
     for epoch in trange(epochs, desc="Training", leave=False, disable=disable_progress):
-        # ----------------------
-        # Training
-        # ----------------------
+        
+        # --- Training Phase ---
         model.train()
         running_loss = 0.0
         num_correct = 0
@@ -93,17 +128,24 @@ def train_model_multiclass(
 
         for x, y in train_data:
             optimizer.zero_grad()
+            if use_geo_penalty:
+                captured_activations.clear()
 
             x = x.float()
-            y = y.long()  # labels as integers (0,1,...,num_classes-1)
+            y = y.long()
 
-            y_hat = model(x)  # raw logits, shape (batch_size, num_classes)
+            y_hat = model(x)  
             loss = loss_fn(y_hat, y)
+            
+            # Apply custom loss if toggled
+            if use_geo_penalty:
+                for layer_name, pre_acts in captured_activations.items():
+                    loss += geo_penalty(pre_acts, y)
+                    
             loss.backward()
             optimizer.step()
 
             preds = y_hat.argmax(dim=1)
-            
             running_loss += loss.item()
             num_correct += (preds == y).sum().item()
             total_samples += y.size(0)
@@ -111,27 +153,33 @@ def train_model_multiclass(
         train_loss[epoch] = running_loss / len(train_data)
         train_accuracy[epoch] = num_correct / total_samples
 
-        # ----------------------
-        # Validation and evaluation
-        # ----------------------
+        # --- Validation and evaluation Phase ---
         model.eval()
         
-        # Eval on train data (for analysis consistency)
+        # Eval on train data
         train_running_loss = 0.0
         train_num_correct = 0
         train_total_samples = 0
         with torch.no_grad():
             for x, y in train_data:
+                if use_geo_penalty:
+                    captured_activations.clear()
+                    
                 x = x.float()
                 y = y.long()
                 
                 y_hat = model(x)
                 loss = loss_fn(y_hat, y)
-                preds = y_hat.argmax(dim=1)
                 
+                if use_geo_penalty:
+                    for layer_name, pre_acts in captured_activations.items():
+                        loss += geo_penalty(pre_acts, y)
+                
+                preds = y_hat.argmax(dim=1)
                 train_running_loss += loss.item()
                 train_num_correct += (preds == y).sum().item()
                 train_total_samples += y.size(0)
+                
         eval_train_loss[epoch] = train_running_loss / len(train_data)
         eval_train_accuracy[epoch] = train_num_correct / train_total_samples
             
@@ -141,13 +189,20 @@ def train_model_multiclass(
         test_total_samples = 0
         with torch.no_grad():
             for x, y in test_data:
+                if use_geo_penalty:
+                    captured_activations.clear()
+                    
                 x = x.float()
                 y = y.long()
 
                 y_hat = model(x)
                 loss = loss_fn(y_hat, y)
-                preds = y_hat.argmax(dim=1)
                 
+                if use_geo_penalty:
+                    for layer_name, pre_acts in captured_activations.items():
+                        loss += geo_penalty(pre_acts, y)
+                        
+                preds = y_hat.argmax(dim=1)
                 test_running_loss += loss.item()
                 test_num_correct += (preds == y).sum().item()
                 test_total_samples += y.size(0)
@@ -159,20 +214,14 @@ def train_model_multiclass(
         # Save state Logic
         # ----------------------
         should_save = False
-
-        # Condition A: Is it in the specific list? (e.g. [0, 1, 2, 5])
         if save_for_epochs is not None and epoch in save_for_epochs:
             should_save = True
-        
-        # Condition B: Does it match the interval? (e.g. every 50)
         if save_everyth_epoch is not None:
             if (epoch % save_everyth_epoch == 0) or (epoch == epochs - 1):
                 should_save = True
 
         if should_save:
             state = copy.deepcopy(model.state_dict())
-            
-            # Use Callback if provided (Best Practice for incremental HDF5 saving)
             if on_save_callback:
                 metrics = {
                     "train_loss": train_loss[epoch],
@@ -183,10 +232,14 @@ def train_model_multiclass(
                     "eval_train_accuracy": eval_train_accuracy[epoch],
                 }
                 on_save_callback(epoch, state, metrics)
-            
-            # Fallback to dictionary (Legacy in-memory or disk behavior)
             elif RETURN_STATES or SAVE_STATES:
                 saved_states[epoch] = state
+
+    # ----------------------
+    # Cleanup Hooks
+    # ----------------------
+    for handle in hook_handles:
+        handle.remove()
 
     # ----------------------
     # Compile results
@@ -201,7 +254,6 @@ def train_model_multiclass(
     }
     results = pd.DataFrame.from_dict(run_results)
 
-    # Legacy: Save to disk as .pth files if requested and NO callback is used
     if SAVE_STATES and savepath is not None and not on_save_callback:
         createfolders(savepath / "state_dicts")
         for epoch, state in saved_states.items():
@@ -211,7 +263,3 @@ def train_model_multiclass(
         print("Training not saved.")
 
     return (results,) if not RETURN_STATES else (results, saved_states)
-
-
-if __name__ == "__main__":
-    pass
