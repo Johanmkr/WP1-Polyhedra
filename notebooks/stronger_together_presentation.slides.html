@@ -7450,22 +7450,6 @@ main {
 </div>
 </div>
 </div></section></section><section><section>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d37a8bef">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Presentation">Presentation<a class="anchor-link" href="#Presentation">¶</a></h2><ol>
-<li>What is a partition, and how do we find it?</li>
-<li>Network Capacity</li>
-<li>Region Analysis</li>
-<li>Mutual Information Estimation</li>
-</ol>
-</div>
-</div>
-</div>
-</div></section></section><section><section>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=45c609d5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
@@ -7542,7 +7526,7 @@ $$</li>
 \begin{equation*}
     F^l_\omega(\mathbf{x}) = A^l_\omega \mathbf{x} + \mathbf{c}^l_\omega, \quad \text{for } \mathbf{x} \in \omega \subset \mathbb{R}^d,
 \end{equation*}</p>
-<p>with $A^l_\omega$ and $\mathbf{c}^l_\omega$ being recursive projections of weights and biases up to layer $l$. They can be represented fully as:</p>
+<p>with $A^l_\omega$ and $\mathbf{c}^l_\omega$ being recursive projections of weights and biases up to layer $l$.</p>
 </div>
 </div>
 </div>
@@ -7621,8 +7605,7 @@ so that we can write:
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Original-idea:-Use-these-partitions-for-MI---estimation">Original idea: Use these partitions for MI - estimation<a class="anchor-link" href="#Original-idea:-Use-these-partitions-for-MI---estimation">¶</a></h2><p>Why? Because analysing $I(X;T)$ and $I(Y;T)$ is widely used in literature. Affine transformations are deterministic: $T = AX + b$ for some $A$ and $b$. Hence:</p>
-<p>$$I(Y;T)=I(Y;\Omega) + I(Y;X|\Omega) $$ $$ I(X;T)=I(X;\Omega) + I(X;X|\Omega)$$</p>
+<h2 id="Original-idea:-Use-these-partitions-for-MI---estimation">Original idea: Use these partitions for MI - estimation<a class="anchor-link" href="#Original-idea:-Use-these-partitions-for-MI---estimation">¶</a></h2><p>Why? Because analysing $I(X;T)$ and $I(Y;T)$ is widely used in literature.</p>
 <p>We look at $I(Y;\Omega)$:
 $$
     I(Y;\Omega) = \sum_{\omega\in\Omega}\sum_{k\in Y}\frac{n_{k\omega}}{N}\log{\frac{n_{k\omega}N}{n_\omega n_k}},
@@ -7658,43 +7641,11 @@ where</p>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h3 id="Problem?">Problem?<a class="anchor-link" href="#Problem?">¶</a></h3><div align="center">
-<img alt="No description has been provided for this image" src="dummy_figs/MI_wbc_lowdim.png" style="width: 100%; height: 300px; object-fit: contain;"/>
+<img alt="No description has been provided for this image" src="dummy_figs/MI_wbc_lowdim.png" style="width: 100%; height: 250px; object-fit: contain;"/>
 </div>
 <div align="center">
-<img alt="No description has been provided for this image" src="dummy_figs/MI_wbc_mediumdim.png" style="width: 100%; height: 300px; object-fit: contain;"/>
+<img alt="No description has been provided for this image" src="dummy_figs/MI_wbc_mediumdim.png" style="width: 100%; height: 250px; object-fit: contain;"/>
 </div>
-</div>
-</div>
-</div>
-</div></section></section><section><section>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=dbc1ffcc">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="MI-$%5Cto$-Network-Capacity-/-Expressivity">MI $\to$ Network Capacity / Expressivity<a class="anchor-link" href="#MI-$%5Cto$-Network-Capacity-/-Expressivity">¶</a></h2><h3 id="Theoretical-bounds">Theoretical bounds<a class="anchor-link" href="#Theoretical-bounds">¶</a></h3><p>Denote the number of regions: $R$. Naïve bounds are: $R_\mathrm{min} \geq 1$ and $R_\mathrm{max}\leq 2^H$ for a total of $H$ neurons.</p>
-<h4 id="Shallow-networks">Shallow networks<a class="anchor-link" href="#Shallow-networks">¶</a></h4><p>One-layer networks are bounded by Zaslavsky's theorem:
-$$
-    R_\mathrm{max} \leq \sum_{i=0}^{n_0}\binom{n}{i}
-$$
-How many regions can an arrangement of $n$ hyperplanes of dimension $n_0$ create (in general position)? This scales as $\mathcal{O}(n^{n_0})$ (polynomial) with parameters $\mathcal{O}(n)$</p>
-<h4 id="Deep-networks---account-for-space-folding">Deep networks - account for space folding<a class="anchor-link" href="#Deep-networks---account-for-space-folding">¶</a></h4><p>For a deep network with $L$ layers and hidden neuron config: [$n_1, n_2, \dots n_L$] the maximum number of regions is lower bounded by:
-$$
-    R_\mathrm{max} \leq \left(   \prod_{i=1}^{L-1}\left\lfloor\frac{n_i}{n_0}\right\rfloor^{n_0} \right)\sum_{j=0}^{n_0}\binom{n_L}{j}.
-$$
-This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combinatorial/exponential) with parameters $\mathcal{O}(Ln^2)$.</p>
-</div>
-</div>
-</div>
-</div></section></section><section><section>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bf5cc15a">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="So,-how-many-regions-are-there?">So, how many regions are there?<a class="anchor-link" href="#So,-how-many-regions-are-there?">¶</a></h2>
 </div>
 </div>
 </div>
@@ -7705,7 +7656,111 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Mutual-Information-Estimation">Mutual Information Estimation<a class="anchor-link" href="#Mutual-Information-Estimation">¶</a></h2>
+<h2 id="Mutual-Information-Estimation---revisited">Mutual Information Estimation - revisited<a class="anchor-link" href="#Mutual-Information-Estimation---revisited">¶</a></h2><p>Data processing inequality (DPI):
+$$
+I(Y;X)\geq I(Y;T^1) \geq I(Y;T^2) \geq \dots \geq I(Y;\hat{Y})
+$$
+$$
+I(X;X)\geq I(X;T^1) \geq I(X;T^2) \geq \dots \geq I(X;\hat{Y})
+$$</p>
+<p>Since the partition $\Omega$ comes from the same projections as $T$ we can state that $T\to\Omega$ is a deterministic mapping (This argument is work in progress).
+$$
+I(Y;T,\Omega) = I(Y;T) + I(Y;\Omega|T)
+$$
+$$
+I(Y;\Omega,T) = I(T;\Omega) + I(Y;T|\Omega)
+$$
+Since $I(Y;\Omega|T)=0$, combining the equations give $I(Y;T) = I(Y;\Omega) + I(Y;T|\Omega)$</p>
+</div>
+</div>
+</div>
+</div></section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=99eb9c65">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Analyzing-the-terms">Analyzing the terms<a class="anchor-link" href="#Analyzing-the-terms">¶</a></h3><ul>
+<li>$I(Y;\Omega)$ - Is the empirical estimator. How much can we know of the class label $Y$ by knowing which region it belongs to.</li>
+<li>$I(Y;T|\Omega)$ - Given a region, how much extra information is contained by knowing its exact latent representation. If the projection matrix is invertible, this is the same as $I(Y;X|\Omega)$ (rarely the case).</li>
+</ul>
+<p>We have the following DPI relationship:
+$$
+I(Y;\Omega) \leq  I(Y;T) \leq I(Y;X)
+$$</p>
+<p>Conclusions:</p>
+<ul>
+<li>$I(Y;T|\Omega)$ is the information lost by collapsing a continuous space into discrete bins.</li>
+<li>$I(Y;\Omega)$ is a lower bound of $I(Y;T)$.</li>
+</ul>
+</div>
+</div>
+</div>
+</div></section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bfe2110b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Different-regimes">Different regimes<a class="anchor-link" href="#Different-regimes">¶</a></h3><ul>
+<li><p>Underparametrization: $|N|$ &gt; $|\Omega|$ $\to$ Estimating MI with $I(Y;\Omega)$ makes sense.</p>
+</li>
+<li><p>Overparametrization: $|N|$ &lt; $|\Omega|$ $\to$ one point per bin, positive finite sample bias, $I(Y;\Omega)$ artificially blows up to $H(Y)$.</p>
+</li>
+</ul>
+<p>Sad story $\to$ Most NNs are in the overparametrized regime.</p>
+<p>Solution $\to$ Switch focus.</p>
+</div>
+</div>
+</div>
+</div></section></section><section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=dbc1ffcc">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="MI-$%5Cto$-Network-Capacity-/-Expressivity-(Theoretical)">MI $\to$ Network Capacity / Expressivity (Theoretical)<a class="anchor-link" href="#MI-$%5Cto$-Network-Capacity-/-Expressivity-(Theoretical)">¶</a></h2><h3 id="Theoretical-bounds">Theoretical bounds<a class="anchor-link" href="#Theoretical-bounds">¶</a></h3><p>Denote the number of regions: $R$. Naïve bounds are: $R_\mathrm{min} \geq 1$ and $R_\mathrm{max}\leq 2^H$ for a total of $H$ neurons.</p>
+<h4 id="Shallow-networks">Shallow networks<a class="anchor-link" href="#Shallow-networks">¶</a></h4><p>One-layer networks are bounded by Zaslavsky's theorem:
+$$
+    R_\mathrm{max} \leq \sum_{i=0}^{n_0}\binom{n}{i}
+$$
+How many regions can an arrangement of $n$ hyperplanes of dimension $n_0$ create (in general position)? This scales as $\mathcal{O}(n^{n_0})$ (polynomial) with parameters $\mathcal{O}(n)$</p>
+</div>
+</div>
+</div>
+</div></section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=cc8086d5">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h4 id="Deep-networks---account-for-space-folding">Deep networks - account for space folding<a class="anchor-link" href="#Deep-networks---account-for-space-folding">¶</a></h4><p>For a deep network with $L$ layers and hidden neuron config: [$n_1, n_2, \dots n_L$] the maximum number of regions is lower bounded by:
+$$
+    R_\mathrm{max} \leq \left(   \prod_{i=1}^{L-1}\left\lfloor\frac{n_i}{n_0}\right\rfloor^{n_0} \right)\sum_{j=0}^{n_0}\binom{n_L}{j}
+$$
+This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combinatorial/exponential) with parameters $\mathcal{O}(Ln^2)$</p>
+</div>
+</div>
+</div>
+</div></section></section><section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1a41efda">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="regions-vs-points">regions vs points<a class="anchor-link" href="#regions-vs-points">¶</a></h2><div style="display: flex; gap: 20px; align-items: center;">
+<div style="flex: 1;">
+<img alt="Network Trend" src="dummy_figs/norm_mi_capL3.png" style="width: 100%; height: 500px; object-fit: contain;"/>
+</div>
+<div style="flex: 1;">
+<img alt="Region Trend" src="dummy_figs/norm_mi_capL10.png" style="width: 100%; height: 500px; object-fit: contain;"/>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -7716,10 +7771,18 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Way-forward?">Way forward?<a class="anchor-link" href="#Way-forward?">¶</a></h2><ul>
-<li>For large networks, training data is in its own region throughout all of training.</li>
-<li>Hamming distance between regions with points.</li>
+<h2 id="Possible-way-forward?">Possible way forward?<a class="anchor-link" href="#Possible-way-forward?">¶</a></h2><ul>
+<li>Analyze network expressivity and training behaviour using region counts and region information.</li>
+<li>Investigate how the partition $\Omega$ is optimized in Hamming space.</li>
 </ul>
+<p>Given a tesselation/partition we can investigate:</p>
+<ul>
+<li>How the number of regions change $\to$ network capacity</li>
+<li>The Hamming distances between class regions</li>
+<li>More efficient ways to calculate the partition (both exact and sparse)</li>
+<li>MI - track $\to$ find new ways to use this to estimate IT-quantities</li>
+</ul>
+<p>The main question is still the same: <em>What can we learn from the convex partitions arising from Continuous Piecewise linear (CPWL) neural networks?</em></p>
 </div>
 </div>
 </div>
@@ -7742,7 +7805,7 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>MLP with [5,5,5] configuration - exact regions - $lr=0.001$</p>
-<video controls="" height="750" width="1000">
+<video controls="" height="600" width="800">
 <source src="../outputs/composite_data_anim/[5, 5, 5]_lr0.001/seed_101_animation_exact_no_points.mp4" type="video/mp4"/>
 </video>
 </div>
@@ -7756,7 +7819,7 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>MLP with [5,5,5] configuration - sparse regions - $lr=0.001$ - data overlay</p>
-<video controls="" height="750" width="1000">
+<video controls="" height="600" width="800">
 <source src="../outputs/composite_data_anim/[5, 5, 5]_lr0.001/seed_102_animation_sparse_w_points.mp4" type="video/mp4"/>
 </video>
 </div>
@@ -7770,8 +7833,36 @@ This scales as $\Omega\left(  \binom{n}{n_0}^{(L-1)n_0}n^{n_0}  \right)$ (combin
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>MLP with [5,5,5] configuration - exact regions - $lr=0.001$ - data overlay</p>
-<video controls="" height="750" width="1000">
+<video controls="" height="600" width="800">
 <source src="../outputs/composite_data_anim/[5, 5, 5]_lr0.001/seed_103_animation_exact_w_points.mp4" type="video/mp4"/>
+</video>
+</div>
+</div>
+</div>
+</div></section><section>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4522e0a9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>MLP with [9,9,9] configuration - exact regions - $lr=0.0001$ - data overlay</p>
+<video controls="" height="600" width="800">
+<source src="../outputs/composite_data_anim/[9, 9, 9]_lr0.0001/seed_101_animation.mp4" type="video/mp4"/>
+</video>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f5e415bf">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>MLP with [50,50,50] configuration - sparse regions - $lr=0.001$ - data overlay</p>
+<video controls="" height="600" width="800">
+<source src="../outputs/composite_data_anim/[50, 50, 50]_lr0.001/seed_101_animation.mp4" type="video/mp4"/>
 </video>
 </div>
 </div>
