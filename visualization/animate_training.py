@@ -130,9 +130,12 @@ def animate_experiment(h5_path, min_bound=0.0, max_bound=1.0, plot_points=False)
                 counts_data[l].append(len(trees[ep].get_regions_at_layer(l + 1)))
 
     # --- B. SETUP FIGURE LAYOUT (2x4 Grid) ---
-    fig = plt.figure(figsize=(16, 8))
-    # width_ratios gives the line plots a bit more horizontal space than the square regions
-    gs = gridspec.GridSpec(2, 4, width_ratios=[1.2, 1.2, 1, 1], wspace=0.25, hspace=0.3)
+    # Made the overall canvas slightly more square (14x10 instead of 16x9)
+    fig = plt.figure(figsize=(14, 10))
+    
+    # width_ratios changed: the right two columns (1.6) now take up significantly 
+    # more space than the left two columns (1.0).
+    gs = gridspec.GridSpec(2, 4, width_ratios=[1, 1, 1.6, 1.6], wspace=0.25, hspace=0.2)
     
     # Left Side: Metrics (Row 0, Cols 0-1) and Region Counts (Row 1, Cols 0-1)
     ax_metrics = fig.add_subplot(gs[0, 0:2])
@@ -189,7 +192,7 @@ def animate_experiment(h5_path, min_bound=0.0, max_bound=1.0, plot_points=False)
     for l in range(num_layers):
         line, = ax_counts.plot([], [], color=layer_colors[l], linewidth=2, label=f"Layer {l+1}")
         lines_counts.append(line)
-    ax_counts.legend(loc="upper left")
+    ax_counts.legend(loc="center right")
 
     # --- D. INITIALIZE LAYER PLOTS ---
     spatial_cmap = plt.get_cmap('hsv') # Cyclic colormap for consistent spatial coloring
@@ -263,13 +266,14 @@ def animate_experiment(h5_path, min_bound=0.0, max_bound=1.0, plot_points=False)
 
     # --- F. RENDER AND SAVE ---
     print(f"Generating animation across {len(epochs_list)} epochs...")
-    fig.subplots_adjust(top=0.90, bottom=0.1, left=0.05, right=0.95) 
+    # Adjusted margins to fit the new aspect ratio perfectly
+    fig.subplots_adjust(top=0.92, bottom=0.08, left=0.06, right=0.98)
     
     anim = FuncAnimation(fig, update, frames=len(epochs_list), interval=200, blit=False)
     out_file = path.parent / f"{path.stem}_animation.mp4"
     
     try:
-        anim.save(out_file, writer='ffmpeg', fps=5, dpi=150)
+        anim.save(out_file, writer='ffmpeg', fps=20, dpi=200)
         print(f"✅ Animation successfully saved to: {out_file}")
     except Exception as e:
         print(f"❌ Error saving animation. Do you have FFmpeg installed? Error details:\n{e}")
