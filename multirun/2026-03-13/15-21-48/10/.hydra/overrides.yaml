@@ -1,0 +1,8 @@
+- epochs=501
+- learning_rate=0.0001
+- ++output_dir=outputs/composite_data_anim
+- ++dataset=composite
+- ++model_seed=103
+- ++save_interval=1
+- architecture=[9,9,9]
+- ++experiment_name=$\{architecture\}_lr$\{learning_rate\}

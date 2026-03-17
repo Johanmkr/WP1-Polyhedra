@@ -9,7 +9,7 @@ epochs: 501
 experiment_name: '[25, 25, 25]_lr0.0001'
 global_seed: 42
 learning_rate: 0.0001
-model_seed: 101
+model_seed: 103
 momentum: 0.9
 output_dir: outputs/composite_data_anim
 save_epochs:
