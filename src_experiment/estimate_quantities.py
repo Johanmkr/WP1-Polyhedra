@@ -143,6 +143,88 @@ class ExperimentEvaluator:
             mi_per_layer[layer_idx] = entropy_terms.sum()
             
         return mi_per_layer
+    
+    def _estimate_hamming_distances(self, tree: 'Tree', df_counts: pd.DataFrame, layer_idx: int):
+        """
+        Calculates the average Inter-class and Intra-class Hamming distances 
+        for a specific layer based on the region activations.
+        """
+        import itertools
+        
+        # Filter data for this specific layer
+        layer_data = df_counts[df_counts["layer_idx"] == layer_idx]
+        if layer_data.empty:
+            return 0.0, 0.0
+            
+        # Get regions at this layer so we can access their .activation property
+        regions = {r.id: r for r in tree.get_regions_at_layer(layer_idx)}
+        class_cols = [str(int(c)) for c in self.unique_classes]
+        
+        # 1. Map each class to the activation vectors of the regions it occupies.
+        # If a region has multiple classes, its activation naturally gets appended to all of them.
+        class_activations = {c: [] for c in class_cols}
+        
+        for _, row in layer_data.iterrows():
+            r_id = int(row["region_idx"])
+            if r_id not in regions:
+                continue
+                
+            region = regions[r_id]
+            # Grab the 1D binary activation array for this region
+            act_vector = region.activation 
+            
+            # Note: If you want to use the FULL path from Layer 1 down to this layer, 
+            # uncomment the following line instead:
+            # act_vector = np.concatenate(region.get_activation_path() + [region.activation])
+            
+            for cls_col in class_cols:
+                if row[cls_col] > 0:
+                    class_activations[cls_col].append(act_vector)
+                    
+        # Convert lists to 2D numpy arrays for fast vectorized distance calculation
+        for cls in class_cols:
+            class_activations[cls] = np.array(class_activations[cls]) if class_activations[cls] else np.empty((0, 0))
+
+        # 2. Helper function to calculate average pairwise Hamming distance
+        def avg_hamming(A, B, is_intra=False):
+            if A.size == 0 or B.size == 0:
+                return 0.0
+            
+            # Vectorized XOR to find differing bits: shape (len(A), len(B), activation_dim)
+            diffs = A[:, None, :] != B[None, :, :]
+            # Sum across the activation dimension to get the Hamming distance
+            distances = diffs.sum(axis=-1)
+            
+            if is_intra:
+                n = len(A)
+                if n < 2:
+                    return 0.0 # Distance is 0 if a class is entirely confined to 1 region
+                # For intra-class, ignore the diagonal (self-distance) and take the upper triangle
+                i, j = np.triu_indices(n, k=1)
+                return np.mean(distances[i, j])
+            else:
+                # For inter-class, simply average all pairs
+                return np.mean(distances)
+
+        # 3. Compute Intra-class distances
+        intra_dists = []
+        for cls in class_cols:
+            acts = class_activations[cls]
+            if len(acts) > 0:
+                intra_dists.append(avg_hamming(acts, acts, is_intra=True))
+                
+        # 4. Compute Inter-class distances
+        inter_dists = []
+        for c1, c2 in itertools.combinations(class_cols, 2):
+            acts1, acts2 = class_activations[c1], class_activations[c2]
+            if len(acts1) > 0 and len(acts2) > 0:
+                inter_dists.append(avg_hamming(acts1, acts2, is_intra=False))
+                
+        # 5. Return global averages for the layer
+        avg_intra = np.mean(intra_dists) if intra_dists else 0.0
+        avg_inter = np.mean(inter_dists) if inter_dists else 0.0
+        
+        return avg_intra, avg_inter
 
     def evaluate_all(self) -> pd.DataFrame:
         """
@@ -176,13 +258,13 @@ class ExperimentEvaluator:
                 # 4. Store layer-by-layer results
                 for layer_idx in mi_yw.keys():
                     
-                    # --- NEW: Get region counts ---
-                    # Total instantiated regions at this layer
+                    # Get region counts
                     total_regions = len(tree.get_regions_at_layer(layer_idx))
-                    
-                    # Number of regions that actually contain data points
                     layer_data = df_counts[df_counts["layer_idx"] == layer_idx]
                     populated_regions = len(layer_data)
+                    
+                    # --- NEW: Compute Hamming Distances ---
+                    intra_h, inter_h = self._estimate_hamming_distances(tree, df_counts, layer_idx)
                     
                     all_results.append({
                         "epoch": ep,
@@ -190,7 +272,9 @@ class ExperimentEvaluator:
                         "I(Y;W)": mi_yw.get(layer_idx, 0.0),
                         "I(X;W)": mi_xw.get(layer_idx, 0.0),
                         "total_regions": total_regions,
-                        "populated_regions": populated_regions
+                        "populated_regions": populated_regions,
+                        "avg_intra_hamming": intra_h,
+                        "avg_inter_hamming": inter_h
                     })
                     
             except Exception as e:

@@ -65,7 +65,7 @@ def train_model_multiclass(
     sgd_mom=0.9,
     on_save_callback: Optional[Callable[[int, Dict, Dict], None]] = None,
     disable_progress: bool = False,
-    use_geo_penalty: bool = True,          # NEW: Toggle Geometric Penalty
+    use_geo_penalty: bool = False,          # NEW: Toggle Geometric Penalty
     geo_alpha: float = 0.1,                 # NEW: Geometric Penalty hyperparams
     geo_beta: float = 0.1,
     geo_margin: float = 1.0,

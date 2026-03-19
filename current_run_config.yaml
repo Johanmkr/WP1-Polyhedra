@@ -1,18 +1,17 @@
 architecture:
-- 5
-- 5
-- 5
+- 250
+- 250
+- 250
 batch_size: 32
-dataset: moons
+dataset: composite
 dropout: 0.0
 epochs: 251
-experiment_name: new_lf_lr0.0001
+experiment_name: '[250, 250, 250]_lr0.001'
 global_seed: 42
-learning_rate: 0.0001
+learning_rate: 0.001
 model_seed: 102
 momentum: 0.9
-noise: 0.1
-output_dir: outputs/moons_new_lf
+output_dir: outputs/comp_new_lf_NOTGEOLOSS
 save_epochs:
 - 0
 - 1
@@ -22,4 +21,4 @@ save_epochs:
 - 6
 - 8
 - 10
-save_interval: 1
+save_interval: 10
