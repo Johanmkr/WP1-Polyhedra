@@ -162,7 +162,6 @@ function main()
         "--exact_regions"
             help = "Use exact tree construction instead of sparse construction"
             action = :store_true    
-        
     end
     parsed_args = parse_args(ARGS, s)
     h5_filename = parsed_args["h5_file"]

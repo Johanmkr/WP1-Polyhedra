@@ -1,0 +1,6 @@
+- epochs=151
+- ++output_dir=outputs/wbc_capacity
+- ++dataset=wbc
+- ++target_dim=2
+- architecture=[3,3,3]
+- ++experiment_name=$\{target_dim\}_dim_$\{architecture\}

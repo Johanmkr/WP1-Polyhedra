@@ -1,0 +1,9 @@
+- epochs=251
+- learning_rate=0.0001
+- ++output_dir=outputs/moons_new_lf
+- ++dataset=moons
+- ++noise=0.1
+- ++model_seed=102
+- ++save_interval=1
+- architecture=[5,5,5]
+- ++experiment_name=new_lf_lr$\{learning_rate\}

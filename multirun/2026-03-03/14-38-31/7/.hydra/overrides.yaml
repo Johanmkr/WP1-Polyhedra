@@ -1,0 +1,4 @@
+- ++output_dir=outputs/blobs_capacity
+- architecture=[5,5,5]
+- ++dataset=blobs
+- ++n_features=3

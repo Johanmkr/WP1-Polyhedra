@@ -1,0 +1,7 @@
+- epochs=251
+- ++output_dir=outputs/wbc_nr_regions
+- ++dataset=wbc
+- ++model_seed=102
+- ++target_dim=3
+- architecture=[7,7,7]
+- ++experiment_name=dim$\{target_dim\}_$\{architecture\}

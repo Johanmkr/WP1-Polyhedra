@@ -17,6 +17,9 @@ new_data_storage = current_dir/"new_stored_data"
 
 testing_data = data_storage/"testing"
 
+# Data storage paths for neurips
+neurips_figpath = pl.Path("/home/johan/Documents/phd/WP1/neurips_2026_paper/figures")
+
 ## Data paths
 def moon_path(arch, dropout, noise, run_number):
     return data_storage/"moon"/f"arch_{arch}"/f"dropout_{dropout:.2f}"/f"noise_{noise:.2f}"/f"run_{int(run_number)}"

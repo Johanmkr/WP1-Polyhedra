@@ -75,10 +75,11 @@ def run(config_path, overwrite=False):
     # Create output/experiment_name/experiment_name.h5
     base_out_dir = Path(config.get("output_dir", "./"))
     exp_name = config.get("experiment_name", "experiment")
+    model_seed = config.get("model_seed", 0)
     
     # New specific directory for this experiment
     exp_dir = base_out_dir / exp_name
-    h5_path = exp_dir / f"{exp_name}.h5"
+    h5_path = exp_dir / f"seed_{model_seed}.h5"
     
     if h5_path.exists() and not overwrite:
         print(f"Error: HDF5 file {h5_path} already exists. Use --overwrite to force re-computation.")
@@ -95,7 +96,7 @@ def run(config_path, overwrite=False):
     set_global_seed(global_seed) 
     
     # Model seed for weight initialization
-    model_seed = config.get("model_seed", 123)
+    # model_seed = config.get("model_seed", 123)
 
     # 2. Prepare Data
     dataset_name = config.get("dataset", "moons")
@@ -107,6 +108,8 @@ def run(config_path, overwrite=False):
         dataset_kwargs["centers"] = config["centers"]
     if "n_features" in config:
         dataset_kwargs["n_features"] = config["n_features"]
+    if "target_dim" in config:
+        dataset_kwargs["target_dim"] = config["target_dim"]
     
     print(f"Loading {dataset_name}...")
     train_loader, test_loader = get_new_data(
