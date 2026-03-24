@@ -38,6 +38,7 @@ _lazy_attributes = {
     "train_model_multiclass": ".train_models",
     "NeuralNet": ".utils",
     "createfolders": ".utils",
+    "savefig": ".utils",
 }
 
 # Dynamically define __all__ based on lazy attributes

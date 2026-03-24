@@ -4,6 +4,7 @@ from typing import List, Optional
 import torch
 import torch.nn as nn
 import torch.nn.init as init
+import matplotlib.pyplot as plt
 
 class NeuralNet(nn.Module):
     """
@@ -126,6 +127,21 @@ def createfolders(*dirs: Path) -> None:
     """Create folders for storing data."""
     for dir in dirs:
         dir.mkdir(parents=True, exist_ok=True)
+        
+
+def savefig(fig, path):
+    # Convert string to a Path object for easy manipulation
+    filepath = Path(path)
+    
+    # Strip the extension if one was accidentally provided
+    base_path = filepath.with_suffix('') 
+    
+    # Save high-res PNG and vector PDF, ensuring labels aren't cut off
+    fig.savefig(f"{base_path}.png", dpi=300, bbox_inches="tight")
+    fig.savefig(f"{base_path}.pdf", bbox_inches="tight")
+    
+    print(f"Saved: {base_path}.png and .pdf")
+  
 
 
 # ----------------------------------------------------------------------

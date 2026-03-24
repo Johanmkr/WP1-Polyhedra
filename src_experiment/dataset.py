@@ -106,7 +106,7 @@ def _map_car_data(X_raw, y_raw):
     y = y_raw.iloc[:, 0].map(target_mapping)
     return X, y
 
-def _make_composite_data(n_samples: int, seed: int) -> Tuple[np.ndarray, np.ndarray]:
+def _make_composite_data(n_samples: int, seed: int, noise=None) -> Tuple[np.ndarray, np.ndarray]:
     """Generates the custom moons/circles/blobs composite dataset."""
     # Proportional splits based on the requested n_samples
     n_moons = int(n_samples * 0.4) 
@@ -132,6 +132,7 @@ def _make_composite_data(n_samples: int, seed: int) -> Tuple[np.ndarray, np.ndar
     y = np.concatenate([labels_moons, labels_circles, labels_blobs])
     
     return X, y
+ 
 
 # ------------------------------------------------------------------------------
 #       3. The Registry (Factory Pattern)
@@ -162,7 +163,7 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
     elif dataset_name == "composite":
         X, y = _make_composite_data(n_samples=N_SAMPLES, seed=split_seed)
         # We pass noise_level=0.0 to the pipeline since the feature noise is already baked into the shapes
-        train_ds, test_ds = process_and_split(X, y, noise_level=0.0, seed=split_seed, target_dim=target_dim)
+        train_ds, test_ds = process_and_split(X, y, noise_level=noise, seed=split_seed, target_dim=target_dim)
 
     # --- Standard Vision Datasets (Modified for Eager PCA Support) ---
     elif dataset_name in ["mnist", "mnist_minimal"]:

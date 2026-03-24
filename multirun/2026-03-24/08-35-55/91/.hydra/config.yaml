@@ -1,0 +1,26 @@
+architecture:
+- 9
+- 9
+- 9
+- 9
+epochs: 151
+batch_size: 32
+learning_rate: 0.001
+momentum: 0.9
+dropout: 0.0
+global_seed: 42
+model_seed: 103
+save_interval: 10
+save_epochs:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 6
+- 8
+- 10
+experiment_name: n${noise}_${architecture}
+output_dir: outputs/composite_label_noise
+dataset: composite
+noise: 0.2
