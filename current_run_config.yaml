@@ -1,19 +1,19 @@
 architecture:
-- 7
-- 7
-- 7
-- 7
-- 7
+- 25
+- 25
+- 25
+- 25
+- 25
 batch_size: 32
 dataset: composite
 dropout: 0.0
 epochs: 151
-experiment_name: n0.2_[7, 7, 7, 7, 7]
+experiment_name: n0.4_[25, 25, 25, 25, 25]
 global_seed: 42
 learning_rate: 0.001
-model_seed: 104
+model_seed: 105
 momentum: 0.9
-noise: 0.2
+noise: 0.4
 output_dir: outputs/composite_label_noise
 save_epochs:
 - 0

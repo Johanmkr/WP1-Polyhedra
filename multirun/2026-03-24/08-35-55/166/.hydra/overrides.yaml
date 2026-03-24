@@ -1,0 +1,9 @@
+- epochs=151
+- learning_rate=0.001
+- ++output_dir=outputs/composite_label_noise
+- ++dataset=composite
+- ++noise=0.4
+- ++model_seed=104
+- ++save_interval=10
+- architecture=[25,25,25,25]
+- ++experiment_name=n$\{noise\}_$\{architecture\}

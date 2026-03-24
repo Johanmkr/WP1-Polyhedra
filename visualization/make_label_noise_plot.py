@@ -21,7 +21,7 @@ except ImportError as e:
     sys.exit(1)
 
 
-def get_path(noise: float, architecture: str, seed: int, data="wbc") -> Path:
+def get_path(noise: float, architecture: str, seed: int, data) -> Path:
     """Generates the file path for a specific experiment configuration."""
     if data == "wbc":
         return outputs / f"wbc_label_noise/n{noise}_{architecture}/seed_{int(seed)}.h5"
@@ -29,7 +29,7 @@ def get_path(noise: float, architecture: str, seed: int, data="wbc") -> Path:
         return outputs / f"composite_label_noise/n{noise}_{architecture}/seed_{int(seed)}.h5"
 
 
-def get_mean_mi(noise: float, architecture: str, seeds: list[int] = None) -> pd.DataFrame:
+def get_mean_mi(data, noise: float, architecture: str, seeds: list[int] = None) -> pd.DataFrame:
     """
     Loads mutual information data across multiple seeds and calculates the mean.
     """
@@ -38,7 +38,7 @@ def get_mean_mi(noise: float, architecture: str, seeds: list[int] = None) -> pd.
         
     dfs = []
     for seed in seeds:
-        path = get_path(noise, architecture, seed)
+        path = get_path(noise, architecture, seed, data)
         # Check if file exists before trying to load it to prevent crashes
         if not path.exists():
             print(f"Warning: Missing data file {path}")
@@ -69,9 +69,9 @@ def main(data="wbc"):
     
     # Group the architectures by the number of hidden layers
     architecture_groups = {
-        "3_layers": ["[5, 5, 5]", "[7, 7, 7]", "[9, 9, 9]"],
-        "4_layers": ["[5, 5, 5, 5]", "[7, 7, 7, 7]", "[9, 9, 9, 9]"],
-        "5_layers": ["[5, 5, 5, 5, 5]", "[7, 7, 7, 7, 7]", "[9, 9, 9, 9, 9]"]
+        "3_layers": ["[5, 5, 5]", "[7, 7, 7]", "[9, 9, 9]", "[25, 25, 25]"],
+        "4_layers": ["[5, 5, 5, 5]", "[7, 7, 7, 7]", "[9, 9, 9, 9]", "[25, 25, 25, 25]"],
+        "5_layers": ["[5, 5, 5, 5, 5]", "[7, 7, 7, 7, 7]", "[9, 9, 9, 9, 9]", "[25, 25, 25, 25, 25]"]
     }
 
     for group_name, architectures in architecture_groups.items():
@@ -81,7 +81,7 @@ def main(data="wbc"):
         print("Aggregating data...")
         for arch in architectures:
             for noise in noise_levels:
-                df_mean = get_mean_mi(noise, arch)
+                df_mean = get_mean_mi(data, noise, arch)
                 
                 if not df_mean.empty:
                     # Inject metadata columns for Seaborn
@@ -128,19 +128,20 @@ def main(data="wbc"):
         g.fig.subplots_adjust(top=0.9)
         
         # Give each plot a distinct title based on its depth
-        depth = group_name.split('_')[0]
-        g.fig.suptitle(f"Information Plane Dynamics - {depth} Hidden Layers")
+        # depth = group_name.split('_')[0]
+        # g.fig.suptitle(f"Information Plane Dynamics - {depth} Hidden Layers")
         
         # Save each plot with a distinct filename
-        filename = f"label_noise_exp_{group_name}.pdf"
+        filename = f"{data}_label_noise_exp_{group_name}.pdf"
         # plt.savefig(neurips_figpath / filename, dpi=300)
         savefig(g.fig, neurips_figpath / filename)
         
-        plt.show()
+        # plt.show()
         
         # Close the figure to free memory before the next loop iteration
         plt.close(g.fig)
 
 
 if __name__ == "__main__":
-    main()
+    main("comp")
+    main("wbc")
