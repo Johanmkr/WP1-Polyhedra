@@ -166,7 +166,7 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
         train_ds, test_ds = process_and_split(X, y, noise_level=noise, seed=split_seed, target_dim=target_dim)
 
     # --- Standard Vision Datasets (Modified for Eager PCA Support) ---
-    elif dataset_name in ["mnist", "mnist_minimal"]:
+    elif dataset_name in ["mnist", "mnist_minimal", "mnist_minimal_random"]:
         print(f"Fetching {dataset_name} (torchvision)...")
         train_data = datasets.MNIST(root='./data', train=True, download=True)
         test_data = datasets.MNIST(root='./data', train=False, download=True)
@@ -177,7 +177,23 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
         y_train = train_data.targets.numpy()
         y_test = test_data.targets.numpy()
         
-        if dataset_name == "mnist_minimal":
+        # --- NEW: DOWNSAMPLE TO 1/4 SIZE ---
+        print("📉 Downsampling dataset to 25% of its original size...")
+        rng_subsample = np.random.default_rng(split_seed) # Ensures the exact same subset is chosen every run
+        
+        # Subsample Train (60k -> 15k)
+        train_idx = rng_subsample.choice(len(X_train), size=int(len(X_train) * 0.10), replace=False)
+        X_train = X_train[train_idx]
+        y_train = y_train[train_idx]
+        
+        # Subsample Test (10k -> 2.5k)
+        test_idx = rng_subsample.choice(len(X_test), size=int(len(X_test) * 0.10), replace=False)
+        X_test = X_test[test_idx]
+        y_test = y_test[test_idx]
+        # -----------------------------------
+        
+        # Apply the minimal downsampling (28x28 -> 7x7)
+        if dataset_name in ["mnist_minimal", "mnist_minimal_random"]:
             X_train = torch.nn.functional.avg_pool2d(X_train.unsqueeze(1), kernel_size=4).squeeze(1)
             X_test = torch.nn.functional.avg_pool2d(X_test.unsqueeze(1), kernel_size=4).squeeze(1)
             
@@ -185,11 +201,19 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
         X_train = X_train.view(X_train.size(0), -1).numpy()
         X_test = X_test.view(X_test.size(0), -1).numpy()
         
+        # OVERWRITE WITH RANDOM LABELS
+        if dataset_name == "mnist_minimal_random":
+            print("⚠️ Overwriting targets with completely random labels (0-9)...")
+            rng_labels = np.random.default_rng(split_seed)
+            y_train = rng_labels.integers(0, 10, size=y_train.shape)
+            y_test = rng_labels.integers(0, 10, size=y_test.shape)
+            noise = 0.0 
+
+        # Call to your custom split function
         train_ds, test_ds = process_and_split(X_train, y_train, noise_level=noise, test_size=0.2, seed=split_seed, target_dim=target_dim)
         
-        # Override test set to keep the strict 60k/10k predefined splits instead of random splitting train data
         # Process test set manually to mirror the train set operations
-        if noise > 0.0:
+        if noise > 0.0 and dataset_name != "mnist_minimal_random":
             y_train = inject_label_noise_vectorized(y_train, noise, 10, split_seed)
             
         if target_dim is not None:

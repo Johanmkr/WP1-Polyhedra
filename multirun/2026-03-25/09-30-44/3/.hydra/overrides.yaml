@@ -1,0 +1,8 @@
+- epochs=501
+- learning_rate=0.01
+- ++output_dir=outputs/mnist_mem_gen_exp
+- ++dataset=mnist_minimal_random
+- ++model_seed=101
+- ++save_interval=25
+- architecture=[1024,1024,1024]
+- ++experiment_name=$\{dataset\}
