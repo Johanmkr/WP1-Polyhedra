@@ -23,10 +23,12 @@ def parse_folder_name(folder_name: str):
     except Exception as e:
         return None, None
 
-def collect_hamming_dynamics(base_dir: Path, target_widths: list, target_noise: float = 0.0):
+def collect_hamming_dynamics(base_dir: Path, target_widths: list, target_noise: float = 0.0, target_layer: int = -1):
     """
-    Extracts the Inter and Intra Hamming distances at the FINAL LAYER 
+    Extracts the Inter and Intra Hamming distances at a SPECIFIED LAYER 
     tracked across all EPOCHS to show learning dynamics.
+    
+    If target_layer == -1, it automatically selects the final hidden layer.
     """
     plot_data = {}
     seeds = [101, 102, 103, 104, 105]
@@ -54,11 +56,18 @@ def collect_hamming_dynamics(base_dir: Path, target_widths: list, target_noise: 
             if df.empty:
                 continue
                 
-            # Filter for the final hidden layer (which holds the ultimate topological representation)
-            final_layer_idx = df['layer_idx'].max()
-            df_final_layer = df[df['layer_idx'] == final_layer_idx].copy()
+            # --- NEW LOGIC: Filter for the specified layer ---
+            if target_layer == -1:
+                layer_to_plot = df['layer_idx'].max()
+            else:
+                # If the user asks for a layer that doesn't exist in this architecture, skip it
+                if target_layer not in df['layer_idx'].unique():
+                    continue
+                layer_to_plot = target_layer
+                
+            df_filtered = df[df['layer_idx'] == layer_to_plot].copy()
             
-            all_dfs.append(df_final_layer)
+            all_dfs.append(df_filtered)
                 
         if not all_dfs:
             continue
@@ -66,7 +75,7 @@ def collect_hamming_dynamics(base_dir: Path, target_widths: list, target_noise: 
         # Combine and aggregate statistics (mean, std) across all seeds
         combined_df = pd.concat(all_dfs)
         
-        # Group by EPOCH this time
+        # Group by EPOCH
         agg_df = combined_df.groupby('epoch').agg({
             'avg_intra_hamming': ['mean', 'std'],
             'avg_inter_hamming': ['mean', 'std']
@@ -83,20 +92,20 @@ def collect_hamming_dynamics(base_dir: Path, target_widths: list, target_noise: 
             'intra_std': agg_df['intra_std'].fillna(0).values,
             'inter_mean': agg_df['inter_mean'].fillna(0).values,
             'inter_std': agg_df['inter_std'].fillna(0).values,
-            'arch': arch
+            'arch': arch,
+            'plotted_layer': layer_to_plot
         }
         
     return plot_data
 
-def plot_topological_dynamics(base_dir_str: str):
+def plot_topological_dynamics(base_dir_str: str, target_layer: int = -1):
     base_dir = Path(base_dir_str)
-    
     target_widths = [5, 7, 9, 25]
     
-    plot_data = collect_hamming_dynamics(base_dir, target_widths=target_widths, target_noise=0.0)
+    plot_data = collect_hamming_dynamics(base_dir, target_widths=target_widths, target_noise=0.0, target_layer=target_layer)
     
     if not plot_data:
-        print("No valid CSV data found.")
+        print(f"No valid CSV data found for layer {target_layer}.")
         return
 
     widths = sorted(plot_data.keys())
@@ -108,6 +117,7 @@ def plot_topological_dynamics(base_dir_str: str):
     if len(depths) == 1: axes = [[ax] for ax in axes]
     
     handles, labels = None, None
+    plotted_layer_name = "Final" if target_layer == -1 else str(target_layer)
     
     for i, width in enumerate(widths):
         for j, depth in enumerate(depths):
@@ -119,6 +129,7 @@ def plot_topological_dynamics(base_dir_str: str):
                 
             data = plot_data[width][depth]
             epochs = data['epochs']
+            actual_layer_plotted = data['plotted_layer']
             
             # --- Plot Intra-class Distance (Cohesion) ---
             intra_m = data['intra_mean']
@@ -137,7 +148,8 @@ def plot_topological_dynamics(base_dir_str: str):
             
             # --- Formatting ---
             if i == 0:
-                ax.set_title(f"Depth = {depth} Layers", fontsize=14)
+                # Append the actual layer plotted to the depth title for clarity
+                ax.set_title(f"Depth = {depth} Layers (Plotting L{actual_layer_plotted})", fontsize=14)
             if j == 0:
                 ax.set_ylabel(f"Width = {width}\nHamming Distance (Bits)", fontsize=12)
             if i == len(widths) - 1:
@@ -145,7 +157,7 @@ def plot_topological_dynamics(base_dir_str: str):
                 
             ax.grid(True, linestyle=':', alpha=0.6)
 
-    fig.suptitle("Training Dynamics: Topological Separation at the Final Layer Over Time", fontsize=18, y=0.98)
+    fig.suptitle(f"Training Dynamics: Topological Separation at Layer {plotted_layer_name} Over Time", fontsize=18, y=0.98)
     
     if handles:
         fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.94), 
@@ -153,12 +165,15 @@ def plot_topological_dynamics(base_dir_str: str):
     
     fig.tight_layout(rect=[0, 0, 1, 0.90])
     
-    # Save output
-    out_path = neurips_figpath / "hamming_topological_dynamics"
+    # Save output dynamically based on layer
+    out_name = f"hamming_topological_dynamics_layer_{plotted_layer_name.lower()}"
+    out_path = neurips_figpath / out_name
     savefig(fig, str(out_path))
 
 if __name__ == "__main__":
     from src_experiment.paths import outputs
     outputs_dir = outputs / "composite_label_noise"
     
-    plot_topological_dynamics(str(outputs_dir))
+    # Example: target_layer = -1 plots the final layer. 
+    # Change to target_layer = 1, 2, etc. to plot specific early layers.
+    plot_topological_dynamics(str(outputs_dir), target_layer=-1)
