@@ -266,11 +266,17 @@ class ExperimentEvaluator:
                     # --- NEW: Compute Hamming Distances ---
                     intra_h, inter_h = self._estimate_hamming_distances(tree, df_counts, layer_idx)
                     
+                    # Compute and add the Miller-Madow bias correction for I(Y;W)
+                    
+                    MMcorr = (populated_regions - 1) * (len(self.unique_classes) - 1) / (2 * self.N_total * np.log(2))
+            
+                    
                     all_results.append({
                         "epoch": ep,
                         "layer_idx": layer_idx,
                         "I(Y;W)": mi_yw.get(layer_idx, 0.0),
                         "I(X;W)": mi_xw.get(layer_idx, 0.0),
+                        "MMcorr": MMcorr,
                         "total_regions": total_regions,
                         "populated_regions": populated_regions,
                         "avg_intra_hamming": intra_h,

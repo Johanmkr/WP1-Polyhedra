@@ -46,6 +46,8 @@ def get_mean_mi(data, noise: float, architecture: str, seeds: list[int] = None) 
             
         ev = ExperimentEvaluator(path)
         df_results = ev.evaluate_all()
+        df_results["Y(I;W)"] = df_results["I(Y;W)"]  - df_results["MMcorr"]  # Apply Miller-Madow correction
+        print(df_results["MMcorr"].head())
         dfs.append(df_results)
         
     if not dfs:
@@ -65,13 +67,13 @@ def get_mean_mi(data, noise: float, architecture: str, seeds: list[int] = None) 
 
 
 def main(data="wbc"):
-    noise_levels = [0.0, 0.2, 0.4]
+    noise_levels = [0.0,]# 0.2, 0.4]
     
     # Group the architectures by the number of hidden layers
     architecture_groups = {
-        "3_layers": ["[5, 5, 5]", "[7, 7, 7]", "[9, 9, 9]", "[25, 25, 25]"],
-        "4_layers": ["[5, 5, 5, 5]", "[7, 7, 7, 7]", "[9, 9, 9, 9]", "[25, 25, 25, 25]"],
-        "5_layers": ["[5, 5, 5, 5, 5]", "[7, 7, 7, 7, 7]", "[9, 9, 9, 9, 9]", "[25, 25, 25, 25, 25]"]
+        # "3_layers": ["[5, 5, 5]", "[7, 7, 7]", "[9, 9, 9]", "[25, 25, 25]"],
+        # "4_layers": ["[5, 5, 5, 5]", "[7, 7, 7, 7]", "[9, 9, 9, 9]", "[25, 25, 25, 25]"],
+        "5_layers": ["[5, 5, 5, 5, 5]", "[7, 7, 7, 7, 7]"]# "[9, 9, 9, 9, 9]", "[25, 25, 25, 25, 25]"]
     }
 
     for group_name, architectures in architecture_groups.items():
@@ -101,6 +103,8 @@ def main(data="wbc"):
         # Identify the last layer for this specific depth group and filter it out
         max_layer = combined_df['layer_idx'].max()
         plot_df = combined_df[combined_df['layer_idx'] < max_layer]
+        
+    
 
         print("Generating plot...")
         # Generate the Seaborn plot using the filtered dataframe
@@ -134,9 +138,9 @@ def main(data="wbc"):
         # Save each plot with a distinct filename
         filename = f"{data}_label_noise_exp_{group_name}.pdf"
         # plt.savefig(neurips_figpath / filename, dpi=300)
-        savefig(g.fig, neurips_figpath / filename)
+        # savefig(g.fig, neurips_figpath / filename)
         
-        # plt.show()
+        plt.show()
         
         # Close the figure to free memory before the next loop iteration
         plt.close(g.fig)
@@ -144,4 +148,4 @@ def main(data="wbc"):
 
 if __name__ == "__main__":
     main("comp")
-    main("wbc")
+    # main("wbc")
