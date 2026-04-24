@@ -39,3 +39,7 @@ outputs/
 
 # data
 data/
+
+.claude/
+CLAUDE.md
+claude_new_estimator_instructions.md
