@@ -92,15 +92,23 @@ This finding alone seems worth a paragraph in Sec 6 of the paper.
 
 ## Steps not yet done
 
-- **Experiment 2 (ρ_func ↔ generalization)** — needs the absolute
-  gen-gap reframing noted in Step 1. Plan: scatter `|gen_gap_acc| + ε`
-  — or better, the *signed gap relative to noise level*
-  `train_acc − (1 − noise) · test_acc` — against `ρ_func(deepest, last
-  epoch)`. Composite first; cross-dataset replication on WBC + MNIST.
-- **Experiment 3 (RL_proxy)** — needs new code in
-  `src_experiment/rtg_overlap.py` plus a re-run of the estimator on
-  ~530 HDF5s to populate the `RL_proxy` column. Composite ~47 min,
-  WBC ~17 min, MNIST trustworthy subset ~5 min.
+~~Both Exp 2 and Exp 3 listed below are now complete.~~ See
+`logging/2026-04-27_exp2_exp3_completion.md` for the chronological
+session log and `logging/paper_experiments_summary.md` for the
+combined writeup (Sections 1-4).
+
+- ~~**Experiment 2 (ρ_func ↔ generalization)**~~ — done. Headline:
+  cross-cell composite r = −0.86 [−0.93, −0.79] on |train−test|
+  (noise-axis confound); within-noise stratification (Sec 2.4 of
+  the summary) rescues wbc to r = +0.61/+0.62/+0.80 at
+  noise = 0/0.2/0.4 and confirms mnist at +0.7-0.85 within each PCA
+  dim.
+- ~~**Experiment 3 (RL_proxy)**~~ — done. Module
+  `src_experiment/rtg_overlap.py` added; `FunctionalQuotientEstimator`
+  emits an `rl_proxy` column. Cross-cell Pearson r in [+0.68, +0.83]
+  across composite/wbc/mnist; within-noise composite hits r =
+  +0.93 [+0.90, +0.98] at noise = 0.4 — the strongest single
+  statistic of the series.
 
 ## Loose ends
 

@@ -31,6 +31,10 @@ from src_experiment.rtg_analyzer import (
     hamming1_adjacency,
     rtg_diagnostics,
 )
+from src_experiment.rtg_overlap import (
+    region_dominant_class,
+    routing_loss_proxy,
+)
 
 PathLike = Union[str, Path]
 
@@ -209,6 +213,7 @@ class QuotientResult:
     num_rtg_components: int
     rtg_largest_component_frac: float
     rtg_isolated_frac: float
+    rl_proxy: float
 
 
 DEFAULT_EPSILONS: Tuple[float, ...] = (0.0, 1e-8, 1e-6, 1e-4, 1e-2, 1e-1)
@@ -273,6 +278,10 @@ class FunctionalQuotientEstimator:
             adjacency = hamming1_adjacency(cum_patterns)
             rtg = rtg_diagnostics(adjacency)
 
+            # Experiment 3: routing-loss proxy (also ε-independent)
+            dominant = region_dominant_class(omega, y)
+            rl = routing_loss_proxy(adjacency, dominant)
+
             for eps in epsilons:
                 quotient_map, num_q = cluster_functional(active_data, eps)
                 pi_func, mm_func, _, _ = routing_information_quotient(
@@ -296,6 +305,7 @@ class FunctionalQuotientEstimator:
                         num_rtg_components=rtg.num_components,
                         rtg_largest_component_frac=rtg.largest_component_frac,
                         rtg_isolated_frac=rtg.isolated_frac,
+                        rl_proxy=rl,
                     )
                 )
         return out
@@ -339,6 +349,7 @@ class FunctionalQuotientEstimator:
                         "num_rtg_components": r.num_rtg_components,
                         "rtg_largest_component_frac": r.rtg_largest_component_frac,
                         "rtg_isolated_frac": r.rtg_isolated_frac,
+                        "rl_proxy": r.rl_proxy,
                     }
                 )
         return pd.DataFrame(rows)
