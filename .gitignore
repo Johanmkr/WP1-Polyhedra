@@ -18,6 +18,7 @@ wheels/
 # Ignore stored data
 stored_data/
 new_stored_data/
+results/
 
 # Ignore old figures
 old_figures/

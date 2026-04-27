@@ -1,0 +1,363 @@
+discovered 180 jobs across ['composite']
+[1/180] skip (exists): composite/n0.0/[25, 25, 25, 25, 25]/seed_101
+[2/180] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  73.24s  (avg 73.24s/job, ETA 217.3 min over 178 remaining)
+[3/180] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  71.08s  (avg 72.16s/job, ETA 212.9 min over 177 remaining)
+[4/180] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  81.61s  (avg 75.31s/job, ETA 220.9 min over 176 remaining)
+[5/180] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  64.24s  (avg 72.54s/job, ETA 211.6 min over 175 remaining)
+[6/180] running: composite/n0.0/[25, 25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  35.13s  (avg 65.06s/job, ETA 188.7 min over 174 remaining)
+[7/180] running: composite/n0.0/[25, 25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  29.51s  (avg 59.14s/job, ETA 170.5 min over 173 remaining)
+[8/180] running: composite/n0.0/[25, 25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  34.73s  (avg 55.65s/job, ETA 159.5 min over 172 remaining)
+[9/180] running: composite/n0.0/[25, 25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  31.23s  (avg 52.60s/job, ETA 149.9 min over 171 remaining)
+[10/180] running: composite/n0.0/[25, 25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  36.80s  (avg 50.84s/job, ETA 144.1 min over 170 remaining)
+[11/180] running: composite/n0.0/[25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  13.46s  (avg 47.10s/job, ETA 132.7 min over 169 remaining)
+[12/180] running: composite/n0.0/[25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  15.71s  (avg 44.25s/job, ETA 123.9 min over 168 remaining)
+[13/180] running: composite/n0.0/[25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  14.50s  (avg 41.77s/job, ETA 116.3 min over 167 remaining)
+[14/180] running: composite/n0.0/[25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  19.76s  (avg 40.08s/job, ETA 110.9 min over 166 remaining)
+[15/180] running: composite/n0.0/[25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  13.75s  (avg 38.20s/job, ETA 105.0 min over 165 remaining)
+[16/180] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.22s  (avg 36.20s/job, ETA 98.9 min over 164 remaining)
+[17/180] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.28s  (avg 34.64s/job, ETA 94.1 min over 163 remaining)
+[18/180] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.75s  (avg 33.12s/job, ETA 89.4 min over 162 remaining)
+[19/180] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.93s  (avg 31.72s/job, ETA 85.1 min over 161 remaining)
+[20/180] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.45s  (avg 30.44s/job, ETA 81.2 min over 160 remaining)
+[21/180] running: composite/n0.0/[5, 5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.77s  (avg 29.21s/job, ETA 77.4 min over 159 remaining)
+[22/180] running: composite/n0.0/[5, 5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.53s  (avg 28.13s/job, ETA 74.1 min over 158 remaining)
+[23/180] running: composite/n0.0/[5, 5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.49s  (avg 27.14s/job, ETA 71.0 min over 157 remaining)
+[24/180] running: composite/n0.0/[5, 5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.30s  (avg 26.24s/job, ETA 68.2 min over 156 remaining)
+[25/180] running: composite/n0.0/[5, 5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.23s  (avg 25.40s/job, ETA 65.6 min over 155 remaining)
+[26/180] running: composite/n0.0/[5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.27s  (avg 24.56s/job, ETA 63.0 min over 154 remaining)
+[27/180] running: composite/n0.0/[5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.26s  (avg 23.78s/job, ETA 60.6 min over 153 remaining)
+[28/180] running: composite/n0.0/[5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.25s  (avg 23.06s/job, ETA 58.4 min over 152 remaining)
+[29/180] running: composite/n0.0/[5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.72s  (avg 22.40s/job, ETA 56.4 min over 151 remaining)
+[30/180] running: composite/n0.0/[5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.37s  (avg 21.78s/job, ETA 54.4 min over 150 remaining)
+[31/180] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.49s  (avg 21.37s/job, ETA 53.1 min over 149 remaining)
+[32/180] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  10.02s  (avg 21.00s/job, ETA 51.8 min over 148 remaining)
+[33/180] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.62s  (avg 20.65s/job, ETA 50.6 min over 147 remaining)
+[34/180] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.48s  (avg 20.37s/job, ETA 49.6 min over 146 remaining)
+[35/180] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.44s  (avg 20.05s/job, ETA 48.4 min over 145 remaining)
+[36/180] running: composite/n0.0/[7, 7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.54s  (avg 19.69s/job, ETA 47.3 min over 144 remaining)
+[37/180] running: composite/n0.0/[7, 7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.26s  (avg 19.35s/job, ETA 46.1 min over 143 remaining)
+[38/180] running: composite/n0.0/[7, 7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.38s  (avg 19.02s/job, ETA 45.0 min over 142 remaining)
+[39/180] running: composite/n0.0/[7, 7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.35s  (avg 18.71s/job, ETA 44.0 min over 141 remaining)
+[40/180] running: composite/n0.0/[7, 7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.73s  (avg 18.41s/job, ETA 43.0 min over 140 remaining)
+[41/180] running: composite/n0.0/[7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.72s  (avg 18.07s/job, ETA 41.9 min over 139 remaining)
+[42/180] running: composite/n0.0/[7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.97s  (avg 17.75s/job, ETA 40.8 min over 138 remaining)
+[43/180] running: composite/n0.0/[7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.04s  (avg 17.44s/job, ETA 39.8 min over 137 remaining)
+[44/180] running: composite/n0.0/[7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.71s  (avg 17.15s/job, ETA 38.9 min over 136 remaining)
+[45/180] running: composite/n0.0/[7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.61s  (avg 16.86s/job, ETA 37.9 min over 135 remaining)
+[46/180] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  17.44s  (avg 16.88s/job, ETA 37.7 min over 134 remaining)
+[47/180] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  21.10s  (avg 16.97s/job, ETA 37.6 min over 133 remaining)
+[48/180] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  12.19s  (avg 16.87s/job, ETA 37.1 min over 132 remaining)
+[49/180] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  15.95s  (avg 16.85s/job, ETA 36.8 min over 131 remaining)
+[50/180] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  16.61s  (avg 16.84s/job, ETA 36.5 min over 130 remaining)
+[51/180] running: composite/n0.0/[9, 9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.73s  (avg 16.66s/job, ETA 35.8 min over 129 remaining)
+[52/180] running: composite/n0.0/[9, 9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.20s  (avg 16.49s/job, ETA 35.2 min over 128 remaining)
+[53/180] running: composite/n0.0/[9, 9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.63s  (avg 16.34s/job, ETA 34.6 min over 127 remaining)
+[54/180] running: composite/n0.0/[9, 9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.97s  (avg 16.20s/job, ETA 34.0 min over 126 remaining)
+[55/180] running: composite/n0.0/[9, 9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.61s  (avg 16.06s/job, ETA 33.5 min over 125 remaining)
+[56/180] running: composite/n0.0/[9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.95s  (avg 15.88s/job, ETA 32.8 min over 124 remaining)
+[57/180] running: composite/n0.0/[9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.41s  (avg 15.69s/job, ETA 32.2 min over 123 remaining)
+[58/180] running: composite/n0.0/[9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.22s  (avg 15.51s/job, ETA 31.5 min over 122 remaining)
+[59/180] running: composite/n0.0/[9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.92s  (avg 15.34s/job, ETA 30.9 min over 121 remaining)
+[60/180] running: composite/n0.0/[9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.20s  (avg 15.17s/job, ETA 30.3 min over 120 remaining)
+[61/180] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  72.19s  (avg 16.12s/job, ETA 32.0 min over 119 remaining)
+[62/180] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  78.32s  (avg 17.14s/job, ETA 33.7 min over 118 remaining)
+[63/180] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  70.56s  (avg 18.00s/job, ETA 35.1 min over 117 remaining)
+[64/180] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  73.28s  (avg 18.88s/job, ETA 36.5 min over 116 remaining)
+[65/180] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  69.29s  (avg 19.67s/job, ETA 37.7 min over 115 remaining)
+[66/180] running: composite/n0.2/[25, 25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  34.77s  (avg 19.90s/job, ETA 37.8 min over 114 remaining)
+[67/180] running: composite/n0.2/[25, 25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  34.76s  (avg 20.12s/job, ETA 37.9 min over 113 remaining)
+[68/180] running: composite/n0.2/[25, 25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  33.48s  (avg 20.32s/job, ETA 37.9 min over 112 remaining)
+[69/180] running: composite/n0.2/[25, 25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  33.84s  (avg 20.52s/job, ETA 38.0 min over 111 remaining)
+[70/180] running: composite/n0.2/[25, 25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  34.13s  (avg 20.72s/job, ETA 38.0 min over 110 remaining)
+[71/180] running: composite/n0.2/[25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  14.46s  (avg 20.63s/job, ETA 37.5 min over 109 remaining)
+[72/180] running: composite/n0.2/[25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  16.24s  (avg 20.57s/job, ETA 37.0 min over 108 remaining)
+[73/180] running: composite/n0.2/[25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  15.40s  (avg 20.50s/job, ETA 36.6 min over 107 remaining)
+[74/180] running: composite/n0.2/[25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  17.25s  (avg 20.45s/job, ETA 36.1 min over 106 remaining)
+[75/180] running: composite/n0.2/[25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  13.87s  (avg 20.36s/job, ETA 35.6 min over 105 remaining)
+[76/180] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.86s  (avg 20.20s/job, ETA 35.0 min over 104 remaining)
+[77/180] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.41s  (avg 20.08s/job, ETA 34.5 min over 103 remaining)
+[78/180] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.35s  (avg 19.94s/job, ETA 33.9 min over 102 remaining)
+[79/180] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.33s  (avg 19.79s/job, ETA 33.3 min over 101 remaining)
+[80/180] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.95s  (avg 19.64s/job, ETA 32.7 min over 100 remaining)
+[81/180] running: composite/n0.2/[5, 5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.31s  (avg 19.48s/job, ETA 32.1 min over 99 remaining)
+[82/180] running: composite/n0.2/[5, 5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.49s  (avg 19.32s/job, ETA 31.6 min over 98 remaining)
+[83/180] running: composite/n0.2/[5, 5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.39s  (avg 19.16s/job, ETA 31.0 min over 97 remaining)
+[84/180] running: composite/n0.2/[5, 5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.49s  (avg 19.01s/job, ETA 30.4 min over 96 remaining)
+[85/180] running: composite/n0.2/[5, 5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.93s  (avg 18.85s/job, ETA 29.8 min over 95 remaining)
+[86/180] running: composite/n0.2/[5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.22s  (avg 18.68s/job, ETA 29.3 min over 94 remaining)
+[87/180] running: composite/n0.2/[5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.39s  (avg 18.51s/job, ETA 28.7 min over 93 remaining)
+[88/180] running: composite/n0.2/[5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.34s  (avg 18.35s/job, ETA 28.1 min over 92 remaining)
+[89/180] running: composite/n0.2/[5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.54s  (avg 18.19s/job, ETA 27.6 min over 91 remaining)
+[90/180] running: composite/n0.2/[5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.39s  (avg 18.04s/job, ETA 27.1 min over 90 remaining)
+[91/180] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.93s  (avg 17.95s/job, ETA 26.6 min over 89 remaining)
+[92/180] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.19s  (avg 17.87s/job, ETA 26.2 min over 88 remaining)
+[93/180] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  10.87s  (avg 17.80s/job, ETA 25.8 min over 87 remaining)
+[94/180] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.32s  (avg 17.73s/job, ETA 25.4 min over 86 remaining)
+[95/180] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.49s  (avg 17.64s/job, ETA 25.0 min over 85 remaining)
+[96/180] running: composite/n0.2/[7, 7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.88s  (avg 17.54s/job, ETA 24.6 min over 84 remaining)
+[97/180] running: composite/n0.2/[7, 7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.66s  (avg 17.43s/job, ETA 24.1 min over 83 remaining)
+[98/180] running: composite/n0.2/[7, 7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.36s  (avg 17.33s/job, ETA 23.7 min over 82 remaining)
+[99/180] running: composite/n0.2/[7, 7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.51s  (avg 17.24s/job, ETA 23.3 min over 81 remaining)
+[100/180] running: composite/n0.2/[7, 7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.24s  (avg 17.14s/job, ETA 22.9 min over 80 remaining)
+[101/180] running: composite/n0.2/[7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.76s  (avg 17.02s/job, ETA 22.4 min over 79 remaining)
+[102/180] running: composite/n0.2/[7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.03s  (avg 16.90s/job, ETA 22.0 min over 78 remaining)
+[103/180] running: composite/n0.2/[7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.97s  (avg 16.78s/job, ETA 21.5 min over 77 remaining)
+[104/180] running: composite/n0.2/[7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.82s  (avg 16.66s/job, ETA 21.1 min over 76 remaining)
+[105/180] running: composite/n0.2/[7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.55s  (avg 16.55s/job, ETA 20.7 min over 75 remaining)
+[106/180] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  15.46s  (avg 16.54s/job, ETA 20.4 min over 74 remaining)
+[107/180] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  20.01s  (avg 16.57s/job, ETA 20.2 min over 73 remaining)
+[108/180] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  16.17s  (avg 16.57s/job, ETA 19.9 min over 72 remaining)
+[109/180] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  15.08s  (avg 16.55s/job, ETA 19.6 min over 71 remaining)
+[110/180] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  16.51s  (avg 16.55s/job, ETA 19.3 min over 70 remaining)
+[111/180] running: composite/n0.2/[9, 9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.18s  (avg 16.48s/job, ETA 18.9 min over 69 remaining)
+[112/180] running: composite/n0.2/[9, 9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.70s  (avg 16.41s/job, ETA 18.6 min over 68 remaining)
+[113/180] running: composite/n0.2/[9, 9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.74s  (avg 16.36s/job, ETA 18.3 min over 67 remaining)
+[114/180] running: composite/n0.2/[9, 9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.40s  (avg 16.29s/job, ETA 17.9 min over 66 remaining)
+[115/180] running: composite/n0.2/[9, 9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  10.43s  (avg 16.24s/job, ETA 17.6 min over 65 remaining)
+[116/180] running: composite/n0.2/[9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.69s  (avg 16.15s/job, ETA 17.2 min over 64 remaining)
+[117/180] running: composite/n0.2/[9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.65s  (avg 16.06s/job, ETA 16.9 min over 63 remaining)
+[118/180] running: composite/n0.2/[9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.58s  (avg 15.97s/job, ETA 16.5 min over 62 remaining)
+[119/180] running: composite/n0.2/[9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.07s  (avg 15.89s/job, ETA 16.2 min over 61 remaining)
+[120/180] running: composite/n0.2/[9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.20s  (avg 15.80s/job, ETA 15.8 min over 60 remaining)
+[121/180] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  61.02s  (avg 16.17s/job, ETA 15.9 min over 59 remaining)
+[122/180] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  82.02s  (avg 16.72s/job, ETA 16.2 min over 58 remaining)
+[123/180] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  66.19s  (avg 17.12s/job, ETA 16.3 min over 57 remaining)
+[124/180] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  67.72s  (avg 17.53s/job, ETA 16.4 min over 56 remaining)
+[125/180] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  66.17s  (avg 17.93s/job, ETA 16.4 min over 55 remaining)
+[126/180] running: composite/n0.4/[25, 25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  28.79s  (avg 18.01s/job, ETA 16.2 min over 54 remaining)
+[127/180] running: composite/n0.4/[25, 25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  33.48s  (avg 18.14s/job, ETA 16.0 min over 53 remaining)
+[128/180] running: composite/n0.4/[25, 25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  31.43s  (avg 18.24s/job, ETA 15.8 min over 52 remaining)
+[129/180] running: composite/n0.4/[25, 25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  32.74s  (avg 18.35s/job, ETA 15.6 min over 51 remaining)
+[130/180] running: composite/n0.4/[25, 25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  37.23s  (avg 18.50s/job, ETA 15.4 min over 50 remaining)
+[131/180] running: composite/n0.4/[25, 25, 25]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  14.75s  (avg 18.47s/job, ETA 15.1 min over 49 remaining)
+[132/180] running: composite/n0.4/[25, 25, 25]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  17.10s  (avg 18.46s/job, ETA 14.8 min over 48 remaining)
+[133/180] running: composite/n0.4/[25, 25, 25]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  15.79s  (avg 18.44s/job, ETA 14.4 min over 47 remaining)
+[134/180] running: composite/n0.4/[25, 25, 25]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  14.67s  (avg 18.41s/job, ETA 14.1 min over 46 remaining)
+[135/180] running: composite/n0.4/[25, 25, 25]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  13.46s  (avg 18.38s/job, ETA 13.8 min over 45 remaining)
+[136/180] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.64s  (avg 18.30s/job, ETA 13.4 min over 44 remaining)
+[137/180] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.58s  (avg 18.25s/job, ETA 13.1 min over 43 remaining)
+[138/180] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.82s  (avg 18.18s/job, ETA 12.7 min over 42 remaining)
+[139/180] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.61s  (avg 18.11s/job, ETA 12.4 min over 41 remaining)
+[140/180] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.31s  (avg 18.03s/job, ETA 12.0 min over 40 remaining)
+[141/180] running: composite/n0.4/[5, 5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.20s  (avg 17.95s/job, ETA 11.7 min over 39 remaining)
+[142/180] running: composite/n0.4/[5, 5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.34s  (avg 17.86s/job, ETA 11.3 min over 38 remaining)
+[143/180] running: composite/n0.4/[5, 5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.55s  (avg 17.78s/job, ETA 11.0 min over 37 remaining)
+[144/180] running: composite/n0.4/[5, 5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.76s  (avg 17.71s/job, ETA 10.6 min over 36 remaining)
+[145/180] running: composite/n0.4/[5, 5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.02s  (avg 17.63s/job, ETA 10.3 min over 35 remaining)
+[146/180] running: composite/n0.4/[5, 5, 5]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.37s  (avg 17.53s/job, ETA 9.9 min over 34 remaining)
+[147/180] running: composite/n0.4/[5, 5, 5]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.54s  (avg 17.45s/job, ETA 9.6 min over 33 remaining)
+[148/180] running: composite/n0.4/[5, 5, 5]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.14s  (avg 17.36s/job, ETA 9.3 min over 32 remaining)
+[149/180] running: composite/n0.4/[5, 5, 5]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.36s  (avg 17.27s/job, ETA 8.9 min over 31 remaining)
+[150/180] running: composite/n0.4/[5, 5, 5]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.24s  (avg 17.18s/job, ETA 8.6 min over 30 remaining)
+[151/180] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.03s  (avg 17.14s/job, ETA 8.3 min over 29 remaining)
+[152/180] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  11.80s  (avg 17.10s/job, ETA 8.0 min over 28 remaining)
+[153/180] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.56s  (avg 17.05s/job, ETA 7.7 min over 27 remaining)
+[154/180] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  10.79s  (avg 17.01s/job, ETA 7.4 min over 26 remaining)
+[155/180] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.92s  (avg 16.96s/job, ETA 7.1 min over 25 remaining)
+[156/180] running: composite/n0.4/[7, 7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.24s  (avg 16.90s/job, ETA 6.8 min over 24 remaining)
+[157/180] running: composite/n0.4/[7, 7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.62s  (avg 16.84s/job, ETA 6.5 min over 23 remaining)
+[158/180] running: composite/n0.4/[7, 7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.64s  (avg 16.78s/job, ETA 6.2 min over 22 remaining)
+[159/180] running: composite/n0.4/[7, 7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   7.61s  (avg 16.72s/job, ETA 5.9 min over 21 remaining)
+[160/180] running: composite/n0.4/[7, 7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.87s  (avg 16.66s/job, ETA 5.6 min over 20 remaining)
+[161/180] running: composite/n0.4/[7, 7, 7]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.59s  (avg 16.58s/job, ETA 5.3 min over 19 remaining)
+[162/180] running: composite/n0.4/[7, 7, 7]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.88s  (avg 16.51s/job, ETA 5.0 min over 18 remaining)
+[163/180] running: composite/n0.4/[7, 7, 7]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.79s  (avg 16.44s/job, ETA 4.7 min over 17 remaining)
+[164/180] running: composite/n0.4/[7, 7, 7]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.73s  (avg 16.37s/job, ETA 4.4 min over 16 remaining)
+[165/180] running: composite/n0.4/[7, 7, 7]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   4.49s  (avg 16.30s/job, ETA 4.1 min over 15 remaining)
+[166/180] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  16.79s  (avg 16.30s/job, ETA 3.8 min over 14 remaining)
+[167/180] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  21.80s  (avg 16.33s/job, ETA 3.5 min over 13 remaining)
+[168/180] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  16.05s  (avg 16.33s/job, ETA 3.3 min over 12 remaining)
+[169/180] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  15.85s  (avg 16.33s/job, ETA 3.0 min over 11 remaining)
+[170/180] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  16.58s  (avg 16.33s/job, ETA 2.7 min over 10 remaining)
+[171/180] running: composite/n0.4/[9, 9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.15s  (avg 16.28s/job, ETA 2.4 min over 9 remaining)
+[172/180] running: composite/n0.4/[9, 9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  10.22s  (avg 16.24s/job, ETA 2.2 min over 8 remaining)
+[173/180] running: composite/n0.4/[9, 9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->  10.09s  (avg 16.21s/job, ETA 1.9 min over 7 remaining)
+[174/180] running: composite/n0.4/[9, 9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   8.95s  (avg 16.17s/job, ETA 1.6 min over 6 remaining)
+[175/180] running: composite/n0.4/[9, 9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   9.30s  (avg 16.13s/job, ETA 1.3 min over 5 remaining)
+[176/180] running: composite/n0.4/[9, 9, 9]/seed_101 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.83s  (avg 16.07s/job, ETA 1.1 min over 4 remaining)
+[177/180] running: composite/n0.4/[9, 9, 9]/seed_102 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   6.02s  (avg 16.01s/job, ETA 0.8 min over 3 remaining)
+[178/180] running: composite/n0.4/[9, 9, 9]/seed_103 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.56s  (avg 15.95s/job, ETA 0.5 min over 2 remaining)
+[179/180] running: composite/n0.4/[9, 9, 9]/seed_104 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.99s  (avg 15.90s/job, ETA 0.3 min over 1 remaining)
+[180/180] running: composite/n0.4/[9, 9, 9]/seed_105 [composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)]
+  ->   5.55s  (avg 15.84s/job, ETA 0.0 min over 0 remaining)
+
+finished: 179 ran, 1 skipped/failed.
+total wall time: 47.25 min, mean 15.84s/job.
