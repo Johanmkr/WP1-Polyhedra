@@ -14,7 +14,7 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = "src_experiment"
 
 from .dataset import get_new_data
-from .utils import NeuralNet
+from .utils import NeuralNet, LeNet5
 from .train_models import train_model_multiclass
 
 def set_global_seed(seed: int):
@@ -46,26 +46,29 @@ def set_global_seed(seed: int):
 
 def infer_dataset_properties(dataloader):
     """
-    Dynamically determines input_size and num_classes from a DataLoader.
-    """
-    # 1. Infer Input Size from the first batch
-    dummy_x, _ = next(iter(dataloader))
-    input_size = dummy_x.shape[1]
+    Dynamically determines input shape and num_classes from a DataLoader.
 
-    # 2. Infer Number of Classes
+    Returns `(input_size, num_classes, input_shape)` where `input_size` is
+    the flattened feature dim (preserves the existing 2D-input contract)
+    and `input_shape` is the per-sample shape tuple (e.g. `(1, 28, 28)`
+    for full-image MNIST).
+    """
+    dummy_x, _ = next(iter(dataloader))
+    input_shape = tuple(dummy_x.shape[1:])
+    input_size = int(np.prod(input_shape))
+
     if hasattr(dataloader.dataset, 'tensors'):
         all_labels = dataloader.dataset.tensors[1]
         num_classes = len(torch.unique(all_labels))
     else:
-        # Fallback (slower, but works for all datasets)
         print("Inferring num_classes by iterating full dataset...")
         all_labels = []
         for _, y in dataloader:
             all_labels.append(y)
         all_labels = torch.cat(all_labels)
         num_classes = len(torch.unique(all_labels))
-        
-    return input_size, num_classes
+
+    return input_size, num_classes, input_shape
 
 def run(config_path, overwrite=False):
     # 1. Load Config
@@ -121,20 +124,34 @@ def run(config_path, overwrite=False):
     )
     
     # --- DYNAMIC INFERENCE ---
-    input_size, num_classes = infer_dataset_properties(train_loader)
-    
+    input_size, num_classes, input_shape = infer_dataset_properties(train_loader)
+
     # Config overrides
     if "input_size" in config: input_size = config["input_size"]
     if "num_classes" in config: num_classes = config["num_classes"]
 
-    # 3. Initialize Model
-    model = NeuralNet(
-        input_size=input_size,
-        hidden_sizes=config.get("architecture", [10, 10]),
-        num_classes=num_classes,
-        dropout=config.get("dropout", 0.0),
-        seed=model_seed
-    )
+    # 3. Initialize Model — dispatch on arch_type (default MLP for back-compat).
+    arch_type = config.get("arch_type", "mlp").lower()
+    if arch_type == "mlp":
+        model = NeuralNet(
+            input_size=input_size,
+            hidden_sizes=config.get("architecture", [10, 10]),
+            num_classes=num_classes,
+            dropout=config.get("dropout", 0.0),
+            seed=model_seed,
+        )
+    elif arch_type == "lenet5":
+        model = LeNet5(
+            conv_channels=tuple(config.get("conv_channels", (6, 16))),
+            fc_widths=tuple(config.get("fc_widths", (120, 84))),
+            num_classes=num_classes,
+            input_shape=tuple(config.get("input_shape", input_shape)),
+            kernel_size=config.get("kernel_size", 5),
+            pool_size=config.get("pool_size", 2),
+            seed=model_seed,
+        )
+    else:
+        raise ValueError(f"Unknown arch_type: {arch_type!r}")
 
     # 4. Setup HDF5 Incremental Writer
     print(f"Initializing HDF5 file at {h5_path}...")
@@ -144,6 +161,8 @@ def run(config_path, overwrite=False):
         meta_grp = f.create_group('metadata')
         config['inferred_input_size'] = input_size
         config['inferred_num_classes'] = num_classes
+        config['inferred_input_shape'] = list(input_shape)
+        config['inferred_arch_type'] = arch_type
         
         for k, v in config.items():
             try:

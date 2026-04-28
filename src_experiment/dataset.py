@@ -232,6 +232,29 @@ def get_new_data(dataset_name: str, noise: float = 0.0, batch_size: int = DEFAUL
         train_ds = TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.int64))
         test_ds = TensorDataset(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=torch.int64))
 
+    # --- Full MNIST (Phase C: CNN sweep) ---
+    elif dataset_name == "mnist_full":
+        # Full 60k/10k MNIST as (N, 1, 28, 28), scaled to [-1, 1].
+        # Optional label noise via the same `inject_label_noise_vectorized`
+        # used elsewhere; no PCA, no subsample, no flatten.
+        print("Fetching mnist_full (torchvision)...")
+        train_data = datasets.MNIST(root="./data", train=True, download=True)
+        test_data = datasets.MNIST(root="./data", train=False, download=True)
+        X_train = (train_data.data.float() / 255.0 - 0.5) * 2.0  # -> [-1, 1]
+        X_test = (test_data.data.float() / 255.0 - 0.5) * 2.0
+        X_train = X_train.unsqueeze(1)  # (N, 1, 28, 28)
+        X_test = X_test.unsqueeze(1)
+        y_train = train_data.targets.numpy().astype(np.int64)
+        y_test = test_data.targets.numpy().astype(np.int64)
+
+        if noise > 0.0:
+            y_train = inject_label_noise_vectorized(y_train, noise, 10, split_seed)
+
+        train_ds = TensorDataset(X_train,
+                                 torch.tensor(y_train, dtype=torch.int64))
+        test_ds = TensorDataset(X_test,
+                                torch.tensor(y_test, dtype=torch.int64))
+
     # --- UCI Datasets ---
     elif dataset_name == "wbc":
         X, y = _load_uci(id=17, target_col="Diagnosis", target_val="M")

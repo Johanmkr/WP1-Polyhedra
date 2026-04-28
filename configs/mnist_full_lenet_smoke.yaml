@@ -1,0 +1,29 @@
+experiment_name: mnist_full_lenet_smoke
+dataset: mnist_full
+output_dir: ./outputs
+
+# Model architecture (Phase C: parametric LeNet-5)
+arch_type: lenet5
+conv_channels: [6, 16]
+fc_widths: [120, 84]
+kernel_size: 5
+pool_size: 2
+
+# Determinism
+global_seed: 42
+model_seed: 101
+
+# Training (smoke: short run to verify the pipeline)
+epochs: 3
+batch_size: 128
+optimizer: SGD
+learning_rate: 0.01
+momentum: 0.9
+
+# Data
+noise: 0.0
+test_size: 0.2
+
+# Saving
+save_interval: 1
+save_epochs: [0, 1, 2]
