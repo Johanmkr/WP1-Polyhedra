@@ -1,0 +1,1914 @@
+==========================================
+  Phase A baselines — runner start
+  Tue Apr 28 08:44:37 AM CEST 2026
+==========================================
+  repo:    /home/johan/Documents/phd/WP1/geometric_binning_estimator
+  log:     /home/johan/Documents/phd/WP1/geometric_binning_estimator/logs/phase_a_baselines_20260428_084437.log
+  args:    <none>
+  threads: OPENBLAS=1 MKL=1 OMP=1
+  flags:   PHASE_A_NO_VALIDATE=0
+           PHASE_A_SKIP_MI=0
+           PHASE_A_SKIP_GG=0
+==========================================
+  Step 1/6 — Validate MI baselines (synthetic gate)
+  Tue Apr 28 08:44:37 AM CEST 2026
+==========================================
+
+[1] discrete I(X;Y): binning + kmeans (target ±0.05 bits)
+  [PASS] binning: truth=1.152  est=1.163  Δ=0.010
+  [PASS] kmeans: truth=1.152  est=1.163  Δ=0.010
+
+[2] mixed Gaussian-discrete I(T;Y): KSG-Ross (target ±0.05 bits, slack 0.10)
+  [PASS] ksg d=1 mu=0.5: truth=0.160  est=0.156  Δ=0.004  wall=0.01s
+  [PASS] ksg d=1 mu=1.0: truth=0.485  est=0.490  Δ=0.005  wall=0.01s
+  [PASS] ksg d=1 mu=2.0: truth=0.913  est=0.907  Δ=0.006  wall=0.01s
+  [PASS] ksg d=5 mu=0.5: truth=0.561  est=0.568  Δ=0.007  wall=0.03s
+  [PASS] ksg d=5 mu=1.0: truth=0.951  est=0.949  Δ=0.001  wall=0.03s
+  [PASS] ksg d=5 mu=2.0: truth=1.000  est=1.000  Δ=0.000  wall=0.04s
+
+[3] Gaussian-sign I(X1; sign(X2)): MINE (±0.10 bits) and InfoNCE (±0.20 bits)
+    using torch device=cpu
+  [PASS] infonce ρ=0.5: truth=0.125  est=0.130  Δ=0.005  wall=1.0s
+  [PASS] mine ρ=0.5: truth=0.125  est=0.137±0.001  Δ=0.012  wall(per seed)≈5.9s
+  [PASS] infonce ρ=0.8: truth=0.385  est=0.363  Δ=0.021  wall=0.5s
+  [PASS] mine ρ=0.8: truth=0.385  est=0.389±0.003  Δ=0.004  wall(per seed)≈6.2s
+
+ALL TESTS PASSED
+==========================================
+  Step 2/6 — Run MI-baseline sweep
+  Tue Apr 28 08:45:17 AM CEST 2026
+==========================================
+discovered 450 jobs across ['composite', 'wbc']
+[1/450] skip (exists): composite/n0.0/[25, 25, 25, 25, 25]/seed_101
+  probe[composite]: composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)
+[2/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_102
+  ->  28.93s   cum=0.5min   ETA 216.0 min over 448 remaining
+[3/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_103
+  ->  29.35s   cum=1.0min   ETA 217.1 min over 447 remaining
+[4/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_104
+  ->  28.98s   cum=1.5min   ETA 216.2 min over 446 remaining
+[5/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_105
+  ->  29.84s   cum=2.0min   ETA 217.1 min over 445 remaining
+[6/450] running: composite/n0.0/[25, 25, 25, 25]/seed_101
+  ->  30.49s   cum=2.5min   ETA 218.4 min over 444 remaining
+[7/450] running: composite/n0.0/[25, 25, 25, 25]/seed_102
+  ->  30.15s   cum=3.0min   ETA 218.7 min over 443 remaining
+[8/450] running: composite/n0.0/[25, 25, 25, 25]/seed_103
+  ->  29.76s   cum=3.5min   ETA 218.4 min over 442 remaining
+[9/450] running: composite/n0.0/[25, 25, 25, 25]/seed_104
+  ->  29.58s   cum=4.0min   ETA 217.8 min over 441 remaining
+[10/450] running: composite/n0.0/[25, 25, 25, 25]/seed_105
+  ->  28.76s   cum=4.4min   ETA 216.6 min over 440 remaining
+[11/450] running: composite/n0.0/[25, 25, 25]/seed_101
+  ->  28.84s   cum=4.9min   ETA 215.6 min over 439 remaining
+[12/450] running: composite/n0.0/[25, 25, 25]/seed_102
+  ->  28.65s   cum=5.4min   ETA 214.6 min over 438 remaining
+[13/450] running: composite/n0.0/[25, 25, 25]/seed_103
+  ->  28.85s   cum=5.9min   ETA 213.8 min over 437 remaining
+[14/450] running: composite/n0.0/[25, 25, 25]/seed_104
+  ->  28.99s   cum=6.4min   ETA 213.1 min over 436 remaining
+[15/450] running: composite/n0.0/[25, 25, 25]/seed_105
+  ->  28.55s   cum=6.8min   ETA 212.2 min over 435 remaining
+[16/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_101
+  ->  27.28s   cum=7.3min   ETA 210.7 min over 434 remaining
+[17/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_102
+  ->  28.13s   cum=7.8min   ETA 209.8 min over 433 remaining
+[18/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_103
+  ->  28.18s   cum=8.2min   ETA 208.9 min over 432 remaining
+[19/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_104
+  ->  28.35s   cum=8.7min   ETA 208.2 min over 431 remaining
+[20/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_105
+  ->  28.57s   cum=9.2min   ETA 207.5 min over 430 remaining
+[21/450] running: composite/n0.0/[5, 5, 5, 5]/seed_101
+  ->  27.87s   cum=9.6min   ETA 206.7 min over 429 remaining
+[22/450] running: composite/n0.0/[5, 5, 5, 5]/seed_102
+  ->  27.71s   cum=10.1min   ETA 205.8 min over 428 remaining
+[23/450] running: composite/n0.0/[5, 5, 5, 5]/seed_103
+  ->  28.48s   cum=10.6min   ETA 205.2 min over 427 remaining
+[24/450] running: composite/n0.0/[5, 5, 5, 5]/seed_104
+  ->  28.40s   cum=11.0min   ETA 204.6 min over 426 remaining
+[25/450] running: composite/n0.0/[5, 5, 5, 5]/seed_105
+  ->  27.54s   cum=11.5min   ETA 203.7 min over 425 remaining
+[26/450] running: composite/n0.0/[5, 5, 5]/seed_101
+  ->  27.99s   cum=12.0min   ETA 203.0 min over 424 remaining
+[27/450] running: composite/n0.0/[5, 5, 5]/seed_102
+  ->  27.68s   cum=12.4min   ETA 202.3 min over 423 remaining
+[28/450] running: composite/n0.0/[5, 5, 5]/seed_103
+  ->  26.76s   cum=12.9min   ETA 201.3 min over 422 remaining
+[29/450] running: composite/n0.0/[5, 5, 5]/seed_104
+  ->  27.02s   cum=13.3min   ETA 200.4 min over 421 remaining
+[30/450] running: composite/n0.0/[5, 5, 5]/seed_105
+  ->  26.39s   cum=13.8min   ETA 199.4 min over 420 remaining
+[31/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_101
+  ->  27.00s   cum=14.2min   ETA 198.6 min over 419 remaining
+[32/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_102
+  ->  28.16s   cum=14.7min   ETA 198.0 min over 418 remaining
+[33/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_103
+  ->  27.53s   cum=15.1min   ETA 197.4 min over 417 remaining
+[34/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_104
+  ->  27.24s   cum=15.6min   ETA 196.7 min over 416 remaining
+[35/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_105
+  ->  27.31s   cum=16.1min   ETA 196.0 min over 415 remaining
+[36/450] running: composite/n0.0/[7, 7, 7, 7]/seed_101
+  ->  27.02s   cum=16.5min   ETA 195.2 min over 414 remaining
+[37/450] running: composite/n0.0/[7, 7, 7, 7]/seed_102
+  ->  26.97s   cum=17.0min   ETA 194.5 min over 413 remaining
+[38/450] running: composite/n0.0/[7, 7, 7, 7]/seed_103
+  ->  27.86s   cum=17.4min   ETA 194.0 min over 412 remaining
+[39/450] running: composite/n0.0/[7, 7, 7, 7]/seed_104
+  ->  27.36s   cum=17.9min   ETA 193.3 min over 411 remaining
+[40/450] running: composite/n0.0/[7, 7, 7, 7]/seed_105
+  ->  27.11s   cum=18.3min   ETA 192.7 min over 410 remaining
+[41/450] running: composite/n0.0/[7, 7, 7]/seed_101
+  ->  27.01s   cum=18.8min   ETA 192.0 min over 409 remaining
+[42/450] running: composite/n0.0/[7, 7, 7]/seed_102
+  ->  27.13s   cum=19.2min   ETA 191.4 min over 408 remaining
+[43/450] running: composite/n0.0/[7, 7, 7]/seed_103
+  ->  27.35s   cum=19.7min   ETA 190.8 min over 407 remaining
+[44/450] running: composite/n0.0/[7, 7, 7]/seed_104
+  ->  27.87s   cum=20.1min   ETA 190.3 min over 406 remaining
+[45/450] running: composite/n0.0/[7, 7, 7]/seed_105
+  ->  27.57s   cum=20.6min   ETA 189.7 min over 405 remaining
+[46/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_101
+  ->  27.04s   cum=21.1min   ETA 189.1 min over 404 remaining
+[47/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_102
+  ->  27.08s   cum=21.5min   ETA 188.5 min over 403 remaining
+[48/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_103
+  ->  27.25s   cum=22.0min   ETA 187.9 min over 402 remaining
+[49/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_104
+  ->  27.33s   cum=22.4min   ETA 187.3 min over 401 remaining
+[50/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_105
+  ->  26.60s   cum=22.9min   ETA 186.6 min over 400 remaining
+[51/450] running: composite/n0.0/[9, 9, 9, 9]/seed_101
+  ->  27.21s   cum=23.3min   ETA 186.1 min over 399 remaining
+[52/450] running: composite/n0.0/[9, 9, 9, 9]/seed_102
+  ->  27.13s   cum=23.8min   ETA 185.5 min over 398 remaining
+[53/450] running: composite/n0.0/[9, 9, 9, 9]/seed_103
+  ->  27.58s   cum=24.2min   ETA 185.0 min over 397 remaining
+[54/450] running: composite/n0.0/[9, 9, 9, 9]/seed_104
+  ->  27.57s   cum=24.7min   ETA 184.5 min over 396 remaining
+[55/450] running: composite/n0.0/[9, 9, 9, 9]/seed_105
+  ->  27.44s   cum=25.1min   ETA 183.9 min over 395 remaining
+[56/450] running: composite/n0.0/[9, 9, 9]/seed_101
+  ->  27.26s   cum=25.6min   ETA 183.4 min over 394 remaining
+[57/450] running: composite/n0.0/[9, 9, 9]/seed_102
+  ->  27.09s   cum=26.1min   ETA 182.8 min over 393 remaining
+[58/450] running: composite/n0.0/[9, 9, 9]/seed_103
+  ->  27.12s   cum=26.5min   ETA 182.3 min over 392 remaining
+[59/450] running: composite/n0.0/[9, 9, 9]/seed_104
+  ->  27.23s   cum=27.0min   ETA 181.7 min over 391 remaining
+[60/450] running: composite/n0.0/[9, 9, 9]/seed_105
+  ->  27.98s   cum=27.4min   ETA 181.3 min over 390 remaining
+[61/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_101
+  ->  28.65s   cum=27.9min   ETA 180.9 min over 389 remaining
+[62/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_102
+  ->  28.41s   cum=28.4min   ETA 180.5 min over 388 remaining
+[63/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_103
+  ->  28.34s   cum=28.8min   ETA 180.1 min over 387 remaining
+[64/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_104
+  ->  28.80s   cum=29.3min   ETA 179.7 min over 386 remaining
+[65/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_105
+  ->  28.31s   cum=29.8min   ETA 179.3 min over 385 remaining
+[66/450] running: composite/n0.2/[25, 25, 25, 25]/seed_101
+  ->  28.83s   cum=30.3min   ETA 178.9 min over 384 remaining
+[67/450] running: composite/n0.2/[25, 25, 25, 25]/seed_102
+  ->  28.75s   cum=30.8min   ETA 178.5 min over 383 remaining
+[68/450] running: composite/n0.2/[25, 25, 25, 25]/seed_103
+  ->  28.21s   cum=31.2min   ETA 178.1 min over 382 remaining
+[69/450] running: composite/n0.2/[25, 25, 25, 25]/seed_104
+  ->  28.27s   cum=31.7min   ETA 177.6 min over 381 remaining
+[70/450] running: composite/n0.2/[25, 25, 25, 25]/seed_105
+  ->  28.26s   cum=32.2min   ETA 177.2 min over 380 remaining
+[71/450] running: composite/n0.2/[25, 25, 25]/seed_101
+  ->  28.16s   cum=32.6min   ETA 176.7 min over 379 remaining
+[72/450] running: composite/n0.2/[25, 25, 25]/seed_102
+  ->  28.33s   cum=33.1min   ETA 176.3 min over 378 remaining
+[73/450] running: composite/n0.2/[25, 25, 25]/seed_103
+  ->  28.34s   cum=33.6min   ETA 175.9 min over 377 remaining
+[74/450] running: composite/n0.2/[25, 25, 25]/seed_104
+  ->  28.35s   cum=34.1min   ETA 175.4 min over 376 remaining
+[75/450] running: composite/n0.2/[25, 25, 25]/seed_105
+  ->  28.93s   cum=34.5min   ETA 175.0 min over 375 remaining
+[76/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_101
+  ->  26.38s   cum=35.0min   ETA 174.4 min over 374 remaining
+[77/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_102
+  ->  27.53s   cum=35.4min   ETA 173.9 min over 373 remaining
+[78/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_103
+  ->  26.56s   cum=35.9min   ETA 173.3 min over 372 remaining
+[79/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_104
+  ->  27.27s   cum=36.3min   ETA 172.8 min over 371 remaining
+[80/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_105
+  ->  27.25s   cum=36.8min   ETA 172.3 min over 370 remaining
+[81/450] running: composite/n0.2/[5, 5, 5, 5]/seed_101
+  ->  26.48s   cum=37.2min   ETA 171.7 min over 369 remaining
+[82/450] running: composite/n0.2/[5, 5, 5, 5]/seed_102
+  ->  26.58s   cum=37.7min   ETA 171.2 min over 368 remaining
+[83/450] running: composite/n0.2/[5, 5, 5, 5]/seed_103
+  ->  26.60s   cum=38.1min   ETA 170.6 min over 367 remaining
+[84/450] running: composite/n0.2/[5, 5, 5, 5]/seed_104
+  ->  26.59s   cum=38.6min   ETA 170.0 min over 366 remaining
+[85/450] running: composite/n0.2/[5, 5, 5, 5]/seed_105
+  ->  27.16s   cum=39.0min   ETA 169.5 min over 365 remaining
+[86/450] running: composite/n0.2/[5, 5, 5]/seed_101
+  ->  27.55s   cum=39.5min   ETA 169.0 min over 364 remaining
+[87/450] running: composite/n0.2/[5, 5, 5]/seed_102
+  ->  27.05s   cum=39.9min   ETA 168.5 min over 363 remaining
+[88/450] running: composite/n0.2/[5, 5, 5]/seed_103
+  ->  26.67s   cum=40.4min   ETA 168.0 min over 362 remaining
+[89/450] running: composite/n0.2/[5, 5, 5]/seed_104
+  ->  26.27s   cum=40.8min   ETA 167.4 min over 361 remaining
+[90/450] running: composite/n0.2/[5, 5, 5]/seed_105
+  ->  26.37s   cum=41.2min   ETA 166.8 min over 360 remaining
+[91/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_101
+  ->  26.61s   cum=41.7min   ETA 166.3 min over 359 remaining
+[92/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_102
+  ->  26.75s   cum=42.1min   ETA 165.8 min over 358 remaining
+[93/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_103
+  ->  26.98s   cum=42.6min   ETA 165.2 min over 357 remaining
+[94/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_104
+  ->  26.76s   cum=43.0min   ETA 164.7 min over 356 remaining
+[95/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_105
+  ->  27.08s   cum=43.5min   ETA 164.2 min over 355 remaining
+[96/450] running: composite/n0.2/[7, 7, 7, 7]/seed_101
+  ->  26.86s   cum=43.9min   ETA 163.7 min over 354 remaining
+[97/450] running: composite/n0.2/[7, 7, 7, 7]/seed_102
+  ->  27.40s   cum=44.4min   ETA 163.2 min over 353 remaining
+[98/450] running: composite/n0.2/[7, 7, 7, 7]/seed_103
+  ->  27.40s   cum=44.8min   ETA 162.7 min over 352 remaining
+[99/450] running: composite/n0.2/[7, 7, 7, 7]/seed_104
+  ->  26.72s   cum=45.3min   ETA 162.2 min over 351 remaining
+[100/450] running: composite/n0.2/[7, 7, 7, 7]/seed_105
+  ->  27.45s   cum=45.7min   ETA 161.7 min over 350 remaining
+[101/450] running: composite/n0.2/[7, 7, 7]/seed_101
+  ->  26.94s   cum=46.2min   ETA 161.2 min over 349 remaining
+[102/450] running: composite/n0.2/[7, 7, 7]/seed_102
+  ->  26.87s   cum=46.6min   ETA 160.7 min over 348 remaining
+[103/450] running: composite/n0.2/[7, 7, 7]/seed_103
+  ->  27.65s   cum=47.1min   ETA 160.2 min over 347 remaining
+[104/450] running: composite/n0.2/[7, 7, 7]/seed_104
+  ->  26.82s   cum=47.5min   ETA 159.7 min over 346 remaining
+[105/450] running: composite/n0.2/[7, 7, 7]/seed_105
+  ->  27.01s   cum=48.0min   ETA 159.2 min over 345 remaining
+[106/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_101
+  ->  27.07s   cum=48.5min   ETA 158.7 min over 344 remaining
+[107/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_102
+  ->  27.10s   cum=48.9min   ETA 158.2 min over 343 remaining
+[108/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_103
+  ->  26.92s   cum=49.4min   ETA 157.7 min over 342 remaining
+[109/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_104
+  ->  26.93s   cum=49.8min   ETA 157.2 min over 341 remaining
+[110/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_105
+  ->  26.63s   cum=50.2min   ETA 156.7 min over 340 remaining
+[111/450] running: composite/n0.2/[9, 9, 9, 9]/seed_101
+  ->  27.57s   cum=50.7min   ETA 156.3 min over 339 remaining
+[112/450] running: composite/n0.2/[9, 9, 9, 9]/seed_102
+  ->  27.36s   cum=51.2min   ETA 155.8 min over 338 remaining
+[113/450] running: composite/n0.2/[9, 9, 9, 9]/seed_103
+  ->  26.73s   cum=51.6min   ETA 155.3 min over 337 remaining
+[114/450] running: composite/n0.2/[9, 9, 9, 9]/seed_104
+  ->  26.83s   cum=52.1min   ETA 154.8 min over 336 remaining
+[115/450] running: composite/n0.2/[9, 9, 9, 9]/seed_105
+  ->  27.38s   cum=52.5min   ETA 154.3 min over 335 remaining
+[116/450] running: composite/n0.2/[9, 9, 9]/seed_101
+  ->  26.86s   cum=53.0min   ETA 153.8 min over 334 remaining
+[117/450] running: composite/n0.2/[9, 9, 9]/seed_102
+  ->  27.16s   cum=53.4min   ETA 153.3 min over 333 remaining
+[118/450] running: composite/n0.2/[9, 9, 9]/seed_103
+  ->  26.79s   cum=53.9min   ETA 152.8 min over 332 remaining
+[119/450] running: composite/n0.2/[9, 9, 9]/seed_104
+  ->  26.91s   cum=54.3min   ETA 152.3 min over 331 remaining
+[120/450] running: composite/n0.2/[9, 9, 9]/seed_105
+  ->  26.79s   cum=54.8min   ETA 151.8 min over 330 remaining
+[121/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_101
+  ->  28.63s   cum=55.2min   ETA 151.4 min over 329 remaining
+[122/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_102
+  ->  28.66s   cum=55.7min   ETA 151.0 min over 328 remaining
+[123/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_103
+  ->  28.21s   cum=56.2min   ETA 150.6 min over 327 remaining
+[124/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_104
+  ->  28.40s   cum=56.6min   ETA 150.1 min over 326 remaining
+[125/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_105
+  ->  28.14s   cum=57.1min   ETA 149.7 min over 325 remaining
+[126/450] running: composite/n0.4/[25, 25, 25, 25]/seed_101
+  ->  28.27s   cum=57.6min   ETA 149.3 min over 324 remaining
+[127/450] running: composite/n0.4/[25, 25, 25, 25]/seed_102
+  ->  28.30s   cum=58.1min   ETA 148.8 min over 323 remaining
+[128/450] running: composite/n0.4/[25, 25, 25, 25]/seed_103
+  ->  28.43s   cum=58.5min   ETA 148.4 min over 322 remaining
+[129/450] running: composite/n0.4/[25, 25, 25, 25]/seed_104
+  ->  28.15s   cum=59.0min   ETA 148.0 min over 321 remaining
+[130/450] running: composite/n0.4/[25, 25, 25, 25]/seed_105
+  ->  28.87s   cum=59.5min   ETA 147.6 min over 320 remaining
+[131/450] running: composite/n0.4/[25, 25, 25]/seed_101
+  ->  28.38s   cum=60.0min   ETA 147.1 min over 319 remaining
+[132/450] running: composite/n0.4/[25, 25, 25]/seed_102
+  ->  29.05s   cum=60.4min   ETA 146.7 min over 318 remaining
+[133/450] running: composite/n0.4/[25, 25, 25]/seed_103
+  ->  29.15s   cum=60.9min   ETA 146.3 min over 317 remaining
+[134/450] running: composite/n0.4/[25, 25, 25]/seed_104
+  ->  28.39s   cum=61.4min   ETA 145.9 min over 316 remaining
+[135/450] running: composite/n0.4/[25, 25, 25]/seed_105
+  ->  28.29s   cum=61.9min   ETA 145.4 min over 315 remaining
+[136/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_101
+  ->  26.71s   cum=62.3min   ETA 144.9 min over 314 remaining
+[137/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_102
+  ->  27.17s   cum=62.8min   ETA 144.5 min over 313 remaining
+[138/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_103
+  ->  26.85s   cum=63.2min   ETA 144.0 min over 312 remaining
+[139/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_104
+  ->  26.76s   cum=63.7min   ETA 143.5 min over 311 remaining
+[140/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_105
+  ->  26.54s   cum=64.1min   ETA 143.0 min over 310 remaining
+[141/450] running: composite/n0.4/[5, 5, 5, 5]/seed_101
+  ->  26.61s   cum=64.5min   ETA 142.5 min over 309 remaining
+[142/450] running: composite/n0.4/[5, 5, 5, 5]/seed_102
+  ->  26.50s   cum=65.0min   ETA 142.0 min over 308 remaining
+[143/450] running: composite/n0.4/[5, 5, 5, 5]/seed_103
+  ->  27.14s   cum=65.4min   ETA 141.5 min over 307 remaining
+[144/450] running: composite/n0.4/[5, 5, 5, 5]/seed_104
+  ->  26.48s   cum=65.9min   ETA 141.0 min over 306 remaining
+[145/450] running: composite/n0.4/[5, 5, 5, 5]/seed_105
+  ->  27.27s   cum=66.3min   ETA 140.5 min over 305 remaining
+[146/450] running: composite/n0.4/[5, 5, 5]/seed_101
+  ->  27.23s   cum=66.8min   ETA 140.0 min over 304 remaining
+[147/450] running: composite/n0.4/[5, 5, 5]/seed_102
+  ->  27.04s   cum=67.2min   ETA 139.6 min over 303 remaining
+[148/450] running: composite/n0.4/[5, 5, 5]/seed_103
+  ->  26.54s   cum=67.7min   ETA 139.1 min over 302 remaining
+[149/450] running: composite/n0.4/[5, 5, 5]/seed_104
+  ->  27.22s   cum=68.1min   ETA 138.6 min over 301 remaining
+[150/450] running: composite/n0.4/[5, 5, 5]/seed_105
+  ->  26.80s   cum=68.6min   ETA 138.1 min over 300 remaining
+[151/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_101
+  ->  26.61s   cum=69.0min   ETA 137.6 min over 299 remaining
+[152/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_102
+  ->  27.02s   cum=69.5min   ETA 137.1 min over 298 remaining
+[153/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_103
+  ->  26.78s   cum=69.9min   ETA 136.6 min over 297 remaining
+[154/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_104
+  ->  26.77s   cum=70.4min   ETA 136.1 min over 296 remaining
+[155/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_105
+  ->  27.26s   cum=70.8min   ETA 135.7 min over 295 remaining
+[156/450] running: composite/n0.4/[7, 7, 7, 7]/seed_101
+  ->  26.89s   cum=71.3min   ETA 135.2 min over 294 remaining
+[157/450] running: composite/n0.4/[7, 7, 7, 7]/seed_102
+  ->  27.43s   cum=71.7min   ETA 134.7 min over 293 remaining
+[158/450] running: composite/n0.4/[7, 7, 7, 7]/seed_103
+  ->  27.57s   cum=72.2min   ETA 134.3 min over 292 remaining
+[159/450] running: composite/n0.4/[7, 7, 7, 7]/seed_104
+  ->  26.92s   cum=72.6min   ETA 133.8 min over 291 remaining
+[160/450] running: composite/n0.4/[7, 7, 7, 7]/seed_105
+  ->  27.43s   cum=73.1min   ETA 133.3 min over 290 remaining
+[161/450] running: composite/n0.4/[7, 7, 7]/seed_101
+  ->  27.20s   cum=73.6min   ETA 132.9 min over 289 remaining
+[162/450] running: composite/n0.4/[7, 7, 7]/seed_102
+  ->  26.80s   cum=74.0min   ETA 132.4 min over 288 remaining
+[163/450] running: composite/n0.4/[7, 7, 7]/seed_103
+  ->  27.08s   cum=74.4min   ETA 131.9 min over 287 remaining
+[164/450] running: composite/n0.4/[7, 7, 7]/seed_104
+  ->  27.07s   cum=74.9min   ETA 131.4 min over 286 remaining
+[165/450] running: composite/n0.4/[7, 7, 7]/seed_105
+  ->  27.24s   cum=75.4min   ETA 131.0 min over 285 remaining
+[166/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_101
+  ->  27.38s   cum=75.8min   ETA 130.5 min over 284 remaining
+[167/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_102
+  ->  27.10s   cum=76.3min   ETA 130.0 min over 283 remaining
+[168/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_103
+  ->  27.35s   cum=76.7min   ETA 129.5 min over 282 remaining
+[169/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_104
+  ->  26.66s   cum=77.2min   ETA 129.1 min over 281 remaining
+[170/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_105
+  ->  26.67s   cum=77.6min   ETA 128.6 min over 280 remaining
+[171/450] running: composite/n0.4/[9, 9, 9, 9]/seed_101
+  ->  26.71s   cum=78.1min   ETA 128.1 min over 279 remaining
+[172/450] running: composite/n0.4/[9, 9, 9, 9]/seed_102
+  ->  27.01s   cum=78.5min   ETA 127.6 min over 278 remaining
+[173/450] running: composite/n0.4/[9, 9, 9, 9]/seed_103
+  ->  27.44s   cum=79.0min   ETA 127.2 min over 277 remaining
+[174/450] running: composite/n0.4/[9, 9, 9, 9]/seed_104
+  ->  28.16s   cum=79.4min   ETA 126.7 min over 276 remaining
+[175/450] running: composite/n0.4/[9, 9, 9, 9]/seed_105
+  ->  28.48s   cum=79.9min   ETA 126.3 min over 275 remaining
+[176/450] running: composite/n0.4/[9, 9, 9]/seed_101
+  ->  28.28s   cum=80.4min   ETA 125.8 min over 274 remaining
+[177/450] running: composite/n0.4/[9, 9, 9]/seed_102
+  ->  28.02s   cum=80.8min   ETA 125.4 min over 273 remaining
+[178/450] running: composite/n0.4/[9, 9, 9]/seed_103
+  ->  27.46s   cum=81.3min   ETA 124.9 min over 272 remaining
+[179/450] running: composite/n0.4/[9, 9, 9]/seed_104
+  ->  27.41s   cum=81.8min   ETA 124.5 min over 271 remaining
+[180/450] running: composite/n0.4/[9, 9, 9]/seed_105
+  ->  27.45s   cum=82.2min   ETA 124.0 min over 270 remaining
+[181/450] skip (exists): wbc/n0.0/[10, 10, 10, 10, 10]/seed_101
+Fetching UCI dataset ID=17...
+  probe[wbc]: wbc full set (N=569); train portion was seen during training. No holdout.
+[182/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_102
+  ->  25.93s   cum=82.6min   ETA 123.1 min over 268 remaining
+[183/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_103
+  ->  26.29s   cum=83.1min   ETA 122.6 min over 267 remaining
+[184/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_104
+  ->  26.63s   cum=83.5min   ETA 122.1 min over 266 remaining
+[185/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_105
+  ->  26.05s   cum=84.0min   ETA 121.6 min over 265 remaining
+[186/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_101
+  ->  26.22s   cum=84.4min   ETA 121.1 min over 264 remaining
+[187/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_102
+  ->  26.02s   cum=84.8min   ETA 120.6 min over 263 remaining
+[188/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_103
+  ->  25.87s   cum=85.3min   ETA 120.1 min over 262 remaining
+[189/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_104
+  ->  26.13s   cum=85.7min   ETA 119.6 min over 261 remaining
+[190/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_105
+  ->  26.05s   cum=86.1min   ETA 119.1 min over 260 remaining
+[191/450] running: wbc/n0.0/[10, 10, 10]/seed_101
+  ->  25.74s   cum=86.6min   ETA 118.6 min over 259 remaining
+[192/450] running: wbc/n0.0/[10, 10, 10]/seed_102
+  ->  25.87s   cum=87.0min   ETA 118.1 min over 258 remaining
+[193/450] running: wbc/n0.0/[10, 10, 10]/seed_103
+  ->  25.98s   cum=87.4min   ETA 117.6 min over 257 remaining
+[194/450] running: wbc/n0.0/[10, 10, 10]/seed_104
+  ->  25.91s   cum=87.9min   ETA 117.1 min over 256 remaining
+[195/450] running: wbc/n0.0/[10, 10, 10]/seed_105
+  ->  25.89s   cum=88.3min   ETA 116.7 min over 255 remaining
+[196/450] running: wbc/n0.0/[100, 100, 100]/seed_101
+  ->  31.06s   cum=88.8min   ETA 116.3 min over 254 remaining
+[197/450] running: wbc/n0.0/[100, 100, 100]/seed_102
+  ->  31.10s   cum=89.3min   ETA 115.9 min over 253 remaining
+[198/450] running: wbc/n0.0/[100, 100, 100]/seed_103
+  ->  31.31s   cum=89.8min   ETA 115.5 min over 252 remaining
+[199/450] running: wbc/n0.0/[100, 100, 100]/seed_104
+  ->  31.16s   cum=90.4min   ETA 115.1 min over 251 remaining
+[200/450] running: wbc/n0.0/[100, 100, 100]/seed_105
+  ->  30.93s   cum=90.9min   ETA 114.8 min over 250 remaining
+[201/450] running: wbc/n0.0/[15, 15, 15]/seed_101
+  ->  26.41s   cum=91.3min   ETA 114.3 min over 249 remaining
+[202/450] running: wbc/n0.0/[15, 15, 15]/seed_102
+  ->  26.43s   cum=91.8min   ETA 113.8 min over 248 remaining
+[203/450] running: wbc/n0.0/[15, 15, 15]/seed_103
+  ->  26.42s   cum=92.2min   ETA 113.3 min over 247 remaining
+[204/450] running: wbc/n0.0/[15, 15, 15]/seed_104
+  ->  26.75s   cum=92.7min   ETA 112.8 min over 246 remaining
+[205/450] running: wbc/n0.0/[15, 15, 15]/seed_105
+  ->  26.46s   cum=93.1min   ETA 112.4 min over 245 remaining
+[206/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_101
+  ->  27.21s   cum=93.5min   ETA 111.9 min over 244 remaining
+[207/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_102
+  ->  27.17s   cum=94.0min   ETA 111.4 min over 243 remaining
+[208/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_103
+  ->  27.82s   cum=94.5min   ETA 111.0 min over 242 remaining/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (118) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (253) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (244) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+
+[209/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_104
+  ->  27.15s   cum=94.9min   ETA 110.5 min over 241 remaining
+[210/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_105
+  ->  27.19s   cum=95.4min   ETA 110.0 min over 240 remaining
+[211/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_101
+  ->  27.00s   cum=95.8min   ETA 109.6 min over 239 remaining
+[212/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_102
+  ->  27.12s   cum=96.3min   ETA 109.1 min over 238 remaining
+[213/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_103
+  ->  27.12s   cum=96.7min   ETA 108.6 min over 237 remaining
+[214/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_104
+  ->  26.86s   cum=97.2min   ETA 108.2 min over 236 remaining
+[215/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_105
+  ->  27.04s   cum=97.6min   ETA 107.7 min over 235 remaining
+[216/450] running: wbc/n0.0/[25, 25, 25]/seed_101
+  ->  26.82s   cum=98.1min   ETA 107.2 min over 234 remaining
+[217/450] running: wbc/n0.0/[25, 25, 25]/seed_102
+  ->  26.95s   cum=98.5min   ETA 106.8 min over 233 remaining
+[218/450] running: wbc/n0.0/[25, 25, 25]/seed_103
+  ->  27.14s   cum=99.0min   ETA 106.3 min over 232 remaining
+[219/450] running: wbc/n0.0/[25, 25, 25]/seed_104
+  ->  26.99s   cum=99.4min   ETA 105.8 min over 231 remaining
+[220/450] running: wbc/n0.0/[25, 25, 25]/seed_105
+  ->  27.17s   cum=99.9min   ETA 105.4 min over 230 remaining
+[221/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_101
+  ->  25.90s   cum=100.3min   ETA 104.9 min over 229 remaining
+[222/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_102
+  ->  25.70s   cum=100.7min   ETA 104.4 min over 228 remaining
+[223/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_103
+  ->  25.71s   cum=101.2min   ETA 103.9 min over 227 remaining
+[224/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_104
+  ->  27.22s   cum=101.6min   ETA 103.4 min over 226 remaining
+[225/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_105
+  ->  26.38s   cum=102.1min   ETA 103.0 min over 225 remaining
+[226/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_101
+  ->  25.70s   cum=102.5min   ETA 102.5 min over 224 remaining
+[227/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_102
+  ->  25.71s   cum=102.9min   ETA 102.0 min over 223 remaining
+[228/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_103
+  ->  25.80s   cum=103.3min   ETA 101.5 min over 222 remaining
+[229/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_104
+  ->  26.90s   cum=103.8min   ETA 101.0 min over 221 remaining
+[230/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_105
+  ->  32.40s   cum=104.3min   ETA 100.7 min over 220 remaining
+[231/450] running: wbc/n0.0/[5, 5, 5]/seed_101
+  ->  27.35s   cum=104.8min   ETA 100.2 min over 219 remaining
+[232/450] running: wbc/n0.0/[5, 5, 5]/seed_102
+  ->  27.08s   cum=105.2min   ETA 99.7 min over 218 remaining
+[233/450] running: wbc/n0.0/[5, 5, 5]/seed_103
+  ->  27.20s   cum=105.7min   ETA 99.3 min over 217 remaining
+[234/450] running: wbc/n0.0/[5, 5, 5]/seed_104
+  ->  26.91s   cum=106.1min   ETA 98.8 min over 216 remaining
+[235/450] running: wbc/n0.0/[5, 5, 5]/seed_105
+  ->  26.15s   cum=106.6min   ETA 98.3 min over 215 remaining
+[236/450] running: wbc/n0.0/[50, 50, 50]/seed_101
+  ->  29.24s   cum=107.1min   ETA 97.9 min over 214 remaining
+[237/450] running: wbc/n0.0/[50, 50, 50]/seed_102
+  ->  29.31s   cum=107.5min   ETA 97.5 min over 213 remaining
+[238/450] running: wbc/n0.0/[50, 50, 50]/seed_103
+  ->  29.02s   cum=108.0min   ETA 97.0 min over 212 remaining
+[239/450] running: wbc/n0.0/[50, 50, 50]/seed_104
+  ->  28.84s   cum=108.5min   ETA 96.6 min over 211 remaining
+[240/450] running: wbc/n0.0/[50, 50, 50]/seed_105
+  ->  29.26s   cum=109.0min   ETA 96.2 min over 210 remaining
+[241/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_101
+  ->  27.05s   cum=109.5min   ETA 95.7 min over 209 remaining
+[242/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_102
+  ->  26.89s   cum=109.9min   ETA 95.2 min over 208 remaining
+[243/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_103
+  ->  26.38s   cum=110.3min   ETA 94.8 min over 207 remaining
+[244/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_104
+  ->  26.00s   cum=110.8min   ETA 94.3 min over 206 remaining
+[245/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_105
+  ->  25.99s   cum=111.2min   ETA 93.8 min over 205 remaining
+[246/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_101
+  ->  25.96s   cum=111.6min   ETA 93.3 min over 204 remaining
+[247/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_102
+  ->  26.22s   cum=112.1min   ETA 92.9 min over 203 remaining
+[248/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_103
+  ->  26.41s   cum=112.5min   ETA 92.4 min over 202 remaining
+[249/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_104
+  ->  26.05s   cum=112.9min   ETA 91.9 min over 201 remaining
+[250/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_105
+  ->  25.97s   cum=113.4min   ETA 91.4 min over 200 remaining
+[251/450] running: wbc/n0.0/[7, 7, 7]/seed_101
+  ->  25.98s   cum=113.8min   ETA 91.0 min over 199 remaining
+[252/450] running: wbc/n0.0/[7, 7, 7]/seed_102
+  ->  26.52s   cum=114.3min   ETA 90.5 min over 198 remaining
+[253/450] running: wbc/n0.0/[7, 7, 7]/seed_103
+  ->  26.49s   cum=114.7min   ETA 90.0 min over 197 remaining
+[254/450] running: wbc/n0.0/[7, 7, 7]/seed_104
+  ->  25.94s   cum=115.1min   ETA 89.5 min over 196 remaining
+[255/450] running: wbc/n0.0/[7, 7, 7]/seed_105
+  ->  26.11s   cum=115.6min   ETA 89.1 min over 195 remaining
+[256/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_101
+  ->  26.32s   cum=116.0min   ETA 88.6 min over 194 remaining
+[257/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_102
+  ->  26.25s   cum=116.4min   ETA 88.1 min over 193 remaining
+[258/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_103
+  ->  26.14s   cum=116.9min   ETA 87.7 min over 192 remaining
+[259/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_104
+  ->  26.01s   cum=117.3min   ETA 87.2 min over 191 remaining
+[260/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_105
+  ->  25.97s   cum=117.7min   ETA 86.7 min over 190 remaining
+[261/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_101
+  ->  26.03s   cum=118.2min   ETA 86.2 min over 189 remaining
+[262/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_102
+  ->  26.21s   cum=118.6min   ETA 85.8 min over 188 remaining
+[263/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_103
+  ->  26.52s   cum=119.1min   ETA 85.3 min over 187 remaining
+[264/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_104
+  ->  26.32s   cum=119.5min   ETA 84.8 min over 186 remaining
+[265/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_105
+  ->  25.91s   cum=119.9min   ETA 84.4 min over 185 remaining
+[266/450] running: wbc/n0.0/[9, 9, 9]/seed_101
+  ->  26.08s   cum=120.4min   ETA 83.9 min over 184 remaining
+[267/450] running: wbc/n0.0/[9, 9, 9]/seed_102
+  ->  25.97s   cum=120.8min   ETA 83.4 min over 183 remaining
+[268/450] running: wbc/n0.0/[9, 9, 9]/seed_103
+  ->  26.30s   cum=121.2min   ETA 82.9 min over 182 remaining
+[269/450] running: wbc/n0.0/[9, 9, 9]/seed_104
+  ->  26.00s   cum=121.7min   ETA 82.5 min over 181 remaining
+[270/450] running: wbc/n0.0/[9, 9, 9]/seed_105
+  ->  25.93s   cum=122.1min   ETA 82.0 min over 180 remaining
+[271/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_101
+  ->  25.97s   cum=122.5min   ETA 81.5 min over 179 remaining
+[272/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_102
+  ->  27.24s   cum=123.0min   ETA 81.1 min over 178 remaining
+[273/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_103
+  ->  26.52s   cum=123.4min   ETA 80.6 min over 177 remaining
+[274/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_104
+  ->  27.50s   cum=123.9min   ETA 80.2 min over 176 remaining
+[275/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_105
+  ->  27.23s   cum=124.3min   ETA 79.7 min over 175 remaining
+[276/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_101
+  ->  27.27s   cum=124.8min   ETA 79.2 min over 174 remaining
+[277/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_102
+  ->  26.22s   cum=125.2min   ETA 78.8 min over 173 remaining
+[278/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_103
+  ->  26.60s   cum=125.7min   ETA 78.3 min over 172 remaining
+[279/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_104
+  ->  26.37s   cum=126.1min   ETA 77.9 min over 171 remaining
+[280/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_105
+  ->  26.55s   cum=126.6min   ETA 77.4 min over 170 remaining
+[281/450] running: wbc/n0.2/[10, 10, 10]/seed_101/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (123) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (189) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (182) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+
+  ->  26.51s   cum=127.0min   ETA 76.9 min over 169 remaining
+[282/450] running: wbc/n0.2/[10, 10, 10]/seed_102
+  ->  27.04s   cum=127.4min   ETA 76.5 min over 168 remaining
+[283/450] running: wbc/n0.2/[10, 10, 10]/seed_103
+  ->  27.14s   cum=127.9min   ETA 76.0 min over 167 remaining
+[284/450] running: wbc/n0.2/[10, 10, 10]/seed_104
+  ->  27.85s   cum=128.4min   ETA 75.6 min over 166 remaining
+[285/450] running: wbc/n0.2/[10, 10, 10]/seed_105
+  ->  27.63s   cum=128.8min   ETA 75.1 min over 165 remaining
+[286/450] running: wbc/n0.2/[100, 100, 100]/seed_101
+  ->  33.26s   cum=129.4min   ETA 74.7 min over 164 remaining
+[287/450] running: wbc/n0.2/[100, 100, 100]/seed_102
+  ->  32.52s   cum=129.9min   ETA 74.3 min over 163 remaining
+[288/450] running: wbc/n0.2/[100, 100, 100]/seed_103
+  ->  31.52s   cum=130.4min   ETA 73.9 min over 162 remaining
+[289/450] running: wbc/n0.2/[100, 100, 100]/seed_104
+  ->  31.83s   cum=131.0min   ETA 73.5 min over 161 remaining
+[290/450] running: wbc/n0.2/[100, 100, 100]/seed_105
+  ->  31.84s   cum=131.5min   ETA 73.1 min over 160 remaining
+[291/450] running: wbc/n0.2/[15, 15, 15]/seed_101
+  ->  27.46s   cum=132.0min   ETA 72.6 min over 159 remaining
+[292/450] running: wbc/n0.2/[15, 15, 15]/seed_102
+  ->  27.70s   cum=132.4min   ETA 72.2 min over 158 remaining
+[293/450] running: wbc/n0.2/[15, 15, 15]/seed_103
+  ->  27.72s   cum=132.9min   ETA 71.7 min over 157 remaining
+[294/450] running: wbc/n0.2/[15, 15, 15]/seed_104
+  ->  27.47s   cum=133.3min   ETA 71.2 min over 156 remaining
+[295/450] running: wbc/n0.2/[15, 15, 15]/seed_105
+  ->  26.81s   cum=133.8min   ETA 70.8 min over 155 remaining
+[296/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_101
+  ->  27.13s   cum=134.2min   ETA 70.3 min over 154 remaining
+[297/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_102
+  ->  27.86s   cum=134.7min   ETA 69.9 min over 153 remaining
+[298/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_103
+  ->  27.62s   cum=135.2min   ETA 69.4 min over 152 remaining
+[299/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_104
+  ->  27.31s   cum=135.6min   ETA 69.0 min over 151 remaining
+[300/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_105
+  ->  27.10s   cum=136.1min   ETA 68.5 min over 150 remaining
+[301/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_101
+  ->  27.35s   cum=136.5min   ETA 68.0 min over 149 remaining
+[302/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_102
+  ->  27.79s   cum=137.0min   ETA 67.6 min over 148 remaining
+[303/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_103
+  ->  27.86s   cum=137.5min   ETA 67.1 min over 147 remaining
+[304/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_104
+  ->  28.14s   cum=137.9min   ETA 66.7 min over 146 remaining
+[305/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_105
+  ->  28.23s   cum=138.4min   ETA 66.2 min over 145 remaining
+[306/450] running: wbc/n0.2/[25, 25, 25]/seed_101
+  ->  27.91s   cum=138.9min   ETA 65.8 min over 144 remaining
+[307/450] running: wbc/n0.2/[25, 25, 25]/seed_102
+  ->  27.21s   cum=139.3min   ETA 65.3 min over 143 remaining
+[308/450] running: wbc/n0.2/[25, 25, 25]/seed_103
+  ->  27.04s   cum=139.8min   ETA 64.9 min over 142 remaining
+[309/450] running: wbc/n0.2/[25, 25, 25]/seed_104
+  ->  27.44s   cum=140.2min   ETA 64.4 min over 141 remaining
+[310/450] running: wbc/n0.2/[25, 25, 25]/seed_105
+  ->  28.03s   cum=140.7min   ETA 64.0 min over 140 remaining
+[311/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_101
+  ->  26.43s   cum=141.1min   ETA 63.5 min over 139 remaining
+[312/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_102
+  ->  26.98s   cum=141.6min   ETA 63.0 min over 138 remaining
+[313/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_103
+  ->  27.08s   cum=142.0min   ETA 62.6 min over 137 remaining
+[314/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_104
+  ->  26.47s   cum=142.5min   ETA 62.1 min over 136 remaining
+[315/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_105
+  ->  26.84s   cum=142.9min   ETA 61.6 min over 135 remaining
+[316/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_101
+  ->  26.71s   cum=143.4min   ETA 61.2 min over 134 remaining
+[317/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_102
+  ->  27.48s   cum=143.8min   ETA 60.7 min over 133 remaining
+[318/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_103
+  ->  26.96s   cum=144.3min   ETA 60.3 min over 132 remaining
+[319/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_104
+  ->  26.43s   cum=144.7min   ETA 59.8 min over 131 remaining
+[320/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_105
+  ->  27.22s   cum=145.2min   ETA 59.3 min over 130 remaining
+[321/450] running: wbc/n0.2/[5, 5, 5]/seed_101
+  ->  27.50s   cum=145.6min   ETA 58.9 min over 129 remaining
+[322/450] running: wbc/n0.2/[5, 5, 5]/seed_102
+  ->  27.17s   cum=146.1min   ETA 58.4 min over 128 remaining
+[323/450] running: wbc/n0.2/[5, 5, 5]/seed_103
+  ->  27.16s   cum=146.5min   ETA 58.0 min over 127 remaining
+[324/450] running: wbc/n0.2/[5, 5, 5]/seed_104
+  ->  27.36s   cum=147.0min   ETA 57.5 min over 126 remaining
+[325/450] running: wbc/n0.2/[5, 5, 5]/seed_105
+  ->  27.50s   cum=147.5min   ETA 57.1 min over 125 remaining
+[326/450] running: wbc/n0.2/[50, 50, 50]/seed_101
+  ->  29.02s   cum=147.9min   ETA 56.6 min over 124 remaining
+[327/450] running: wbc/n0.2/[50, 50, 50]/seed_102
+  ->  29.41s   cum=148.4min   ETA 56.2 min over 123 remaining
+[328/450] running: wbc/n0.2/[50, 50, 50]/seed_103
+  ->  29.92s   cum=148.9min   ETA 55.7 min over 122 remaining
+[329/450] running: wbc/n0.2/[50, 50, 50]/seed_104
+  ->  29.29s   cum=149.4min   ETA 55.3 min over 121 remaining
+[330/450] running: wbc/n0.2/[50, 50, 50]/seed_105
+  ->  29.91s   cum=149.9min   ETA 54.8 min over 120 remaining
+[331/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_101
+  ->  27.01s   cum=150.4min   ETA 54.4 min over 119 remaining
+[332/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_102
+  ->  27.36s   cum=150.8min   ETA 53.9 min over 118 remaining
+[333/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_103
+  ->  27.52s   cum=151.3min   ETA 53.5 min over 117 remaining
+[334/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_104
+  ->  26.45s   cum=151.7min   ETA 53.0 min over 116 remaining
+[335/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_105
+  ->  26.69s   cum=152.2min   ETA 52.5 min over 115 remaining
+[336/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_101
+  ->  26.62s   cum=152.6min   ETA 52.1 min over 114 remaining
+[337/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_102
+  ->  27.30s   cum=153.1min   ETA 51.6 min over 113 remaining
+[338/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_103
+  ->  26.98s   cum=153.5min   ETA 51.2 min over 112 remaining
+[339/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_104
+  ->  26.43s   cum=153.9min   ETA 50.7 min over 111 remaining
+[340/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_105
+  ->  26.91s   cum=154.4min   ETA 50.2 min over 110 remaining
+[341/450] running: wbc/n0.2/[7, 7, 7]/seed_101
+  ->  26.99s   cum=154.8min   ETA 49.8 min over 109 remaining
+[342/450] running: wbc/n0.2/[7, 7, 7]/seed_102
+  ->  26.96s   cum=155.3min   ETA 49.3 min over 108 remaining
+[343/450] running: wbc/n0.2/[7, 7, 7]/seed_103
+  ->  26.66s   cum=155.7min   ETA 48.9 min over 107 remaining
+[344/450] running: wbc/n0.2/[7, 7, 7]/seed_104
+  ->  27.20s   cum=156.2min   ETA 48.4 min over 106 remaining
+[345/450] running: wbc/n0.2/[7, 7, 7]/seed_105
+  ->  27.37s   cum=156.7min   ETA 48.0 min over 105 remaining
+[346/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_101
+  ->  27.46s   cum=157.1min   ETA 47.5 min over 104 remaining
+[347/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_102
+  ->  27.37s   cum=157.6min   ETA 47.0 min over 103 remaining
+[348/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_103
+  ->  27.10s   cum=158.0min   ETA 46.6 min over 102 remaining
+[349/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_104
+  ->  26.80s   cum=158.5min   ETA 46.1 min over 101 remaining
+[350/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_105
+  ->  27.20s   cum=158.9min   ETA 45.7 min over 100 remaining
+[351/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_101
+  ->  26.99s   cum=159.4min   ETA 45.2 min over 99 remaining
+[352/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_102
+  ->  26.83s   cum=159.8min   ETA 44.7 min over 98 remaining
+[353/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_103
+  ->  26.63s   cum=160.3min   ETA 44.3 min over 97 remaining/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (155) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (254) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (214) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (215) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+/home/johan/Documents/phd/WP1/geometric_binning_estimator/.venv/lib/python3.13/site-packages/sklearn/base.py:1389: ConvergenceWarning: Number of distinct clusters (176) found smaller than n_clusters (256). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+
+[354/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_104
+  ->  26.46s   cum=160.7min   ETA 43.8 min over 96 remaining
+[355/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_105
+  ->  27.10s   cum=161.1min   ETA 43.4 min over 95 remaining
+[356/450] running: wbc/n0.2/[9, 9, 9]/seed_101
+  ->  26.19s   cum=161.6min   ETA 42.9 min over 94 remaining
+[357/450] running: wbc/n0.2/[9, 9, 9]/seed_102
+  ->  27.00s   cum=162.0min   ETA 42.4 min over 93 remaining
+[358/450] running: wbc/n0.2/[9, 9, 9]/seed_103
+  ->  27.21s   cum=162.5min   ETA 42.0 min over 92 remaining
+[359/450] running: wbc/n0.2/[9, 9, 9]/seed_104
+  ->  26.48s   cum=162.9min   ETA 41.5 min over 91 remaining
+[360/450] running: wbc/n0.2/[9, 9, 9]/seed_105
+  ->  26.85s   cum=163.4min   ETA 41.1 min over 90 remaining
+[361/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_101
+  ->  26.26s   cum=163.8min   ETA 40.6 min over 89 remaining
+[362/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_102
+  ->  26.12s   cum=164.3min   ETA 40.2 min over 88 remaining
+[363/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_103
+  ->  26.44s   cum=164.7min   ETA 39.7 min over 87 remaining
+[364/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_104
+  ->  26.03s   cum=165.1min   ETA 39.2 min over 86 remaining
+[365/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_105
+  ->  26.37s   cum=165.6min   ETA 38.8 min over 85 remaining
+[366/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_101
+  ->  27.06s   cum=166.0min   ETA 38.3 min over 84 remaining
+[367/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_102
+  ->  26.69s   cum=166.5min   ETA 37.9 min over 83 remaining
+[368/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_103
+  ->  25.69s   cum=166.9min   ETA 37.4 min over 82 remaining
+[369/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_104
+  ->  26.45s   cum=167.3min   ETA 36.9 min over 81 remaining
+[370/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_105
+  ->  25.93s   cum=167.8min   ETA 36.5 min over 80 remaining
+[371/450] running: wbc/n0.4/[10, 10, 10]/seed_101
+  ->  26.38s   cum=168.2min   ETA 36.0 min over 79 remaining
+[372/450] running: wbc/n0.4/[10, 10, 10]/seed_102
+  ->  26.67s   cum=168.6min   ETA 35.6 min over 78 remaining
+[373/450] running: wbc/n0.4/[10, 10, 10]/seed_103
+  ->  26.44s   cum=169.1min   ETA 35.1 min over 77 remaining
+[374/450] running: wbc/n0.4/[10, 10, 10]/seed_104
+  ->  25.88s   cum=169.5min   ETA 34.6 min over 76 remaining
+[375/450] running: wbc/n0.4/[10, 10, 10]/seed_105
+  ->  26.02s   cum=170.0min   ETA 34.2 min over 75 remaining
+[376/450] running: wbc/n0.4/[100, 100, 100]/seed_101
+  ->  31.33s   cum=170.5min   ETA 33.7 min over 74 remaining
+[377/450] running: wbc/n0.4/[100, 100, 100]/seed_102
+  ->  31.62s   cum=171.0min   ETA 33.3 min over 73 remaining
+[378/450] running: wbc/n0.4/[100, 100, 100]/seed_103
+  ->  31.21s   cum=171.5min   ETA 32.8 min over 72 remaining
+[379/450] running: wbc/n0.4/[100, 100, 100]/seed_104
+  ->  31.80s   cum=172.1min   ETA 32.4 min over 71 remaining
+[380/450] running: wbc/n0.4/[100, 100, 100]/seed_105
+  ->  31.79s   cum=172.6min   ETA 32.0 min over 70 remaining
+[381/450] running: wbc/n0.4/[15, 15, 15]/seed_101
+  ->  26.37s   cum=173.0min   ETA 31.5 min over 69 remaining
+[382/450] running: wbc/n0.4/[15, 15, 15]/seed_102
+  ->  27.47s   cum=173.5min   ETA 31.0 min over 68 remaining
+[383/450] running: wbc/n0.4/[15, 15, 15]/seed_103
+  ->  26.65s   cum=173.9min   ETA 30.6 min over 67 remaining
+[384/450] running: wbc/n0.4/[15, 15, 15]/seed_104
+  ->  26.23s   cum=174.4min   ETA 30.1 min over 66 remaining
+[385/450] running: wbc/n0.4/[15, 15, 15]/seed_105
+  ->  26.16s   cum=174.8min   ETA 29.7 min over 65 remaining
+[386/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_101
+  ->  27.15s   cum=175.2min   ETA 29.2 min over 64 remaining
+[387/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_102
+  ->  27.41s   cum=175.7min   ETA 28.8 min over 63 remaining
+[388/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_103
+  ->  27.11s   cum=176.2min   ETA 28.3 min over 62 remaining
+[389/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_104
+  ->  27.43s   cum=176.6min   ETA 27.8 min over 61 remaining
+[390/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_105
+  ->  26.98s   cum=177.1min   ETA 27.4 min over 60 remaining
+[391/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_101
+  ->  28.19s   cum=177.5min   ETA 26.9 min over 59 remaining
+[392/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_102
+  ->  27.75s   cum=178.0min   ETA 26.5 min over 58 remaining
+[393/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_103
+  ->  27.39s   cum=178.5min   ETA 26.0 min over 57 remaining
+[394/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_104
+  ->  26.89s   cum=178.9min   ETA 25.6 min over 56 remaining
+[395/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_105
+  ->  26.84s   cum=179.3min   ETA 25.1 min over 55 remaining
+[396/450] running: wbc/n0.4/[25, 25, 25]/seed_101
+  ->  26.63s   cum=179.8min   ETA 24.6 min over 54 remaining
+[397/450] running: wbc/n0.4/[25, 25, 25]/seed_102
+  ->  27.14s   cum=180.2min   ETA 24.2 min over 53 remaining
+[398/450] running: wbc/n0.4/[25, 25, 25]/seed_103
+  ->  27.42s   cum=180.7min   ETA 23.7 min over 52 remaining
+[399/450] running: wbc/n0.4/[25, 25, 25]/seed_104
+  ->  27.11s   cum=181.2min   ETA 23.3 min over 51 remaining
+[400/450] running: wbc/n0.4/[25, 25, 25]/seed_105
+  ->  27.56s   cum=181.6min   ETA 22.8 min over 50 remaining
+[401/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_101
+  ->  26.55s   cum=182.1min   ETA 22.4 min over 49 remaining
+[402/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_102
+  ->  26.04s   cum=182.5min   ETA 21.9 min over 48 remaining
+[403/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_103
+  ->  25.89s   cum=182.9min   ETA 21.4 min over 47 remaining
+[404/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_104
+  ->  26.47s   cum=183.4min   ETA 21.0 min over 46 remaining
+[405/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_105
+  ->  25.79s   cum=183.8min   ETA 20.5 min over 45 remaining
+[406/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_101
+  ->  26.23s   cum=184.2min   ETA 20.1 min over 44 remaining
+[407/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_102
+  ->  25.81s   cum=184.7min   ETA 19.6 min over 43 remaining
+[408/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_103
+  ->  25.76s   cum=185.1min   ETA 19.1 min over 42 remaining
+[409/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_104
+  ->  26.11s   cum=185.5min   ETA 18.7 min over 41 remaining
+[410/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_105
+  ->  25.86s   cum=186.0min   ETA 18.2 min over 40 remaining
+[411/450] running: wbc/n0.4/[5, 5, 5]/seed_101
+  ->  26.36s   cum=186.4min   ETA 17.8 min over 39 remaining
+[412/450] running: wbc/n0.4/[5, 5, 5]/seed_102
+  ->  25.72s   cum=186.8min   ETA 17.3 min over 38 remaining
+[413/450] running: wbc/n0.4/[5, 5, 5]/seed_103
+  ->  25.72s   cum=187.3min   ETA 16.9 min over 37 remaining
+[414/450] running: wbc/n0.4/[5, 5, 5]/seed_104
+  ->  26.54s   cum=187.7min   ETA 16.4 min over 36 remaining
+[415/450] running: wbc/n0.4/[5, 5, 5]/seed_105
+  ->  25.75s   cum=188.1min   ETA 15.9 min over 35 remaining
+[416/450] running: wbc/n0.4/[50, 50, 50]/seed_101
+  ->  28.67s   cum=188.6min   ETA 15.5 min over 34 remaining
+[417/450] running: wbc/n0.4/[50, 50, 50]/seed_102
+  ->  28.32s   cum=189.1min   ETA 15.0 min over 33 remaining
+[418/450] running: wbc/n0.4/[50, 50, 50]/seed_103
+  ->  28.37s   cum=189.5min   ETA 14.6 min over 32 remaining
+[419/450] running: wbc/n0.4/[50, 50, 50]/seed_104
+  ->  29.14s   cum=190.0min   ETA 14.1 min over 31 remaining
+[420/450] running: wbc/n0.4/[50, 50, 50]/seed_105
+  ->  29.21s   cum=190.5min   ETA 13.7 min over 30 remaining
+[421/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_101
+  ->  25.93s   cum=190.9min   ETA 13.2 min over 29 remaining
+[422/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_102
+  ->  26.84s   cum=191.4min   ETA 12.8 min over 28 remaining
+[423/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_103
+  ->  26.01s   cum=191.8min   ETA 12.3 min over 27 remaining
+[424/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_104
+  ->  27.02s   cum=192.3min   ETA 11.8 min over 26 remaining
+[425/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_105
+  ->  26.69s   cum=192.7min   ETA 11.4 min over 25 remaining
+[426/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_101
+  ->  26.68s   cum=193.2min   ETA 10.9 min over 24 remaining
+[427/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_102
+  ->  25.81s   cum=193.6min   ETA 10.5 min over 23 remaining
+[428/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_103
+  ->  26.57s   cum=194.0min   ETA 10.0 min over 22 remaining
+[429/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_104
+  ->  26.41s   cum=194.5min   ETA 9.6 min over 21 remaining
+[430/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_105
+  ->  26.13s   cum=194.9min   ETA 9.1 min over 20 remaining
+[431/450] running: wbc/n0.4/[7, 7, 7]/seed_101
+  ->  26.87s   cum=195.4min   ETA 8.7 min over 19 remaining
+[432/450] running: wbc/n0.4/[7, 7, 7]/seed_102
+  ->  25.97s   cum=195.8min   ETA 8.2 min over 18 remaining
+[433/450] running: wbc/n0.4/[7, 7, 7]/seed_103
+  ->  25.74s   cum=196.2min   ETA 7.7 min over 17 remaining
+[434/450] running: wbc/n0.4/[7, 7, 7]/seed_104
+  ->  25.75s   cum=196.7min   ETA 7.3 min over 16 remaining
+[435/450] running: wbc/n0.4/[7, 7, 7]/seed_105
+  ->  25.82s   cum=197.1min   ETA 6.8 min over 15 remaining
+[436/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_101
+  ->  26.17s   cum=197.5min   ETA 6.4 min over 14 remaining
+[437/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_102
+  ->  27.00s   cum=198.0min   ETA 5.9 min over 13 remaining
+[438/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_103
+  ->  27.01s   cum=198.4min   ETA 5.5 min over 12 remaining
+[439/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_104
+  ->  25.90s   cum=198.9min   ETA 5.0 min over 11 remaining
+[440/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_105
+  ->  25.93s   cum=199.3min   ETA 4.5 min over 10 remaining
+[441/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_101
+  ->  26.42s   cum=199.7min   ETA 4.1 min over 9 remaining
+[442/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_102
+  ->  26.04s   cum=200.2min   ETA 3.6 min over 8 remaining
+[443/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_103
+  ->  26.40s   cum=200.6min   ETA 3.2 min over 7 remaining
+[444/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_104
+  ->  26.43s   cum=201.0min   ETA 2.7 min over 6 remaining
+[445/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_105
+  ->  25.72s   cum=201.5min   ETA 2.3 min over 5 remaining
+[446/450] running: wbc/n0.4/[9, 9, 9]/seed_101
+  ->  26.59s   cum=201.9min   ETA 1.8 min over 4 remaining
+[447/450] running: wbc/n0.4/[9, 9, 9]/seed_102
+  ->  25.93s   cum=202.3min   ETA 1.4 min over 3 remaining
+[448/450] running: wbc/n0.4/[9, 9, 9]/seed_103
+  ->  26.92s   cum=202.8min   ETA 0.9 min over 2 remaining
+[449/450] running: wbc/n0.4/[9, 9, 9]/seed_104
+  ->  26.78s   cum=203.2min   ETA 0.5 min over 1 remaining
+[450/450] running: wbc/n0.4/[9, 9, 9]/seed_105
+  ->  26.25s   cum=203.7min   ETA 0.0 min over 0 remaining
+
+finished: 448 ran, 2 skipped/failed.
+==========================================
+  Step 3/6 — Aggregate MI-baseline CSVs
+  Tue Apr 28 12:09:05 PM CEST 2026
+==========================================
+wrote 450 rows to /home/johan/Documents/phd/WP1/geometric_binning_estimator/results/mi_baselines.csv
+==========================================
+  Step 4/6 — Validate gen-gap predictors (closed-form gate)
+  Tue Apr 28 12:09:08 PM CEST 2026
+==========================================
+
+[1] Frobenius on identity weights (target: sqrt(rank sums))
+  [PASS] frobenius identity: truth=3.1623  est=3.1623
+
+[2] Path-norm on a 2-layer all-ones model (closed form)
+  [PASS] path_norm all-ones: truth=3.4641  est=3.4641
+
+[3] Spectral product on identity weights (target: 1.0)
+  [PASS] spectral_prod=1: spectral_prod=1.000000
+  [PASS] gamma_min=1 (identity logits, one-hot inputs): gamma_min=1.000000
+
+[4] Sharpness — top-5 eigenvalues match brute-force Hessian
+  [PASS] sharpness lambda_max: truth=1.8706  est=1.8706
+  [PASS] sharpness lambda_sum_top5: truth=3.7285  est=3.7285
+  [PASS] sharpness Lanczos converged: converged=True
+
+ALL TESTS PASSED
+==========================================
+  Step 5/6 — Run gen-gap-predictor sweep
+  Tue Apr 28 12:09:09 PM CEST 2026
+==========================================
+discovered 450 jobs across ['composite', 'wbc']
+[1/450] skip (exists): composite/n0.0/[25, 25, 25, 25, 25]/seed_101
+  probe[composite]: composite probe N=20000 (seed=1042), holdout N=10000 (seed=2042); scaler refit from training-time pipeline (global_seed=42)
+[2/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_102
+  ->   0.49s   cum=0.0min   ETA 3.6 min over 448 remaining
+[3/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_103
+  ->   0.16s   cum=0.0min   ETA 2.4 min over 447 remaining
+[4/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_104
+  ->   0.18s   cum=0.0min   ETA 2.1 min over 446 remaining
+[5/450] running: composite/n0.0/[25, 25, 25, 25, 25]/seed_105
+  ->   0.17s   cum=0.0min   ETA 1.9 min over 445 remaining
+[6/450] running: composite/n0.0/[25, 25, 25, 25]/seed_101
+  ->   0.15s   cum=0.0min   ETA 1.7 min over 444 remaining
+[7/450] running: composite/n0.0/[25, 25, 25, 25]/seed_102
+  ->   0.15s   cum=0.0min   ETA 1.6 min over 443 remaining
+[8/450] running: composite/n0.0/[25, 25, 25, 25]/seed_103
+  ->   0.15s   cum=0.0min   ETA 1.5 min over 442 remaining
+[9/450] running: composite/n0.0/[25, 25, 25, 25]/seed_104
+  ->   0.15s   cum=0.0min   ETA 1.5 min over 441 remaining
+[10/450] running: composite/n0.0/[25, 25, 25, 25]/seed_105
+  ->   0.12s   cum=0.0min   ETA 1.4 min over 440 remaining
+[11/450] running: composite/n0.0/[25, 25, 25]/seed_101
+  ->   0.13s   cum=0.0min   ETA 1.4 min over 439 remaining
+[12/450] running: composite/n0.0/[25, 25, 25]/seed_102
+  ->   0.10s   cum=0.0min   ETA 1.3 min over 438 remaining
+[13/450] running: composite/n0.0/[25, 25, 25]/seed_103
+  ->   0.13s   cum=0.0min   ETA 1.3 min over 437 remaining
+[14/450] running: composite/n0.0/[25, 25, 25]/seed_104
+  ->   0.11s   cum=0.0min   ETA 1.2 min over 436 remaining
+[15/450] running: composite/n0.0/[25, 25, 25]/seed_105
+  ->   0.14s   cum=0.0min   ETA 1.2 min over 435 remaining
+[16/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_101
+  ->   0.10s   cum=0.0min   ETA 1.2 min over 434 remaining
+[17/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_102
+  ->   0.10s   cum=0.0min   ETA 1.1 min over 433 remaining
+[18/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_103
+  ->   0.11s   cum=0.0min   ETA 1.1 min over 432 remaining
+[19/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_104
+  ->   0.11s   cum=0.0min   ETA 1.1 min over 431 remaining
+[20/450] running: composite/n0.0/[5, 5, 5, 5, 5]/seed_105
+  ->   0.10s   cum=0.0min   ETA 1.1 min over 430 remaining
+[21/450] running: composite/n0.0/[5, 5, 5, 5]/seed_101
+  ->   0.09s   cum=0.0min   ETA 1.1 min over 429 remaining
+[22/450] running: composite/n0.0/[5, 5, 5, 5]/seed_102
+  ->   0.09s   cum=0.1min   ETA 1.0 min over 428 remaining
+[23/450] running: composite/n0.0/[5, 5, 5, 5]/seed_103
+  ->   0.10s   cum=0.1min   ETA 1.0 min over 427 remaining
+[24/450] running: composite/n0.0/[5, 5, 5, 5]/seed_104
+  ->   0.10s   cum=0.1min   ETA 1.0 min over 426 remaining
+[25/450] running: composite/n0.0/[5, 5, 5, 5]/seed_105
+  ->   0.09s   cum=0.1min   ETA 1.0 min over 425 remaining
+[26/450] running: composite/n0.0/[5, 5, 5]/seed_101
+  ->   0.08s   cum=0.1min   ETA 1.0 min over 424 remaining
+[27/450] running: composite/n0.0/[5, 5, 5]/seed_102
+  ->   0.09s   cum=0.1min   ETA 0.9 min over 423 remaining
+[28/450] running: composite/n0.0/[5, 5, 5]/seed_103
+  ->   0.08s   cum=0.1min   ETA 0.9 min over 422 remaining
+[29/450] running: composite/n0.0/[5, 5, 5]/seed_104
+  ->   0.08s   cum=0.1min   ETA 0.9 min over 421 remaining
+[30/450] running: composite/n0.0/[5, 5, 5]/seed_105
+  ->   0.07s   cum=0.1min   ETA 0.9 min over 420 remaining
+[31/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_101
+  ->   0.10s   cum=0.1min   ETA 0.9 min over 419 remaining
+[32/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_102
+  ->   0.11s   cum=0.1min   ETA 0.9 min over 418 remaining
+[33/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_103
+  ->   0.11s   cum=0.1min   ETA 0.9 min over 417 remaining
+[34/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_104
+  ->   0.11s   cum=0.1min   ETA 0.9 min over 416 remaining
+[35/450] running: composite/n0.0/[7, 7, 7, 7, 7]/seed_105
+  ->   0.11s   cum=0.1min   ETA 0.9 min over 415 remaining
+[36/450] running: composite/n0.0/[7, 7, 7, 7]/seed_101
+  ->   0.09s   cum=0.1min   ETA 0.9 min over 414 remaining
+[37/450] running: composite/n0.0/[7, 7, 7, 7]/seed_102
+  ->   0.10s   cum=0.1min   ETA 0.9 min over 413 remaining
+[38/450] running: composite/n0.0/[7, 7, 7, 7]/seed_103
+  ->   0.10s   cum=0.1min   ETA 0.8 min over 412 remaining
+[39/450] running: composite/n0.0/[7, 7, 7, 7]/seed_104
+  ->   0.09s   cum=0.1min   ETA 0.8 min over 411 remaining
+[40/450] running: composite/n0.0/[7, 7, 7, 7]/seed_105
+  ->   0.10s   cum=0.1min   ETA 0.8 min over 410 remaining
+[41/450] running: composite/n0.0/[7, 7, 7]/seed_101
+  ->   0.09s   cum=0.1min   ETA 0.8 min over 409 remaining
+[42/450] running: composite/n0.0/[7, 7, 7]/seed_102
+  ->   0.08s   cum=0.1min   ETA 0.8 min over 408 remaining
+[43/450] running: composite/n0.0/[7, 7, 7]/seed_103
+  ->   0.09s   cum=0.1min   ETA 0.8 min over 407 remaining
+[44/450] running: composite/n0.0/[7, 7, 7]/seed_104
+  ->   0.09s   cum=0.1min   ETA 0.8 min over 406 remaining
+[45/450] running: composite/n0.0/[7, 7, 7]/seed_105
+  ->   0.09s   cum=0.1min   ETA 0.8 min over 405 remaining
+[46/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_101
+  ->   0.12s   cum=0.1min   ETA 0.8 min over 404 remaining
+[47/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_102
+  ->   0.11s   cum=0.1min   ETA 0.8 min over 403 remaining
+[48/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_103
+  ->   0.12s   cum=0.1min   ETA 0.8 min over 402 remaining
+[49/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_104
+  ->   0.12s   cum=0.1min   ETA 0.8 min over 401 remaining
+[50/450] running: composite/n0.0/[9, 9, 9, 9, 9]/seed_105
+  ->   0.11s   cum=0.1min   ETA 0.8 min over 400 remaining
+[51/450] running: composite/n0.0/[9, 9, 9, 9]/seed_101
+  ->   0.11s   cum=0.1min   ETA 0.8 min over 399 remaining
+[52/450] running: composite/n0.0/[9, 9, 9, 9]/seed_102
+  ->   0.10s   cum=0.1min   ETA 0.8 min over 398 remaining
+[53/450] running: composite/n0.0/[9, 9, 9, 9]/seed_103
+  ->   0.11s   cum=0.1min   ETA 0.8 min over 397 remaining
+[54/450] running: composite/n0.0/[9, 9, 9, 9]/seed_104
+  ->   0.11s   cum=0.1min   ETA 0.8 min over 396 remaining
+[55/450] running: composite/n0.0/[9, 9, 9, 9]/seed_105
+  ->   0.11s   cum=0.1min   ETA 0.8 min over 395 remaining
+[56/450] running: composite/n0.0/[9, 9, 9]/seed_101
+  ->   0.08s   cum=0.1min   ETA 0.8 min over 394 remaining
+[57/450] running: composite/n0.0/[9, 9, 9]/seed_102
+  ->   0.09s   cum=0.1min   ETA 0.8 min over 393 remaining
+[58/450] running: composite/n0.0/[9, 9, 9]/seed_103
+  ->   0.09s   cum=0.1min   ETA 0.7 min over 392 remaining
+[59/450] running: composite/n0.0/[9, 9, 9]/seed_104
+  ->   0.08s   cum=0.1min   ETA 0.7 min over 391 remaining
+[60/450] running: composite/n0.0/[9, 9, 9]/seed_105
+  ->   0.10s   cum=0.1min   ETA 0.7 min over 390 remaining
+[61/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_101
+  ->   0.13s   cum=0.1min   ETA 0.7 min over 389 remaining
+[62/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_102
+  ->   0.13s   cum=0.1min   ETA 0.7 min over 388 remaining
+[63/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_103
+  ->   0.14s   cum=0.1min   ETA 0.7 min over 387 remaining
+[64/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_104
+  ->   0.14s   cum=0.1min   ETA 0.7 min over 386 remaining
+[65/450] running: composite/n0.2/[25, 25, 25, 25, 25]/seed_105
+  ->   0.13s   cum=0.1min   ETA 0.7 min over 385 remaining
+[66/450] running: composite/n0.2/[25, 25, 25, 25]/seed_101
+  ->   0.11s   cum=0.1min   ETA 0.7 min over 384 remaining
+[67/450] running: composite/n0.2/[25, 25, 25, 25]/seed_102
+  ->   0.11s   cum=0.1min   ETA 0.7 min over 383 remaining
+[68/450] running: composite/n0.2/[25, 25, 25, 25]/seed_103
+  ->   0.11s   cum=0.1min   ETA 0.7 min over 382 remaining
+[69/450] running: composite/n0.2/[25, 25, 25, 25]/seed_104
+  ->   0.12s   cum=0.1min   ETA 0.7 min over 381 remaining
+[70/450] running: composite/n0.2/[25, 25, 25, 25]/seed_105
+  ->   0.12s   cum=0.1min   ETA 0.7 min over 380 remaining
+[71/450] running: composite/n0.2/[25, 25, 25]/seed_101
+  ->   0.10s   cum=0.1min   ETA 0.7 min over 379 remaining
+[72/450] running: composite/n0.2/[25, 25, 25]/seed_102
+  ->   0.10s   cum=0.1min   ETA 0.7 min over 378 remaining
+[73/450] running: composite/n0.2/[25, 25, 25]/seed_103
+  ->   0.09s   cum=0.1min   ETA 0.7 min over 377 remaining
+[74/450] running: composite/n0.2/[25, 25, 25]/seed_104
+  ->   0.10s   cum=0.1min   ETA 0.7 min over 376 remaining
+[75/450] running: composite/n0.2/[25, 25, 25]/seed_105
+  ->   0.10s   cum=0.1min   ETA 0.7 min over 375 remaining
+[76/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_101
+  ->   0.09s   cum=0.1min   ETA 0.7 min over 374 remaining
+[77/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_102
+  ->   0.09s   cum=0.1min   ETA 0.7 min over 373 remaining
+[78/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_103
+  ->   0.09s   cum=0.1min   ETA 0.7 min over 372 remaining
+[79/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_104
+  ->   0.09s   cum=0.1min   ETA 0.7 min over 371 remaining
+[80/450] running: composite/n0.2/[5, 5, 5, 5, 5]/seed_105
+  ->   0.09s   cum=0.1min   ETA 0.7 min over 370 remaining
+[81/450] running: composite/n0.2/[5, 5, 5, 5]/seed_101
+  ->   0.08s   cum=0.1min   ETA 0.7 min over 369 remaining
+[82/450] running: composite/n0.2/[5, 5, 5, 5]/seed_102
+  ->   0.08s   cum=0.2min   ETA 0.7 min over 368 remaining
+[83/450] running: composite/n0.2/[5, 5, 5, 5]/seed_103
+  ->   0.08s   cum=0.2min   ETA 0.7 min over 367 remaining
+[84/450] running: composite/n0.2/[5, 5, 5, 5]/seed_104
+  ->   0.08s   cum=0.2min   ETA 0.7 min over 366 remaining
+[85/450] running: composite/n0.2/[5, 5, 5, 5]/seed_105
+  ->   0.08s   cum=0.2min   ETA 0.7 min over 365 remaining
+[86/450] running: composite/n0.2/[5, 5, 5]/seed_101
+  ->   0.07s   cum=0.2min   ETA 0.7 min over 364 remaining
+[87/450] running: composite/n0.2/[5, 5, 5]/seed_102
+  ->   0.07s   cum=0.2min   ETA 0.7 min over 363 remaining
+[88/450] running: composite/n0.2/[5, 5, 5]/seed_103
+  ->   0.07s   cum=0.2min   ETA 0.7 min over 362 remaining
+[89/450] running: composite/n0.2/[5, 5, 5]/seed_104
+  ->   0.07s   cum=0.2min   ETA 0.7 min over 361 remaining
+[90/450] running: composite/n0.2/[5, 5, 5]/seed_105
+  ->   0.07s   cum=0.2min   ETA 0.7 min over 360 remaining
+[91/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_101
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 359 remaining
+[92/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_102
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 358 remaining
+[93/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_103
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 357 remaining
+[94/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_104
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 356 remaining
+[95/450] running: composite/n0.2/[7, 7, 7, 7, 7]/seed_105
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 355 remaining
+[96/450] running: composite/n0.2/[7, 7, 7, 7]/seed_101
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 354 remaining
+[97/450] running: composite/n0.2/[7, 7, 7, 7]/seed_102
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 353 remaining
+[98/450] running: composite/n0.2/[7, 7, 7, 7]/seed_103
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 352 remaining
+[99/450] running: composite/n0.2/[7, 7, 7, 7]/seed_104
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 351 remaining
+[100/450] running: composite/n0.2/[7, 7, 7, 7]/seed_105
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 350 remaining
+[101/450] running: composite/n0.2/[7, 7, 7]/seed_101
+  ->   0.07s   cum=0.2min   ETA 0.6 min over 349 remaining
+[102/450] running: composite/n0.2/[7, 7, 7]/seed_102
+  ->   0.07s   cum=0.2min   ETA 0.6 min over 348 remaining
+[103/450] running: composite/n0.2/[7, 7, 7]/seed_103
+  ->   0.07s   cum=0.2min   ETA 0.6 min over 347 remaining
+[104/450] running: composite/n0.2/[7, 7, 7]/seed_104
+  ->   0.07s   cum=0.2min   ETA 0.6 min over 346 remaining
+[105/450] running: composite/n0.2/[7, 7, 7]/seed_105
+  ->   0.07s   cum=0.2min   ETA 0.6 min over 345 remaining
+[106/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_101
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 344 remaining
+[107/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_102
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 343 remaining
+[108/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_103
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 342 remaining
+[109/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_104
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 341 remaining
+[110/450] running: composite/n0.2/[9, 9, 9, 9, 9]/seed_105
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 340 remaining
+[111/450] running: composite/n0.2/[9, 9, 9, 9]/seed_101
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 339 remaining
+[112/450] running: composite/n0.2/[9, 9, 9, 9]/seed_102
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 338 remaining
+[113/450] running: composite/n0.2/[9, 9, 9, 9]/seed_103
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 337 remaining
+[114/450] running: composite/n0.2/[9, 9, 9, 9]/seed_104
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 336 remaining
+[115/450] running: composite/n0.2/[9, 9, 9, 9]/seed_105
+  ->   0.09s   cum=0.2min   ETA 0.6 min over 335 remaining
+[116/450] running: composite/n0.2/[9, 9, 9]/seed_101
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 334 remaining
+[117/450] running: composite/n0.2/[9, 9, 9]/seed_102
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 333 remaining
+[118/450] running: composite/n0.2/[9, 9, 9]/seed_103
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 332 remaining
+[119/450] running: composite/n0.2/[9, 9, 9]/seed_104
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 331 remaining
+[120/450] running: composite/n0.2/[9, 9, 9]/seed_105
+  ->   0.08s   cum=0.2min   ETA 0.6 min over 330 remaining
+[121/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_101
+  ->   0.16s   cum=0.2min   ETA 0.6 min over 329 remaining
+[122/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_102
+  ->   0.14s   cum=0.2min   ETA 0.6 min over 328 remaining
+[123/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_103
+  ->   0.14s   cum=0.2min   ETA 0.6 min over 327 remaining
+[124/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_104
+  ->   0.14s   cum=0.2min   ETA 0.6 min over 326 remaining
+[125/450] running: composite/n0.4/[25, 25, 25, 25, 25]/seed_105
+  ->   0.14s   cum=0.2min   ETA 0.6 min over 325 remaining
+[126/450] running: composite/n0.4/[25, 25, 25, 25]/seed_101
+  ->   0.12s   cum=0.2min   ETA 0.6 min over 324 remaining
+[127/450] running: composite/n0.4/[25, 25, 25, 25]/seed_102
+  ->   0.14s   cum=0.2min   ETA 0.6 min over 323 remaining
+[128/450] running: composite/n0.4/[25, 25, 25, 25]/seed_103
+  ->   0.12s   cum=0.2min   ETA 0.6 min over 322 remaining
+[129/450] running: composite/n0.4/[25, 25, 25, 25]/seed_104
+  ->   0.12s   cum=0.2min   ETA 0.6 min over 321 remaining
+[130/450] running: composite/n0.4/[25, 25, 25, 25]/seed_105
+  ->   0.12s   cum=0.2min   ETA 0.6 min over 320 remaining
+[131/450] running: composite/n0.4/[25, 25, 25]/seed_101
+  ->   0.13s   cum=0.2min   ETA 0.6 min over 319 remaining
+[132/450] running: composite/n0.4/[25, 25, 25]/seed_102
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 318 remaining
+[133/450] running: composite/n0.4/[25, 25, 25]/seed_103
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 317 remaining
+[134/450] running: composite/n0.4/[25, 25, 25]/seed_104
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 316 remaining
+[135/450] running: composite/n0.4/[25, 25, 25]/seed_105
+  ->   0.10s   cum=0.2min   ETA 0.6 min over 315 remaining
+[136/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_101
+  ->   0.09s   cum=0.2min   ETA 0.5 min over 314 remaining
+[137/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_102
+  ->   0.09s   cum=0.2min   ETA 0.5 min over 313 remaining
+[138/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_103
+  ->   0.09s   cum=0.2min   ETA 0.5 min over 312 remaining
+[139/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_104
+  ->   0.09s   cum=0.2min   ETA 0.5 min over 311 remaining
+[140/450] running: composite/n0.4/[5, 5, 5, 5, 5]/seed_105
+  ->   0.09s   cum=0.2min   ETA 0.5 min over 310 remaining
+[141/450] running: composite/n0.4/[5, 5, 5, 5]/seed_101
+  ->   0.08s   cum=0.2min   ETA 0.5 min over 309 remaining
+[142/450] running: composite/n0.4/[5, 5, 5, 5]/seed_102
+  ->   0.08s   cum=0.2min   ETA 0.5 min over 308 remaining
+[143/450] running: composite/n0.4/[5, 5, 5, 5]/seed_103
+  ->   0.08s   cum=0.2min   ETA 0.5 min over 307 remaining
+[144/450] running: composite/n0.4/[5, 5, 5, 5]/seed_104
+  ->   0.08s   cum=0.2min   ETA 0.5 min over 306 remaining
+[145/450] running: composite/n0.4/[5, 5, 5, 5]/seed_105
+  ->   0.08s   cum=0.2min   ETA 0.5 min over 305 remaining
+[146/450] running: composite/n0.4/[5, 5, 5]/seed_101
+  ->   0.07s   cum=0.2min   ETA 0.5 min over 304 remaining
+[147/450] running: composite/n0.4/[5, 5, 5]/seed_102
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 303 remaining
+[148/450] running: composite/n0.4/[5, 5, 5]/seed_103
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 302 remaining
+[149/450] running: composite/n0.4/[5, 5, 5]/seed_104
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 301 remaining
+[150/450] running: composite/n0.4/[5, 5, 5]/seed_105
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 300 remaining
+[151/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_101
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 299 remaining
+[152/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_102
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 298 remaining
+[153/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_103
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 297 remaining
+[154/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_104
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 296 remaining
+[155/450] running: composite/n0.4/[7, 7, 7, 7, 7]/seed_105
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 295 remaining
+[156/450] running: composite/n0.4/[7, 7, 7, 7]/seed_101
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 294 remaining
+[157/450] running: composite/n0.4/[7, 7, 7, 7]/seed_102
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 293 remaining
+[158/450] running: composite/n0.4/[7, 7, 7, 7]/seed_103
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 292 remaining
+[159/450] running: composite/n0.4/[7, 7, 7, 7]/seed_104
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 291 remaining
+[160/450] running: composite/n0.4/[7, 7, 7, 7]/seed_105
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 290 remaining
+[161/450] running: composite/n0.4/[7, 7, 7]/seed_101
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 289 remaining
+[162/450] running: composite/n0.4/[7, 7, 7]/seed_102
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 288 remaining
+[163/450] running: composite/n0.4/[7, 7, 7]/seed_103
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 287 remaining
+[164/450] running: composite/n0.4/[7, 7, 7]/seed_104
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 286 remaining
+[165/450] running: composite/n0.4/[7, 7, 7]/seed_105
+  ->   0.07s   cum=0.3min   ETA 0.5 min over 285 remaining
+[166/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_101
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 284 remaining
+[167/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_102
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 283 remaining
+[168/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_103
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 282 remaining
+[169/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_104
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 281 remaining
+[170/450] running: composite/n0.4/[9, 9, 9, 9, 9]/seed_105
+  ->   0.10s   cum=0.3min   ETA 0.5 min over 280 remaining
+[171/450] running: composite/n0.4/[9, 9, 9, 9]/seed_101
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 279 remaining
+[172/450] running: composite/n0.4/[9, 9, 9, 9]/seed_102
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 278 remaining
+[173/450] running: composite/n0.4/[9, 9, 9, 9]/seed_103
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 277 remaining
+[174/450] running: composite/n0.4/[9, 9, 9, 9]/seed_104
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 276 remaining
+[175/450] running: composite/n0.4/[9, 9, 9, 9]/seed_105
+  ->   0.09s   cum=0.3min   ETA 0.5 min over 275 remaining
+[176/450] running: composite/n0.4/[9, 9, 9]/seed_101
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 274 remaining
+[177/450] running: composite/n0.4/[9, 9, 9]/seed_102
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 273 remaining
+[178/450] running: composite/n0.4/[9, 9, 9]/seed_103
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 272 remaining
+[179/450] running: composite/n0.4/[9, 9, 9]/seed_104
+  ->   0.08s   cum=0.3min   ETA 0.5 min over 271 remaining
+[180/450] running: composite/n0.4/[9, 9, 9]/seed_105
+  ->   0.08s   cum=0.3min   ETA 0.4 min over 270 remaining
+Fetching UCI dataset ID=17...
+  probe[wbc]: wbc full set (N=569); train portion was seen during training. No holdout.
+[181/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_101
+  ->   0.08s   cum=0.3min   ETA 0.4 min over 269 remaining
+[182/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_102
+  ->   0.08s   cum=0.3min   ETA 0.4 min over 268 remaining
+[183/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_103
+  ->   0.08s   cum=0.3min   ETA 0.4 min over 267 remaining
+[184/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_104
+  ->   0.08s   cum=0.3min   ETA 0.4 min over 266 remaining
+[185/450] running: wbc/n0.0/[10, 10, 10, 10, 10]/seed_105
+  ->   0.08s   cum=0.3min   ETA 0.4 min over 265 remaining
+[186/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_101
+  ->   0.07s   cum=0.3min   ETA 0.4 min over 264 remaining
+[187/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_102
+  ->   0.07s   cum=0.3min   ETA 0.4 min over 263 remaining
+[188/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_103
+  ->   0.07s   cum=0.3min   ETA 0.4 min over 262 remaining
+[189/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_104
+  ->   0.08s   cum=0.3min   ETA 0.4 min over 261 remaining
+[190/450] running: wbc/n0.0/[10, 10, 10, 10]/seed_105
+  ->   0.07s   cum=0.3min   ETA 0.4 min over 260 remaining
+[191/450] running: wbc/n0.0/[10, 10, 10]/seed_101
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 259 remaining
+[192/450] running: wbc/n0.0/[10, 10, 10]/seed_102
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 258 remaining
+[193/450] running: wbc/n0.0/[10, 10, 10]/seed_103
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 257 remaining
+[194/450] running: wbc/n0.0/[10, 10, 10]/seed_104
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 256 remaining
+[195/450] running: wbc/n0.0/[10, 10, 10]/seed_105
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 255 remaining
+[196/450] running: wbc/n0.0/[100, 100, 100]/seed_101
+  ->   0.21s   cum=0.3min   ETA 0.4 min over 254 remaining
+[197/450] running: wbc/n0.0/[100, 100, 100]/seed_102
+  ->   0.21s   cum=0.3min   ETA 0.4 min over 253 remaining
+[198/450] running: wbc/n0.0/[100, 100, 100]/seed_103
+  ->   0.21s   cum=0.3min   ETA 0.4 min over 252 remaining
+[199/450] running: wbc/n0.0/[100, 100, 100]/seed_104
+  ->   0.21s   cum=0.3min   ETA 0.4 min over 251 remaining
+[200/450] running: wbc/n0.0/[100, 100, 100]/seed_105
+  ->   0.21s   cum=0.3min   ETA 0.4 min over 250 remaining
+[201/450] running: wbc/n0.0/[15, 15, 15]/seed_101
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 249 remaining
+[202/450] running: wbc/n0.0/[15, 15, 15]/seed_102
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 248 remaining
+[203/450] running: wbc/n0.0/[15, 15, 15]/seed_103
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 247 remaining
+[204/450] running: wbc/n0.0/[15, 15, 15]/seed_104
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 246 remaining
+[205/450] running: wbc/n0.0/[15, 15, 15]/seed_105
+  ->   0.06s   cum=0.3min   ETA 0.4 min over 245 remaining
+[206/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_101
+  ->   0.10s   cum=0.3min   ETA 0.4 min over 244 remaining
+[207/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_102
+  ->   0.10s   cum=0.3min   ETA 0.4 min over 243 remaining
+[208/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_103
+  ->   0.10s   cum=0.3min   ETA 0.4 min over 242 remaining
+[209/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_104
+  ->   0.10s   cum=0.3min   ETA 0.4 min over 241 remaining
+[210/450] running: wbc/n0.0/[25, 25, 25, 25, 25]/seed_105
+  ->   0.10s   cum=0.3min   ETA 0.4 min over 240 remaining
+[211/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_101
+  ->   0.09s   cum=0.3min   ETA 0.4 min over 239 remaining
+[212/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_102
+  ->   0.09s   cum=0.3min   ETA 0.4 min over 238 remaining
+[213/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_103
+  ->   0.09s   cum=0.4min   ETA 0.4 min over 237 remaining
+[214/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_104
+  ->   0.09s   cum=0.4min   ETA 0.4 min over 236 remaining
+[215/450] running: wbc/n0.0/[25, 25, 25, 25]/seed_105
+  ->   0.09s   cum=0.4min   ETA 0.4 min over 235 remaining
+[216/450] running: wbc/n0.0/[25, 25, 25]/seed_101
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 234 remaining
+[217/450] running: wbc/n0.0/[25, 25, 25]/seed_102
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 233 remaining
+[218/450] running: wbc/n0.0/[25, 25, 25]/seed_103
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 232 remaining
+[219/450] running: wbc/n0.0/[25, 25, 25]/seed_104
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 231 remaining
+[220/450] running: wbc/n0.0/[25, 25, 25]/seed_105
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 230 remaining
+[221/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_101
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 229 remaining
+[222/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_102
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 228 remaining
+[223/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_103
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 227 remaining
+[224/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_104
+  ->   0.12s   cum=0.4min   ETA 0.4 min over 226 remaining
+[225/450] running: wbc/n0.0/[5, 5, 5, 5, 5]/seed_105
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 225 remaining
+[226/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_101
+  ->   0.06s   cum=0.4min   ETA 0.4 min over 224 remaining
+[227/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_102
+  ->   0.06s   cum=0.4min   ETA 0.4 min over 223 remaining
+[228/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_103
+  ->   0.07s   cum=0.4min   ETA 0.4 min over 222 remaining
+[229/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_104
+  ->   0.06s   cum=0.4min   ETA 0.4 min over 221 remaining
+[230/450] running: wbc/n0.0/[5, 5, 5, 5]/seed_105
+  ->   0.06s   cum=0.4min   ETA 0.4 min over 220 remaining
+[231/450] running: wbc/n0.0/[5, 5, 5]/seed_101
+  ->   0.06s   cum=0.4min   ETA 0.4 min over 219 remaining
+[232/450] running: wbc/n0.0/[5, 5, 5]/seed_102
+  ->   0.05s   cum=0.4min   ETA 0.4 min over 218 remaining
+[233/450] running: wbc/n0.0/[5, 5, 5]/seed_103
+  ->   0.05s   cum=0.4min   ETA 0.4 min over 217 remaining
+[234/450] running: wbc/n0.0/[5, 5, 5]/seed_104
+  ->   0.05s   cum=0.4min   ETA 0.3 min over 216 remaining
+[235/450] running: wbc/n0.0/[5, 5, 5]/seed_105
+  ->   0.05s   cum=0.4min   ETA 0.3 min over 215 remaining
+[236/450] running: wbc/n0.0/[50, 50, 50]/seed_101
+  ->   0.10s   cum=0.4min   ETA 0.3 min over 214 remaining
+[237/450] running: wbc/n0.0/[50, 50, 50]/seed_102
+  ->   0.11s   cum=0.4min   ETA 0.3 min over 213 remaining
+[238/450] running: wbc/n0.0/[50, 50, 50]/seed_103
+  ->   0.12s   cum=0.4min   ETA 0.3 min over 212 remaining
+[239/450] running: wbc/n0.0/[50, 50, 50]/seed_104
+  ->   0.10s   cum=0.4min   ETA 0.3 min over 211 remaining
+[240/450] running: wbc/n0.0/[50, 50, 50]/seed_105
+  ->   0.10s   cum=0.4min   ETA 0.3 min over 210 remaining
+[241/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_101
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 209 remaining
+[242/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_102
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 208 remaining
+[243/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_103
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 207 remaining
+[244/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_104
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 206 remaining
+[245/450] running: wbc/n0.0/[7, 7, 7, 7, 7]/seed_105
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 205 remaining
+[246/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_101
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 204 remaining
+[247/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_102
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 203 remaining
+[248/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_103
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 202 remaining
+[249/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_104
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 201 remaining
+[250/450] running: wbc/n0.0/[7, 7, 7, 7]/seed_105
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 200 remaining
+[251/450] running: wbc/n0.0/[7, 7, 7]/seed_101
+  ->   0.05s   cum=0.4min   ETA 0.3 min over 199 remaining
+[252/450] running: wbc/n0.0/[7, 7, 7]/seed_102
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 198 remaining
+[253/450] running: wbc/n0.0/[7, 7, 7]/seed_103
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 197 remaining
+[254/450] running: wbc/n0.0/[7, 7, 7]/seed_104
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 196 remaining
+[255/450] running: wbc/n0.0/[7, 7, 7]/seed_105
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 195 remaining
+[256/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_101
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 194 remaining
+[257/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_102
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 193 remaining
+[258/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_103
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 192 remaining
+[259/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_104
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 191 remaining
+[260/450] running: wbc/n0.0/[9, 9, 9, 9, 9]/seed_105
+  ->   0.09s   cum=0.4min   ETA 0.3 min over 190 remaining
+[261/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_101
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 189 remaining
+[262/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_102
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 188 remaining
+[263/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_103
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 187 remaining
+[264/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_104
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 186 remaining
+[265/450] running: wbc/n0.0/[9, 9, 9, 9]/seed_105
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 185 remaining
+[266/450] running: wbc/n0.0/[9, 9, 9]/seed_101
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 184 remaining
+[267/450] running: wbc/n0.0/[9, 9, 9]/seed_102
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 183 remaining
+[268/450] running: wbc/n0.0/[9, 9, 9]/seed_103
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 182 remaining
+[269/450] running: wbc/n0.0/[9, 9, 9]/seed_104
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 181 remaining
+[270/450] running: wbc/n0.0/[9, 9, 9]/seed_105
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 180 remaining
+[271/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_101
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 179 remaining
+[272/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_102
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 178 remaining
+[273/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_103
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 177 remaining
+[274/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_104
+  ->   0.12s   cum=0.4min   ETA 0.3 min over 176 remaining
+[275/450] running: wbc/n0.2/[10, 10, 10, 10, 10]/seed_105
+  ->   0.08s   cum=0.4min   ETA 0.3 min over 175 remaining
+[276/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_101
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 174 remaining
+[277/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_102
+  ->   0.10s   cum=0.4min   ETA 0.3 min over 173 remaining
+[278/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_103
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 172 remaining
+[279/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_104
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 171 remaining
+[280/450] running: wbc/n0.2/[10, 10, 10, 10]/seed_105
+  ->   0.10s   cum=0.4min   ETA 0.3 min over 170 remaining
+[281/450] running: wbc/n0.2/[10, 10, 10]/seed_101
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 169 remaining
+[282/450] running: wbc/n0.2/[10, 10, 10]/seed_102
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 168 remaining
+[283/450] running: wbc/n0.2/[10, 10, 10]/seed_103
+  ->   0.06s   cum=0.4min   ETA 0.3 min over 167 remaining
+[284/450] running: wbc/n0.2/[10, 10, 10]/seed_104
+  ->   0.07s   cum=0.4min   ETA 0.3 min over 166 remaining
+[285/450] running: wbc/n0.2/[10, 10, 10]/seed_105
+  ->   0.09s   cum=0.4min   ETA 0.3 min over 165 remaining
+[286/450] running: wbc/n0.2/[100, 100, 100]/seed_101
+  ->   0.37s   cum=0.4min   ETA 0.3 min over 164 remaining
+[287/450] running: wbc/n0.2/[100, 100, 100]/seed_102
+  ->   0.34s   cum=0.5min   ETA 0.3 min over 163 remaining
+[288/450] running: wbc/n0.2/[100, 100, 100]/seed_103
+  ->   0.34s   cum=0.5min   ETA 0.3 min over 162 remaining
+[289/450] running: wbc/n0.2/[100, 100, 100]/seed_104
+  ->   0.33s   cum=0.5min   ETA 0.3 min over 161 remaining
+[290/450] running: wbc/n0.2/[100, 100, 100]/seed_105
+  ->   0.32s   cum=0.5min   ETA 0.3 min over 160 remaining
+[291/450] running: wbc/n0.2/[15, 15, 15]/seed_101
+  ->   0.09s   cum=0.5min   ETA 0.3 min over 159 remaining
+[292/450] running: wbc/n0.2/[15, 15, 15]/seed_102
+  ->   0.10s   cum=0.5min   ETA 0.3 min over 158 remaining
+[293/450] running: wbc/n0.2/[15, 15, 15]/seed_103
+  ->   0.08s   cum=0.5min   ETA 0.3 min over 157 remaining
+[294/450] running: wbc/n0.2/[15, 15, 15]/seed_104
+  ->   0.09s   cum=0.5min   ETA 0.3 min over 156 remaining
+[295/450] running: wbc/n0.2/[15, 15, 15]/seed_105
+  ->   0.06s   cum=0.5min   ETA 0.3 min over 155 remaining
+[296/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_101
+  ->   0.10s   cum=0.5min   ETA 0.2 min over 154 remaining
+[297/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_102
+  ->   0.14s   cum=0.5min   ETA 0.2 min over 153 remaining
+[298/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_103
+  ->   0.15s   cum=0.5min   ETA 0.2 min over 152 remaining
+[299/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_104
+  ->   0.12s   cum=0.5min   ETA 0.2 min over 151 remaining
+[300/450] running: wbc/n0.2/[25, 25, 25, 25, 25]/seed_105
+  ->   0.10s   cum=0.5min   ETA 0.2 min over 150 remaining
+[301/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_101
+  ->   0.13s   cum=0.5min   ETA 0.2 min over 149 remaining
+[302/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_102
+  ->   0.13s   cum=0.5min   ETA 0.2 min over 148 remaining
+[303/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_103
+  ->   0.13s   cum=0.5min   ETA 0.2 min over 147 remaining
+[304/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_104
+  ->   0.13s   cum=0.5min   ETA 0.2 min over 146 remaining
+[305/450] running: wbc/n0.2/[25, 25, 25, 25]/seed_105
+  ->   0.13s   cum=0.5min   ETA 0.2 min over 145 remaining
+[306/450] running: wbc/n0.2/[25, 25, 25]/seed_101
+  ->   0.11s   cum=0.5min   ETA 0.2 min over 144 remaining
+[307/450] running: wbc/n0.2/[25, 25, 25]/seed_102
+  ->   0.11s   cum=0.5min   ETA 0.2 min over 143 remaining
+[308/450] running: wbc/n0.2/[25, 25, 25]/seed_103
+  ->   0.11s   cum=0.5min   ETA 0.2 min over 142 remaining
+[309/450] running: wbc/n0.2/[25, 25, 25]/seed_104
+  ->   0.08s   cum=0.5min   ETA 0.2 min over 141 remaining
+[310/450] running: wbc/n0.2/[25, 25, 25]/seed_105
+  ->   0.11s   cum=0.5min   ETA 0.2 min over 140 remaining
+[311/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_101
+  ->   0.07s   cum=0.5min   ETA 0.2 min over 139 remaining
+[312/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_102
+  ->   0.11s   cum=0.5min   ETA 0.2 min over 138 remaining
+[313/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_103
+  ->   0.07s   cum=0.5min   ETA 0.2 min over 137 remaining
+[314/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_104
+  ->   0.08s   cum=0.5min   ETA 0.2 min over 136 remaining
+[315/450] running: wbc/n0.2/[5, 5, 5, 5, 5]/seed_105
+  ->   0.07s   cum=0.5min   ETA 0.2 min over 135 remaining
+[316/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_101
+  ->   0.06s   cum=0.5min   ETA 0.2 min over 134 remaining
+[317/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_102
+  ->   0.06s   cum=0.5min   ETA 0.2 min over 133 remaining
+[318/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_103
+  ->   0.06s   cum=0.5min   ETA 0.2 min over 132 remaining
+[319/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_104
+  ->   0.06s   cum=0.5min   ETA 0.2 min over 131 remaining
+[320/450] running: wbc/n0.2/[5, 5, 5, 5]/seed_105
+  ->   0.06s   cum=0.5min   ETA 0.2 min over 130 remaining
+[321/450] running: wbc/n0.2/[5, 5, 5]/seed_101
+  ->   0.06s   cum=0.5min   ETA 0.2 min over 129 remaining
+[322/450] running: wbc/n0.2/[5, 5, 5]/seed_102
+  ->   0.05s   cum=0.5min   ETA 0.2 min over 128 remaining
+[323/450] running: wbc/n0.2/[5, 5, 5]/seed_103
+  ->   0.05s   cum=0.5min   ETA 0.2 min over 127 remaining
+[324/450] running: wbc/n0.2/[5, 5, 5]/seed_104
+  ->   0.05s   cum=0.5min   ETA 0.2 min over 126 remaining
+[325/450] running: wbc/n0.2/[5, 5, 5]/seed_105
+  ->   0.06s   cum=0.5min   ETA 0.2 min over 125 remaining
+[326/450] running: wbc/n0.2/[50, 50, 50]/seed_101
+  ->   0.16s   cum=0.5min   ETA 0.2 min over 124 remaining
+[327/450] running: wbc/n0.2/[50, 50, 50]/seed_102
+  ->   0.18s   cum=0.5min   ETA 0.2 min over 123 remaining
+[328/450] running: wbc/n0.2/[50, 50, 50]/seed_103
+  ->   0.17s   cum=0.5min   ETA 0.2 min over 122 remaining
+[329/450] running: wbc/n0.2/[50, 50, 50]/seed_104
+  ->   0.16s   cum=0.5min   ETA 0.2 min over 121 remaining
+[330/450] running: wbc/n0.2/[50, 50, 50]/seed_105
+  ->   0.16s   cum=0.5min   ETA 0.2 min over 120 remaining
+[331/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_101
+  ->   0.11s   cum=0.5min   ETA 0.2 min over 119 remaining
+[332/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_102
+  ->   0.08s   cum=0.5min   ETA 0.2 min over 118 remaining
+[333/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_103
+  ->   0.12s   cum=0.5min   ETA 0.2 min over 117 remaining
+[334/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_104
+  ->   0.09s   cum=0.5min   ETA 0.2 min over 116 remaining
+[335/450] running: wbc/n0.2/[7, 7, 7, 7, 7]/seed_105
+  ->   0.11s   cum=0.5min   ETA 0.2 min over 115 remaining
+[336/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_101
+  ->   0.08s   cum=0.5min   ETA 0.2 min over 114 remaining
+[337/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_102
+  ->   0.10s   cum=0.5min   ETA 0.2 min over 113 remaining
+[338/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_103
+  ->   0.10s   cum=0.5min   ETA 0.2 min over 112 remaining
+[339/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_104
+  ->   0.07s   cum=0.5min   ETA 0.2 min over 111 remaining
+[340/450] running: wbc/n0.2/[7, 7, 7, 7]/seed_105
+  ->   0.07s   cum=0.6min   ETA 0.2 min over 110 remaining
+[341/450] running: wbc/n0.2/[7, 7, 7]/seed_101
+  ->   0.07s   cum=0.6min   ETA 0.2 min over 109 remaining
+[342/450] running: wbc/n0.2/[7, 7, 7]/seed_102
+  ->   0.06s   cum=0.6min   ETA 0.2 min over 108 remaining
+[343/450] running: wbc/n0.2/[7, 7, 7]/seed_103
+  ->   0.07s   cum=0.6min   ETA 0.2 min over 107 remaining
+[344/450] running: wbc/n0.2/[7, 7, 7]/seed_104
+  ->   0.06s   cum=0.6min   ETA 0.2 min over 106 remaining
+[345/450] running: wbc/n0.2/[7, 7, 7]/seed_105
+  ->   0.06s   cum=0.6min   ETA 0.2 min over 105 remaining
+[346/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_101
+  ->   0.08s   cum=0.6min   ETA 0.2 min over 104 remaining
+[347/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_102
+  ->   0.08s   cum=0.6min   ETA 0.2 min over 103 remaining
+[348/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_103
+  ->   0.08s   cum=0.6min   ETA 0.2 min over 102 remaining
+[349/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_104
+  ->   0.11s   cum=0.6min   ETA 0.2 min over 101 remaining
+[350/450] running: wbc/n0.2/[9, 9, 9, 9, 9]/seed_105
+  ->   0.09s   cum=0.6min   ETA 0.2 min over 100 remaining
+[351/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_101
+  ->   0.10s   cum=0.6min   ETA 0.2 min over 99 remaining
+[352/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_102
+  ->   0.07s   cum=0.6min   ETA 0.2 min over 98 remaining
+[353/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_103
+  ->   0.07s   cum=0.6min   ETA 0.2 min over 97 remaining
+[354/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_104
+  ->   0.07s   cum=0.6min   ETA 0.2 min over 96 remaining
+[355/450] running: wbc/n0.2/[9, 9, 9, 9]/seed_105
+  ->   0.07s   cum=0.6min   ETA 0.2 min over 95 remaining
+[356/450] running: wbc/n0.2/[9, 9, 9]/seed_101
+  ->   0.09s   cum=0.6min   ETA 0.2 min over 94 remaining
+[357/450] running: wbc/n0.2/[9, 9, 9]/seed_102
+  ->   0.08s   cum=0.6min   ETA 0.1 min over 93 remaining
+[358/450] running: wbc/n0.2/[9, 9, 9]/seed_103
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 92 remaining
+[359/450] running: wbc/n0.2/[9, 9, 9]/seed_104
+  ->   0.06s   cum=0.6min   ETA 0.1 min over 91 remaining
+[360/450] running: wbc/n0.2/[9, 9, 9]/seed_105
+  ->   0.08s   cum=0.6min   ETA 0.1 min over 90 remaining
+[361/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_101
+  ->   0.10s   cum=0.6min   ETA 0.1 min over 89 remaining
+[362/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_102
+  ->   0.08s   cum=0.6min   ETA 0.1 min over 88 remaining
+[363/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_103
+  ->   0.08s   cum=0.6min   ETA 0.1 min over 87 remaining
+[364/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_104
+  ->   0.08s   cum=0.6min   ETA 0.1 min over 86 remaining
+[365/450] running: wbc/n0.4/[10, 10, 10, 10, 10]/seed_105
+  ->   0.12s   cum=0.6min   ETA 0.1 min over 85 remaining
+[366/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_101
+  ->   0.10s   cum=0.6min   ETA 0.1 min over 84 remaining
+[367/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_102
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 83 remaining
+[368/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_103
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 82 remaining
+[369/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_104
+  ->   0.10s   cum=0.6min   ETA 0.1 min over 81 remaining
+[370/450] running: wbc/n0.4/[10, 10, 10, 10]/seed_105
+  ->   0.10s   cum=0.6min   ETA 0.1 min over 80 remaining
+[371/450] running: wbc/n0.4/[10, 10, 10]/seed_101
+  ->   0.07s   cum=0.6min   ETA 0.1 min over 79 remaining
+[372/450] running: wbc/n0.4/[10, 10, 10]/seed_102
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 78 remaining
+[373/450] running: wbc/n0.4/[10, 10, 10]/seed_103
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 77 remaining
+[374/450] running: wbc/n0.4/[10, 10, 10]/seed_104
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 76 remaining
+[375/450] running: wbc/n0.4/[10, 10, 10]/seed_105
+  ->   0.07s   cum=0.6min   ETA 0.1 min over 75 remaining
+[376/450] running: wbc/n0.4/[100, 100, 100]/seed_101
+  ->   0.40s   cum=0.6min   ETA 0.1 min over 74 remaining
+[377/450] running: wbc/n0.4/[100, 100, 100]/seed_102
+  ->   0.47s   cum=0.6min   ETA 0.1 min over 73 remaining
+[378/450] running: wbc/n0.4/[100, 100, 100]/seed_103
+  ->   0.44s   cum=0.6min   ETA 0.1 min over 72 remaining
+[379/450] running: wbc/n0.4/[100, 100, 100]/seed_104
+  ->   0.44s   cum=0.6min   ETA 0.1 min over 71 remaining
+[380/450] running: wbc/n0.4/[100, 100, 100]/seed_105
+  ->   0.34s   cum=0.6min   ETA 0.1 min over 70 remaining
+[381/450] running: wbc/n0.4/[15, 15, 15]/seed_101
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 69 remaining
+[382/450] running: wbc/n0.4/[15, 15, 15]/seed_102
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 68 remaining
+[383/450] running: wbc/n0.4/[15, 15, 15]/seed_103
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 67 remaining
+[384/450] running: wbc/n0.4/[15, 15, 15]/seed_104
+  ->   0.09s   cum=0.6min   ETA 0.1 min over 66 remaining
+[385/450] running: wbc/n0.4/[15, 15, 15]/seed_105
+  ->   0.07s   cum=0.6min   ETA 0.1 min over 65 remaining
+[386/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_101
+  ->   0.12s   cum=0.6min   ETA 0.1 min over 64 remaining
+[387/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_102
+  ->   0.16s   cum=0.6min   ETA 0.1 min over 63 remaining
+[388/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_103
+  ->   0.15s   cum=0.6min   ETA 0.1 min over 62 remaining
+[389/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_104
+  ->   0.15s   cum=0.6min   ETA 0.1 min over 61 remaining
+[390/450] running: wbc/n0.4/[25, 25, 25, 25, 25]/seed_105
+  ->   0.16s   cum=0.7min   ETA 0.1 min over 60 remaining
+[391/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_101
+  ->   0.14s   cum=0.7min   ETA 0.1 min over 59 remaining
+[392/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_102
+  ->   0.13s   cum=0.7min   ETA 0.1 min over 58 remaining
+[393/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_103
+  ->   0.13s   cum=0.7min   ETA 0.1 min over 57 remaining
+[394/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_104
+  ->   0.13s   cum=0.7min   ETA 0.1 min over 56 remaining
+[395/450] running: wbc/n0.4/[25, 25, 25, 25]/seed_105
+  ->   0.14s   cum=0.7min   ETA 0.1 min over 55 remaining
+[396/450] running: wbc/n0.4/[25, 25, 25]/seed_101
+  ->   0.11s   cum=0.7min   ETA 0.1 min over 54 remaining
+[397/450] running: wbc/n0.4/[25, 25, 25]/seed_102
+  ->   0.11s   cum=0.7min   ETA 0.1 min over 53 remaining
+[398/450] running: wbc/n0.4/[25, 25, 25]/seed_103
+  ->   0.11s   cum=0.7min   ETA 0.1 min over 52 remaining
+[399/450] running: wbc/n0.4/[25, 25, 25]/seed_104
+  ->   0.11s   cum=0.7min   ETA 0.1 min over 51 remaining
+[400/450] running: wbc/n0.4/[25, 25, 25]/seed_105
+  ->   0.11s   cum=0.7min   ETA 0.1 min over 50 remaining
+[401/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_101
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 49 remaining
+[402/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_102
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 48 remaining
+[403/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_103
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 47 remaining
+[404/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_104
+  ->   0.11s   cum=0.7min   ETA 0.1 min over 46 remaining
+[405/450] running: wbc/n0.4/[5, 5, 5, 5, 5]/seed_105
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 45 remaining
+[406/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_101
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 44 remaining
+[407/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_102
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 43 remaining
+[408/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_103
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 42 remaining
+[409/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_104
+  ->   0.09s   cum=0.7min   ETA 0.1 min over 41 remaining
+[410/450] running: wbc/n0.4/[5, 5, 5, 5]/seed_105
+  ->   0.07s   cum=0.7min   ETA 0.1 min over 40 remaining
+[411/450] running: wbc/n0.4/[5, 5, 5]/seed_101
+  ->   0.06s   cum=0.7min   ETA 0.1 min over 39 remaining
+[412/450] running: wbc/n0.4/[5, 5, 5]/seed_102
+  ->   0.06s   cum=0.7min   ETA 0.1 min over 38 remaining
+[413/450] running: wbc/n0.4/[5, 5, 5]/seed_103
+  ->   0.06s   cum=0.7min   ETA 0.1 min over 37 remaining
+[414/450] running: wbc/n0.4/[5, 5, 5]/seed_104
+  ->   0.06s   cum=0.7min   ETA 0.1 min over 36 remaining
+[415/450] running: wbc/n0.4/[5, 5, 5]/seed_105
+  ->   0.05s   cum=0.7min   ETA 0.1 min over 35 remaining
+[416/450] running: wbc/n0.4/[50, 50, 50]/seed_101
+  ->   0.22s   cum=0.7min   ETA 0.1 min over 34 remaining
+[417/450] running: wbc/n0.4/[50, 50, 50]/seed_102
+  ->   0.20s   cum=0.7min   ETA 0.1 min over 33 remaining
+[418/450] running: wbc/n0.4/[50, 50, 50]/seed_103
+  ->   0.20s   cum=0.7min   ETA 0.1 min over 32 remaining
+[419/450] running: wbc/n0.4/[50, 50, 50]/seed_104
+  ->   0.20s   cum=0.7min   ETA 0.1 min over 31 remaining
+[420/450] running: wbc/n0.4/[50, 50, 50]/seed_105
+  ->   0.18s   cum=0.7min   ETA 0.1 min over 30 remaining
+[421/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_101
+  ->   0.08s   cum=0.7min   ETA 0.0 min over 29 remaining
+[422/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_102
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 28 remaining
+[423/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_103
+  ->   0.09s   cum=0.7min   ETA 0.0 min over 27 remaining
+[424/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_104
+  ->   0.11s   cum=0.7min   ETA 0.0 min over 26 remaining
+[425/450] running: wbc/n0.4/[7, 7, 7, 7, 7]/seed_105
+  ->   0.10s   cum=0.7min   ETA 0.0 min over 25 remaining
+[426/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_101
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 24 remaining
+[427/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_102
+  ->   0.06s   cum=0.7min   ETA 0.0 min over 23 remaining
+[428/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_103
+  ->   0.10s   cum=0.7min   ETA 0.0 min over 22 remaining
+[429/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_104
+  ->   0.09s   cum=0.7min   ETA 0.0 min over 21 remaining
+[430/450] running: wbc/n0.4/[7, 7, 7, 7]/seed_105
+  ->   0.10s   cum=0.7min   ETA 0.0 min over 20 remaining
+[431/450] running: wbc/n0.4/[7, 7, 7]/seed_101
+  ->   0.06s   cum=0.7min   ETA 0.0 min over 19 remaining
+[432/450] running: wbc/n0.4/[7, 7, 7]/seed_102
+  ->   0.06s   cum=0.7min   ETA 0.0 min over 18 remaining
+[433/450] running: wbc/n0.4/[7, 7, 7]/seed_103
+  ->   0.06s   cum=0.7min   ETA 0.0 min over 17 remaining
+[434/450] running: wbc/n0.4/[7, 7, 7]/seed_104
+  ->   0.06s   cum=0.7min   ETA 0.0 min over 16 remaining
+[435/450] running: wbc/n0.4/[7, 7, 7]/seed_105
+  ->   0.06s   cum=0.7min   ETA 0.0 min over 15 remaining
+[436/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_101
+  ->   0.08s   cum=0.7min   ETA 0.0 min over 14 remaining
+[437/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_102
+  ->   0.08s   cum=0.7min   ETA 0.0 min over 13 remaining
+[438/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_103
+  ->   0.12s   cum=0.7min   ETA 0.0 min over 12 remaining
+[439/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_104
+  ->   0.09s   cum=0.7min   ETA 0.0 min over 11 remaining
+[440/450] running: wbc/n0.4/[9, 9, 9, 9, 9]/seed_105
+  ->   0.08s   cum=0.7min   ETA 0.0 min over 10 remaining
+[441/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_101
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 9 remaining
+[442/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_102
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 8 remaining
+[443/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_103
+  ->   0.08s   cum=0.7min   ETA 0.0 min over 7 remaining
+[444/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_104
+  ->   0.09s   cum=0.7min   ETA 0.0 min over 6 remaining
+[445/450] running: wbc/n0.4/[9, 9, 9, 9]/seed_105
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 5 remaining
+[446/450] running: wbc/n0.4/[9, 9, 9]/seed_101
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 4 remaining
+[447/450] running: wbc/n0.4/[9, 9, 9]/seed_102
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 3 remaining
+[448/450] running: wbc/n0.4/[9, 9, 9]/seed_103
+  ->   0.07s   cum=0.7min   ETA 0.0 min over 2 remaining
+[449/450] running: wbc/n0.4/[9, 9, 9]/seed_104
+  ->   0.10s   cum=0.7min   ETA 0.0 min over 1 remaining
+[450/450] running: wbc/n0.4/[9, 9, 9]/seed_105
+  ->   0.08s   cum=0.7min   ETA 0.0 min over 0 remaining
+
+finished: 449 ran, 1 skipped/failed.
+==========================================
+  Step 6/6 — Aggregate gen-gap-predictor CSVs
+  Tue Apr 28 12:10:00 PM CEST 2026
+==========================================
+wrote 450 rows to /home/johan/Documents/phd/WP1/geometric_binning_estimator/results/gen_gap_predictors.csv
+==========================================
+  Phase A baselines — done
+  Tue Apr 28 12:10:03 PM CEST 2026
+==========================================
+  log:     /home/johan/Documents/phd/WP1/geometric_binning_estimator/logs/phase_a_baselines_20260428_084437.log
+  outputs:
+    /home/johan/Documents/phd/WP1/geometric_binning_estimator/results/mi_baselines.csv
+    /home/johan/Documents/phd/WP1/geometric_binning_estimator/results/gen_gap_predictors.csv

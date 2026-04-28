@@ -153,6 +153,36 @@ Smoke-test target: see A.1.4.
   natural "your estimator without functional structure" baseline.
   The pitch: ours retrieves more class-info than naive clustering.
 
+#### KSG (Kraskov-Stögbauer-Grassberger 2004; Ross 2014 mixed variant)
+
+- **Setting**: `T ∈ R^{d_l}` continuous, `Y ∈ {0,…,|Y|-1}` discrete.
+  Use the Ross 2014 estimator for mixed continuous/discrete pairs
+  (the natural KSG-1 generalisation when one variable is categorical).
+- **Estimator**:
+  `Î(T;Y) = ψ(N) - ⟨ψ(N_y_i)⟩ + ψ(k) - ⟨ψ(m_i)⟩` (in nats),
+  divide by `ln 2` for bits. For each sample `i`:
+  - `N_y_i` = number of samples sharing label `y_i`.
+  - `d_i` = Chebyshev distance from `t_i` to its k-th nearest
+    neighbour **within class** `y_i` (uses `BallTree` /
+    `KDTree` per-class with `metric="chebyshev"`).
+  - `m_i` = number of samples (any class) with
+    `||t_j - t_i||_∞ < d_i`, computed with a global tree and
+    `query_radius` (open ball, matching Ross's definition).
+- **Hyperparams**: `k ∈ {3, 5, 10}` (sweep; default k=3 follows
+  Ross). Sklearn's `mutual_info_classif` implements the same
+  estimator and can be used as a cross-check, but it returns
+  per-feature MI rather than the joint we want, so we implement
+  the joint estimator directly.
+- **Cost**: dominated by neighbour search; `O(N log N)` per query
+  with KDTree. ~3–8 s per HDF5 for N=5000, d≤25.
+- **Notes**: KSG is the de-facto standard MI estimator for
+  continuous data and is a much fairer comparison than naive
+  binning when `d_l` is non-trivial — it is dimension-aware and
+  bias-corrected, so the high-dimension regime that breaks
+  histogram MI is exactly where KSG shines. Sample-size–limited
+  bias is well-characterised (Gao et al. 2015); we follow the
+  same `N=5000` cap as MINE for a fair head-to-head.
+
 ### A.1.2 — File structure
 
 `src_experiment/baselines/mi_baselines.py`:
@@ -174,6 +204,12 @@ def binning_mi(T: np.ndarray, Y: np.ndarray, n_bins: int) -> dict:
 
 def kmeans_mi(T: np.ndarray, Y: np.ndarray, K: int, seed: int) -> dict:
     """K-means cluster T into K, plug-in MI on (cluster, Y)."""
+
+def ksg_mi(T: np.ndarray, Y: np.ndarray, k: int = 3) -> dict:
+    """KSG / Ross 2014 mixed continuous-discrete MI estimator.
+
+    Returns {"bits": float, "k": int, "wall": float}.
+    """
 ```
 
 `scripts/run_mi_baselines.py`:
@@ -191,7 +227,8 @@ emit per-HDF5 CSV `<h5>_mi_baselines.csv` with columns:
     bits_infonce_mean, bits_infonce_std,
     bits_binning_2, bits_binning_4, ..., bits_binning_30,
     bits_kmeans_K{|Y|,2|Y|,4|Y|,16,64,256},
-    wall_seconds_mine, wall_seconds_infonce,
+    bits_ksg_k{3,5,10},
+    wall_seconds_mine, wall_seconds_infonce, wall_seconds_ksg,
     bits_ours_raw, bits_ours_func, rho, rho_func   # copied from existing CSV for cross-ref
 ```
 
@@ -223,7 +260,15 @@ emit per-HDF5 CSV `<h5>_mi_baselines.csv` with columns:
    Check at ρ ∈ {0.3, 0.5, 0.8}, N=5000:
    - MINE recovers MI to ±0.1 bits (mean over 5 seeds).
    - InfoNCE recovers MI to ±0.2 bits (it's a looser bound).
-3. **Trivial baseline**: `f(x) = x` should have `I(X;Y)=Y` exactly.
+3. **Mixed Gaussian-discrete I(T;Y)** for KSG: `Y ~ Uniform{0,1}`,
+   `T | Y=0 ~ N(-μ, 1)`, `T | Y=1 ~ N(+μ, 1)` in 1D, plus the
+   d-dim isotropic version. Closed-form `I(T;Y) = log 2 -
+   E[H(p(Y|T))]` (numerical integration). Check at μ ∈ {0.5, 1.0,
+   2.0}, N=5000, d ∈ {1, 5}:
+   - `ksg_mi(k=3)` recovers MI to ±0.05 bits.
+   - Confirms Ross-formula implementation matches sklearn's
+     `mutual_info_classif(...).sum()` to within numerical tol.
+4. **Trivial baseline**: `f(x) = x` should have `I(X;Y)=Y` exactly.
 
 Each test is parametrised; the script asserts on the deltas above
 and exits 0 / 1.
@@ -241,7 +286,8 @@ iters, broken EMA); the synthetic test catches those.
 | InfoNCE × 3 seeds × 1000 iter | ~5 s | ~45 min |
 | binning × 5 settings | <1 s | ~10 min |
 | kmeans × 6 settings | ~3 s | ~30 min |
-| **Total A.1** | ~35 s | **~5.5 h** |
+| ksg × 3 settings (k=3,5,10) | ~5 s | ~45 min |
+| **Total A.1** | ~40 s | **~6.3 h** |
 
 CPU is fine; if a GPU is available MINE drops to ~5s/HDF5
 (~45 min total).
@@ -270,6 +316,7 @@ CPU is fine; if a GPU is available MINE drops to ~5s/HDF5
 | risk | mitigation |
 |---|---|
 | MINE underestimates at low N (Belghazi 2018 fig 4) | Subsample to N=5000 only when N>5000 |
+| KSG biased on dim ≥ ~20 (curse of dimensionality, Gao 2015) | Report KSG only up to deepest hidden width; flag rows with `d_l > 20` for caveat in writeup |
 | MINE seed variance large | Report mean ± std across 5 critic seeds; flag any HDF5 with std > 0.2 bits |
 | InfoNCE bound saturates at log(K) | Use K=256 batch; saturation is a known limit, document |
 | Binning explodes at high n_bins | Stop sweep at n_bins=30; report the curve, not a single number |
