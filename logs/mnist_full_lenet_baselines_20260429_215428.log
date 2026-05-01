@@ -1,0 +1,148 @@
+
+=== Pre-flight: LeNet-XS / noise=0 / seed=101 (cheap baselines) ===
++ uv run python scripts/run_mi_baselines.py --datasets mnist_full_lenet --noise 0.0 --archs LeNet-XS --seeds 101 --skip-mine --skip-infonce --force
+discovered 1 jobs across ['mnist_full_lenet']
+  probe[mnist_full_lenet]: mnist_full_lenet probe N=10000; read from /home/johan/Documents/phd/WP1/geometric_binning_estimator/outputs/mnist_full_lenet/n0.0_LeNet-XS/seed_101.h5 (canonical: same test set is saved into every LeNet HDF5)
+[1/1] running: mnist_full_lenet/n0.0/LeNet-XS/seed_101
+  ->   3.59s   cum=0.1min   ETA 0.0 min over 0 remaining
+
+finished: 1 ran, 0 skipped/failed.
+
+=== Main sweep: 60 jobs (4 archs * 3 noise * 5 seeds) ===
++ uv run python scripts/run_mi_baselines.py --datasets mnist_full_lenet
+discovered 60 jobs across ['mnist_full_lenet']
+[1/60] skip (exists): mnist_full_lenet/n0.0/LeNet-L/seed_101
+  probe[mnist_full_lenet]: mnist_full_lenet probe N=10000; read from /home/johan/Documents/phd/WP1/geometric_binning_estimator/outputs/mnist_full_lenet/n0.0_LeNet-XS/seed_101.h5 (canonical: same test set is saved into every LeNet HDF5)
+[2/60] running: mnist_full_lenet/n0.0/LeNet-L/seed_102
+  ->  50.64s   cum=0.8min   ETA 49.0 min over 58 remaining
+[3/60] running: mnist_full_lenet/n0.0/LeNet-L/seed_103
+  ->  44.77s   cum=1.6min   ETA 45.3 min over 57 remaining
+[4/60] running: mnist_full_lenet/n0.0/LeNet-L/seed_104
+  ->  44.65s   cum=2.3min   ETA 43.6 min over 56 remaining
+[5/60] running: mnist_full_lenet/n0.0/LeNet-L/seed_105
+  ->  47.20s   cum=3.1min   ETA 42.9 min over 55 remaining
+[6/60] running: mnist_full_lenet/n0.0/LeNet-M/seed_101
+  ->  42.95s   cum=3.8min   ETA 41.4 min over 54 remaining
+[7/60] running: mnist_full_lenet/n0.0/LeNet-M/seed_102
+  ->  44.51s   cum=4.6min   ETA 40.4 min over 53 remaining
+[8/60] running: mnist_full_lenet/n0.0/LeNet-M/seed_103
+  ->  44.49s   cum=5.3min   ETA 39.5 min over 52 remaining
+[9/60] running: mnist_full_lenet/n0.0/LeNet-M/seed_104
+  ->  43.48s   cum=6.0min   ETA 38.5 min over 51 remaining
+[10/60] running: mnist_full_lenet/n0.0/LeNet-M/seed_105
+  ->  43.94s   cum=6.8min   ETA 37.7 min over 50 remaining
+[11/60] running: mnist_full_lenet/n0.0/LeNet-S/seed_101
+  ->  40.50s   cum=7.5min   ETA 36.5 min over 49 remaining
+[12/60] running: mnist_full_lenet/n0.0/LeNet-S/seed_102
+  ->  42.43s   cum=8.2min   ETA 35.6 min over 48 remaining
+[13/60] running: mnist_full_lenet/n0.0/LeNet-S/seed_103
+  ->  42.03s   cum=8.9min   ETA 34.7 min over 47 remaining
+[14/60] running: mnist_full_lenet/n0.0/LeNet-S/seed_104
+  ->  41.14s   cum=9.5min   ETA 33.8 min over 46 remaining
+[15/60] running: mnist_full_lenet/n0.0/LeNet-S/seed_105
+  ->  42.17s   cum=10.2min   ETA 32.9 min over 45 remaining
+[16/60] skip (exists): mnist_full_lenet/n0.0/LeNet-XS/seed_101
+[17/60] running: mnist_full_lenet/n0.0/LeNet-XS/seed_102
+  ->  37.24s   cum=10.9min   ETA 31.2 min over 43 remaining
+[18/60] running: mnist_full_lenet/n0.0/LeNet-XS/seed_103
+  ->  36.03s   cum=11.5min   ETA 30.1 min over 42 remaining
+[19/60] running: mnist_full_lenet/n0.0/LeNet-XS/seed_104
+  ->  37.12s   cum=12.1min   ETA 29.2 min over 41 remaining
+[20/60] running: mnist_full_lenet/n0.0/LeNet-XS/seed_105
+  ->  36.49s   cum=12.7min   ETA 28.2 min over 40 remaining
+[21/60] running: mnist_full_lenet/n0.2/LeNet-L/seed_101
+  ->  61.50s   cum=13.7min   ETA 28.2 min over 39 remaining
+[22/60] running: mnist_full_lenet/n0.2/LeNet-L/seed_102
+  ->  54.40s   cum=14.6min   ETA 27.8 min over 38 remaining
+[23/60] running: mnist_full_lenet/n0.2/LeNet-L/seed_103
+  ->  54.95s   cum=15.5min   ETA 27.4 min over 37 remaining
+[24/60] running: mnist_full_lenet/n0.2/LeNet-L/seed_104
+  ->  54.86s   cum=16.5min   ETA 26.9 min over 36 remaining
+[25/60] running: mnist_full_lenet/n0.2/LeNet-L/seed_105
+  ->  55.12s   cum=17.4min   ETA 26.4 min over 35 remaining
+[26/60] running: mnist_full_lenet/n0.2/LeNet-M/seed_101
+  ->  47.75s   cum=18.2min   ETA 25.7 min over 34 remaining
+[27/60] running: mnist_full_lenet/n0.2/LeNet-M/seed_102
+  ->  48.34s   cum=19.0min   ETA 25.1 min over 33 remaining
+[28/60] running: mnist_full_lenet/n0.2/LeNet-M/seed_103
+  ->  49.13s   cum=19.8min   ETA 24.4 min over 32 remaining
+[29/60] running: mnist_full_lenet/n0.2/LeNet-M/seed_104
+  ->  48.30s   cum=20.6min   ETA 23.7 min over 31 remaining
+[30/60] running: mnist_full_lenet/n0.2/LeNet-M/seed_105
+  ->  48.55s   cum=21.4min   ETA 22.9 min over 30 remaining
+[31/60] running: mnist_full_lenet/n0.2/LeNet-S/seed_101
+  ->  42.38s   cum=22.1min   ETA 22.1 min over 29 remaining
+[32/60] running: mnist_full_lenet/n0.2/LeNet-S/seed_102
+  ->  43.42s   cum=22.8min   ETA 21.3 min over 28 remaining
+[33/60] running: mnist_full_lenet/n0.2/LeNet-S/seed_103
+  ->  42.83s   cum=23.6min   ETA 20.5 min over 27 remaining
+[34/60] running: mnist_full_lenet/n0.2/LeNet-S/seed_104
+  ->  42.40s   cum=24.3min   ETA 19.7 min over 26 remaining
+[35/60] running: mnist_full_lenet/n0.2/LeNet-S/seed_105
+  ->  43.22s   cum=25.0min   ETA 18.9 min over 25 remaining
+[36/60] running: mnist_full_lenet/n0.2/LeNet-XS/seed_101
+  ->  37.10s   cum=25.6min   ETA 18.1 min over 24 remaining
+[37/60] running: mnist_full_lenet/n0.2/LeNet-XS/seed_102
+  ->  36.34s   cum=26.2min   ETA 17.2 min over 23 remaining
+[38/60] running: mnist_full_lenet/n0.2/LeNet-XS/seed_103
+  ->  36.66s   cum=26.8min   ETA 16.4 min over 22 remaining
+[39/60] running: mnist_full_lenet/n0.2/LeNet-XS/seed_104
+  ->  38.37s   cum=27.5min   ETA 15.6 min over 21 remaining
+[40/60] running: mnist_full_lenet/n0.2/LeNet-XS/seed_105
+  ->  37.51s   cum=28.1min   ETA 14.8 min over 20 remaining
+[41/60] running: mnist_full_lenet/n0.4/LeNet-L/seed_101
+  ->  56.04s   cum=29.0min   ETA 14.1 min over 19 remaining
+[42/60] running: mnist_full_lenet/n0.4/LeNet-L/seed_102
+  ->  55.56s   cum=29.9min   ETA 13.5 min over 18 remaining
+[43/60] running: mnist_full_lenet/n0.4/LeNet-L/seed_103
+  ->  54.45s   cum=30.8min   ETA 12.8 min over 17 remaining
+[44/60] running: mnist_full_lenet/n0.4/LeNet-L/seed_104
+  ->  55.92s   cum=31.8min   ETA 12.1 min over 16 remaining
+[45/60] running: mnist_full_lenet/n0.4/LeNet-L/seed_105
+  ->  57.46s   cum=32.7min   ETA 11.4 min over 15 remaining
+[46/60] running: mnist_full_lenet/n0.4/LeNet-M/seed_101
+  ->  56.38s   cum=33.7min   ETA 10.7 min over 14 remaining
+[47/60] running: mnist_full_lenet/n0.4/LeNet-M/seed_102
+  ->  49.64s   cum=34.5min   ETA 10.0 min over 13 remaining
+[48/60] running: mnist_full_lenet/n0.4/LeNet-M/seed_103
+  ->  48.49s   cum=35.3min   ETA 9.2 min over 12 remaining
+[49/60] running: mnist_full_lenet/n0.4/LeNet-M/seed_104
+  ->  49.34s   cum=36.1min   ETA 8.5 min over 11 remaining
+[50/60] running: mnist_full_lenet/n0.4/LeNet-M/seed_105
+  ->  57.75s   cum=37.1min   ETA 7.7 min over 10 remaining
+[51/60] running: mnist_full_lenet/n0.4/LeNet-S/seed_101
+  ->  44.02s   cum=37.8min   ETA 6.9 min over 9 remaining
+[52/60] running: mnist_full_lenet/n0.4/LeNet-S/seed_102
+  ->  42.59s   cum=38.5min   ETA 6.2 min over 8 remaining
+[53/60] running: mnist_full_lenet/n0.4/LeNet-S/seed_103
+  ->  50.36s   cum=39.4min   ETA 5.4 min over 7 remaining
+[54/60] running: mnist_full_lenet/n0.4/LeNet-S/seed_104
+  ->  43.62s   cum=40.1min   ETA 4.6 min over 6 remaining
+[55/60] running: mnist_full_lenet/n0.4/LeNet-S/seed_105
+  ->  43.40s   cum=40.8min   ETA 3.9 min over 5 remaining
+[56/60] running: mnist_full_lenet/n0.4/LeNet-XS/seed_101
+  ->  38.39s   cum=41.5min   ETA 3.1 min over 4 remaining
+[57/60] running: mnist_full_lenet/n0.4/LeNet-XS/seed_102
+  ->  38.05s   cum=42.1min   ETA 2.3 min over 3 remaining
+[58/60] running: mnist_full_lenet/n0.4/LeNet-XS/seed_103
+  ->  37.11s   cum=42.7min   ETA 1.5 min over 2 remaining
+[59/60] running: mnist_full_lenet/n0.4/LeNet-XS/seed_104
+  ->  36.70s   cum=43.3min   ETA 0.8 min over 1 remaining
+[60/60] running: mnist_full_lenet/n0.4/LeNet-XS/seed_105
+  ->  37.75s   cum=44.0min   ETA 0.0 min over 0 remaining
+
+finished: 58 ran, 2 skipped/failed.
+
+=== Aggregate: results/mi_baselines.csv ===
++ uv run python scripts/run_mi_baselines.py --aggregate
+wrote 510 rows to /home/johan/Documents/phd/WP1/geometric_binning_estimator/results/mi_baselines.csv
+
+=== Replot: figures/baseline_mi_with_plugin.png ===
++ uv run python scripts/plot_routing_vs_baselines.py
+Warning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.
+[warn] missing mnist_full_lenet_label_noise_new_estimator.csv; baselines for mnist_full_lenet will plot without ours-side overlays
+merged 195 cells across 3 datasets
+wrote /home/johan/Documents/phd/WP1/geometric_binning_estimator/results/routing_vs_baselines_summary.csv
+wrote /home/johan/Documents/phd/WP1/geometric_binning_estimator/figures/baseline_mi_with_plugin.png
+
+=== Done ===

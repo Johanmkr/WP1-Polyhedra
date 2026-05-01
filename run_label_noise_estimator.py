@@ -48,13 +48,15 @@ OUTPUTS = REPO / "outputs"
 DATASETS = {
     "composite": OUTPUTS / "composite_label_noise",
     "wbc": OUTPUTS / "wbc_label_noise",
+    "mnist_full_lenet": OUTPUTS / "mnist_full_lenet",
 }
 
 # Wider than spec default. See `new_estimator_next_steps.md` for rationale.
 DEFAULT_EPSILONS = (0.0, 1e-4, 1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0)
 
-# Filename pattern: ``n0.2_[25, 25, 25]`` -> noise=0.2, arch="[25, 25, 25]"
-_DIR_RE = re.compile(r"^n(?P<noise>[0-9.]+)_(?P<arch>\[.*\])$")
+# Filename pattern: ``n0.2_[25, 25, 25]`` (MLP) or ``n0.0_LeNet-XS`` (CNN).
+# arch group accepts either a bracketed list or a hyphenated identifier.
+_DIR_RE = re.compile(r"^n(?P<noise>[0-9.]+)_(?P<arch>.+)$")
 _SEED_RE = re.compile(r"^seed_(?P<seed>\d+)\.h5$")
 
 

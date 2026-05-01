@@ -179,3 +179,42 @@ def make_wbc_probe(
         )
 
     raise ValueError(f"unknown wbc mode: {mode!r} (expected test|full|split)")
+
+
+# ---------------------------------------------------------------------------
+# MNIST full + LeNet
+# ---------------------------------------------------------------------------
+@lru_cache(maxsize=None)
+def make_mnist_full_lenet_probe(
+    canonical_h5: Optional[str] = None,
+) -> ProbeBundle:
+    """Probe builder for the ``mnist_full_lenet`` sweep.
+
+    All 60 LeNet HDF5s under ``outputs/mnist_full_lenet/`` share the same
+    saved test set (10 000 MNIST samples already in ``[-1, 1]``). Read
+    ``points`` / ``labels`` from a canonical HDF5 (LeNet-XS / noise=0 /
+    seed=101) so probe construction is deterministic and avoids re-running
+    the original training-time preprocessing.
+    """
+    import h5py
+    from pathlib import Path as _Path
+
+    if canonical_h5 is None:
+        canonical_h5 = str(
+            _Path(__file__).resolve().parents[1]
+            / "outputs"
+            / "mnist_full_lenet"
+            / "n0.0_LeNet-XS"
+            / "seed_101.h5"
+        )
+    with h5py.File(canonical_h5, "r") as f:
+        X = np.asarray(f["points"][:], dtype=np.float32)
+        y = np.asarray(f["labels"][:], dtype=np.int64)
+    return ProbeBundle(
+        X_probe=X,
+        y_probe=y,
+        note=(
+            f"mnist_full_lenet probe N={len(X)}; read from {canonical_h5} "
+            f"(canonical: same test set is saved into every LeNet HDF5)"
+        ),
+    )

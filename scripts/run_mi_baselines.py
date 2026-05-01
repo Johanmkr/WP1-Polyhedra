@@ -41,7 +41,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 from run_label_noise_estimator import DATASETS, discover_jobs  # noqa: E402
-from src_experiment.baselines.activations import load_layer_activations  # noqa: E402
+from src_experiment.baselines.activations import load_activations_dispatch  # noqa: E402
 from src_experiment.baselines.mi_baselines import (  # noqa: E402
     InfoNCEEstimator,
     MINEEstimator,
@@ -52,6 +52,7 @@ from src_experiment.baselines.mi_baselines import (  # noqa: E402
 from src_experiment.probe_loader import (  # noqa: E402
     ProbeBundle,
     make_composite_probe,
+    make_mnist_full_lenet_probe,
     make_wbc_probe,
 )
 
@@ -73,6 +74,8 @@ def _resolve_probe(dataset: str) -> ProbeBundle:
         return make_composite_probe()  # N=20k, cached
     if dataset == "wbc":
         return make_wbc_probe(mode="full")  # N=569
+    if dataset == "mnist_full_lenet":
+        return make_mnist_full_lenet_probe()  # N=10k, cached
     raise ValueError(f"unknown dataset {dataset!r}")
 
 
@@ -80,16 +83,30 @@ def _resolve_probe(dataset: str) -> ProbeBundle:
 # HDF5 introspection
 # ---------------------------------------------------------------------------
 def _h5_summary(h5_path: Path) -> dict:
-    """Read architecture, last epoch, num_classes, network_id from one HDF5."""
+    """Read architecture, last epoch, num_classes, network_id from one HDF5.
+
+    Handles both MLP HDF5s (``architecture`` attr is the hidden-width list)
+    and LeNet5 HDF5s (``arch_type=lenet5``; deepest hidden is
+    ``n_conv + n_fc_hidden``).
+    """
     with h5py.File(h5_path, "r") as f:
         attrs = dict(f["metadata"].attrs)
-        arch = list(attrs.get("architecture", []))
         epochs = sorted(
             int(k.split("_")[1]) for k in f["epochs"].keys() if k.startswith("epoch_")
         )
+        arch_type = str(attrs.get("arch_type", "mlp"))
+        if arch_type == "lenet5":
+            conv_channels = list(attrs.get("conv_channels", []))
+            fc_widths = list(attrs.get("fc_widths", []))
+            arch = list(conv_channels) + list(fc_widths)
+            deepest = len(conv_channels) + len(fc_widths)  # last fc-ReLU layer
+        else:
+            arch = list(attrs.get("architecture", []))
+            deepest = len(arch)
     return {
         "architecture": arch,
-        "deepest_layer": len(arch),  # 1-indexed last hidden
+        "arch_type": arch_type,
+        "deepest_layer": int(deepest),  # 1-indexed last hidden ReLU step
         "last_epoch": int(epochs[-1]),
         "num_classes": int(attrs.get("inferred_num_classes", 0)),
         "network_id": str(attrs.get("experiment_name", h5_path.stem)),
@@ -97,10 +114,15 @@ def _h5_summary(h5_path: Path) -> dict:
 
 
 def _crossref_existing(h5_path: Path, epoch: int, layer: int) -> dict:
-    """Pick `bits_ours_raw`/`bits_ours_func`/`rho`/`rho_func` from the
-    existing ``new_estimator_<seed>.csv`` if one exists. Returns empty dict
-    if not. Joins on (epoch, layer); for the functional column we take the
-    smallest non-zero ε row."""
+    """Pick the routing-information estimator outputs from the existing
+    ``new_estimator_<seed>.csv`` if one exists. Returns empty dict if not.
+
+    Surfaces both the **plug-in** (``bits_ours_plugin`` / ``bits_ours_func_plugin``)
+    and the **Miller-Madow corrected** (``bits_ours_raw`` /
+    ``bits_ours_func``) variants, so the baseline figure can compare both.
+    Joins on (epoch, layer); for the functional column we take the smallest
+    non-zero ε row.
+    """
     csv = h5_path.with_name(f"new_estimator_{h5_path.stem}.csv")
     if not csv.exists():
         return {}
@@ -110,12 +132,14 @@ def _crossref_existing(h5_path: Path, epoch: int, layer: int) -> dict:
         return {}
     raw = sub.iloc[0]
     out = {
+        "bits_ours_plugin": float(raw["plug_in_bits"]),
         "bits_ours_raw": float(raw["miller_madow_bits"]),
         "rho": float(raw["rho"]),
     }
     func_rows = sub[sub["epsilon"] > 0]
     if not func_rows.empty:
         f = func_rows.sort_values("epsilon").iloc[0]
+        out["bits_ours_func_plugin"] = float(f["plug_in_func_bits"])
         out["bits_ours_func"] = float(f["miller_madow_func_bits"])
         out["rho_func"] = float(f["rho_func"])
         out["epsilon_for_ours_func"] = float(f["epsilon"])
@@ -150,7 +174,7 @@ def evaluate_one(
     else:
         N_eff = N
 
-    T = load_layer_activations(h5_path, epoch, layer, X, kind="pre")
+    T = load_activations_dispatch(h5_path, epoch, layer, X, kind="pre")
     d_T = T.shape[1]
 
     row: dict = {

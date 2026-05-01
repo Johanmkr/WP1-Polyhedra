@@ -1,0 +1,31 @@
+experiment_name: n0.0_LeNet-XS
+dataset: mnist_full
+output_dir: outputs/mnist_full_lenet
+arch_type: lenet5
+conv_channels:
+- 4
+- 8
+fc_widths:
+- 60
+- 42
+kernel_size: 5
+pool_size: 2
+global_seed: 42
+model_seed: 103
+epochs: 101
+batch_size: 128
+optimizer: SGD
+learning_rate: 0.01
+momentum: 0.9
+noise: 0.0
+test_size: 0.2
+save_interval: 10
+save_epochs:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 6
+- 8
+- 10
