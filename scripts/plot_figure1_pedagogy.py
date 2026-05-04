@@ -11,11 +11,15 @@ Output:
     figures/figure1_pedagogy.pdf / .png
 
 Usage:
-    uv run python scripts/plot_figure1_pedagogy.py
+    uv run python scripts/plot_figure1_pedagogy.py [--retrain]
+
+    Use --retrain to force retraining (otherwise loads saved weights if available)
 """
 
 from __future__ import annotations
 
+import sys
+import argparse
 from pathlib import Path
 from collections import Counter
 
@@ -29,9 +33,17 @@ from matplotlib.patches import ConnectionPatch
 from sklearn.datasets import make_moons
 from sklearn.preprocessing import MinMaxScaler
 
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
+
+from src_experiment.utils import savefig
+from src_experiment.paths import neurips_figpath
+
 REPO = Path(__file__).resolve().parents[1]
 FIGURES = REPO / "figures"
 FIGURES.mkdir(exist_ok=True)
+WEIGHTS_FILE = REPO / ".cache" / "figure1_pedagogy_weights.pt"
+WEIGHTS_FILE.parent.mkdir(exist_ok=True)
 
 SEED   = 7
 HIDDEN = 4   # neurons per hidden layer
@@ -64,16 +76,38 @@ class SmallNet(nn.Module):
         return self.out(self.relu2(self.l2(self.relu1(self.l1(x)))))
 
 
-net = SmallNet(HIDDEN)
-opt = torch.optim.Adam(net.parameters(), lr=3e-3)
-for _ in range(2000):
-    opt.zero_grad()
-    nn.CrossEntropyLoss()(net(X_t), y_t).backward()
-    opt.step()
+def train_or_load_model(retrain=False):
+    """Train model or load pre-trained weights if available."""
+    net = SmallNet(HIDDEN)
 
-with torch.no_grad():
-    acc = (net(X_t).argmax(1) == y_t).float().mean().item()
-print(f"Train accuracy: {acc:.3f}")
+    if WEIGHTS_FILE.exists() and not retrain:
+        print(f"Loading pre-trained weights from {WEIGHTS_FILE}")
+        net.load_state_dict(torch.load(WEIGHTS_FILE))
+        return net
+
+    print("Training network...")
+    opt = torch.optim.Adam(net.parameters(), lr=3e-3)
+    for _ in range(2000):
+        opt.zero_grad()
+        nn.CrossEntropyLoss()(net(X_t), y_t).backward()
+        opt.step()
+
+    with torch.no_grad():
+        acc = (net(X_t).argmax(1) == y_t).float().mean().item()
+    print(f"Train accuracy: {acc:.3f}")
+
+    torch.save(net.state_dict(), WEIGHTS_FILE)
+    print(f"Saved weights to {WEIGHTS_FILE}")
+
+    return net
+
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Generate pedagogical Figure 1")
+parser.add_argument("--retrain", action="store_true", help="Force retraining of the network")
+args = parser.parse_args()
+
+net = train_or_load_model(retrain=args.retrain)
 
 # ── Extract weights ───────────────────────────────────────────────────────────
 W1    = net.l1.weight.detach().numpy()    # (H, 2)
@@ -124,7 +158,7 @@ HL_EDGE     = "#b8960a"
 NODE_ON     = "#27ae60"
 NODE_OFF    = "#ecf0f1"
 NODE_IN     = "#95a5a6"
-CLASS_C     = ["#2980b9", "#c0392b"]   # class 0 = blue, class 1 = red
+CLASS_C     = ["#003cff", "#ff1900"]   # class 0 = blue, class 1 = red
 
 # Soft qualitative palette – 16 distinct pastel colours
 _RAW_PALETTE = [
@@ -149,14 +183,17 @@ def region_image(codes_flat, highlight_code):
     img = np.zeros((N * N, 4))
     for i, c in enumerate(unique):
         mask = codes_flat == c
-        img[mask] = YELLOW_HL if c == highlight_code else PALETTE[i % len(PALETTE)]
+        if c == highlight_code:
+            img[mask] = YELLOW_HL
+        else:
+            img[mask] = [1, 1, 1, 0]  # White with 0 alpha (transparent)
     return img.reshape(N, N, 4)
 
 
 # ── Figure ────────────────────────────────────────────────────────────────────
-fig = plt.figure(figsize=(13.5, 4.8))
-gs  = GridSpec(1, 3, figure=fig, wspace=0.28,
-               left=0.04, right=0.97, top=0.90, bottom=0.14)
+fig = plt.figure(figsize=(15, 5))
+gs  = GridSpec(1, 3, figure=fig, wspace=-0.10,
+               left=0.01, right=0.99, top=0.92, bottom=0.10)
 ax_a = fig.add_subplot(gs[0])
 ax_b = fig.add_subplot(gs[1])
 ax_c = fig.add_subplot(gs[2])
@@ -186,14 +223,14 @@ ax_a.imshow(region_image(code1, c1), origin="lower",
 line_cols = plt.cm.Set1(np.linspace(0.0, 0.75, HIDDEN))
 for i in range(HIDDEN):
     ax_a.contour(XX, YY, pre1[:, i].reshape(N, N), levels=[0],
-                 colors=[line_cols[i]], linewidths=2.0, alpha=0.9, zorder=2)
+                 colors="black", linewidths=1.5, alpha=0.9, zorder=2)
 
 plot_data(ax_a)
 mask_a = code1 == c1
 cx_a, cy_a = label_region(ax_a, mask_a, r"region $\omega$")
 
 ax_a.set_xlim(-lim, lim); ax_a.set_ylim(-lim, lim)
-ax_a.set_xlabel("$x_1$", fontsize=11); ax_a.set_ylabel("$x_2$", fontsize=11)
+ax_a.set_xticks([]); ax_a.set_yticks([])
 ax_a.set_title("(a)  After layer 1", fontsize=12, pad=6)
 
 # ── Panel (b): full 2-layer partition ─────────────────────────────────────────
@@ -203,26 +240,26 @@ ax_b.imshow(region_image(code_full, best_full), origin="lower",
 bnd = np.zeros((N, N), bool)
 bnd[:-1, :] |= (full_grid[:-1, :] != full_grid[1:, :])
 bnd[:, :-1] |= (full_grid[:, :-1] != full_grid[:, 1:])
-bnd_rgba = np.zeros((N, N, 4))
-bnd_rgba[bnd] = [0, 0, 0, 0.40]
-ax_b.imshow(bnd_rgba, origin="lower", extent=EXTENT, aspect="equal",
-            interpolation="nearest", zorder=2)
 
-ax_b.contour(XX, YY, logits[:, 1].reshape(N, N),
-             levels=[0], colors="k", linewidths=1.5, linestyles="--",
-             zorder=3, alpha=0.7)
+# Draw boundaries as contours with explicit linewidth
+for code_val in np.unique(full_grid):
+    ax_b.contour(XX, YY, full_grid, levels=[code_val - 0.5],
+                 colors="black", linewidths=1, alpha=0.8, zorder=2)
 
 plot_data(ax_b)
 mask_b = code_full == best_full
 cx_b, cy_b = label_region(ax_b, mask_b, r"region $\omega$")
 
 ax_b.set_xlim(-lim, lim); ax_b.set_ylim(-lim, lim)
-ax_b.set_xlabel("$x_1$", fontsize=11)
+ax_b.set_xticks([]); ax_b.set_yticks([])
 ax_b.set_title("(b)  After layer 2", fontsize=12, pad=6)
 
+# Add legend between panels (a) and (b), below titles
 c0_h = mpatches.Patch(color=CLASS_C[0], label="Class 0", alpha=0.8)
 c1_h = mpatches.Patch(color=CLASS_C[1], label="Class 1", alpha=0.8)
-ax_b.legend(handles=[c0_h, c1_h], loc="lower left", fontsize=8.5, framealpha=0.85)
+legend_y = 0.97  # Below title, above plot
+fig.legend(handles=[c0_h, c1_h], loc="upper center", fontsize=9, framealpha=0.9,
+           bbox_to_anchor=(0.35, legend_y), ncol=2, frameon=False)
 
 # ── Panel (c): network diagram ────────────────────────────────────────────────
 y_top  = (HIDDEN - 1) * 1.2 + 0.5
@@ -280,21 +317,11 @@ lbl_kw = dict(ha="center", fontsize=9, color="#111",
 ax_c.text(2.0, -1.20, r"$\pi^{(1)}_\omega = $" + fmt(ACT1), **lbl_kw)
 ax_c.text(3.5, -1.20, r"$\pi^{(2)}_\omega = $" + fmt(ACT2), **lbl_kw)
 
-on_p  = mpatches.Patch(color=NODE_ON,  label="Active (1)")
-off_p = mpatches.Patch(color=NODE_OFF, label="Inactive (0)", ec="#aaa", lw=0.8)
-ax_c.legend(handles=[on_p, off_p], loc="upper right", fontsize=8.5, framealpha=0.85)
-
-# ── Connecting arrow: highlighted region in (b) → network diagram ─────────────
-fig.add_artist(ConnectionPatch(
-    xyA=(cx_b, cy_b), coordsA=ax_b.transData,
-    xyB=(0.2, y_mid),  coordsB=ax_c.transData,
-    arrowstyle="-|>", color=HL_EDGE, lw=2.2, mutation_scale=18, zorder=10,
-))
-
 # ── Save ──────────────────────────────────────────────────────────────────────
-for ext in ("pdf", "png"):
-    out = FIGURES / f"figure1_pedagogy.{ext}"
-    fig.savefig(out, bbox_inches="tight", dpi=200)
-    print(f"Saved {out}")
+# for ext in ("pdf", "png"):
+#     out = FIGURES / f"figure1_pedagogy.{ext}"
+#     fig.savefig(out, bbox_inches="tight", dpi=200)
+#     print(f"Saved {out}")
+savefig(fig, neurips_figpath / "pedagogical_figure1")
 
 plt.show()

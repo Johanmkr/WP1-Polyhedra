@@ -1,26 +1,32 @@
 """
 Phase A.1 sweep runner: evaluate the MI baselines (binning, k-means, KSG,
-InfoNCE, MINE-f) at the last-epoch / deepest hidden layer of every label-noise
-HDF5, one CSV row per network.
+InfoNCE, MINE-f) across **all saved epochs and all hidden layers** of every
+label-noise HDF5.  One CSV row per (epoch, layer) cell; per-HDF5 CSVs land at
+``mi_baselines_seed_<seed>.csv`` next to the HDF5.
 
-Reuses :func:`run_label_noise_estimator.discover_jobs` for filename parsing
-and the standard probe loaders. Per-HDF5 CSVs land at
-``mi_baselines_seed_<seed>.csv`` next to the HDF5 (resumable: the script
-skips files whose CSV already exists). ``--aggregate`` concatenates them
+Resumable: already-computed (epoch, layer) cells are skipped automatically.
+New cells are appended and flushed to disk after each cell so a crash only
+loses the cell in progress.  ``--aggregate`` concatenates all per-HDF5 CSVs
 into ``results/mi_baselines.csv``.
 
 Examples
 --------
-Smoke run on a single composite HDF5 with the cheap baselines only::
+Smoke run — one HDF5, cheap baselines only::
 
     uv run python scripts/run_mi_baselines.py --datasets composite --limit 1 \\
         --skip-mine --skip-infonce
 
-Full sweep::
+Sweep all epochs/layers, skip neural estimators (fast)::
 
-    uv run python scripts/run_mi_baselines.py --datasets both
+    uv run python scripts/run_mi_baselines.py --datasets both \\
+        --skip-mine --skip-infonce
 
-Aggregate::
+Target a single layer across all epochs::
+
+    uv run python scripts/run_mi_baselines.py --datasets composite \\
+        --layer-filter 3 --skip-mine --skip-infonce
+
+Aggregate into results/mi_baselines.csv::
 
     uv run python scripts/run_mi_baselines.py --aggregate
 """
@@ -83,15 +89,15 @@ def _resolve_probe(dataset: str) -> ProbeBundle:
 # HDF5 introspection
 # ---------------------------------------------------------------------------
 def _h5_summary(h5_path: Path) -> dict:
-    """Read architecture, last epoch, num_classes, network_id from one HDF5.
+    """Read architecture, all epochs, all layer indices, num_classes from one HDF5.
 
     Handles both MLP HDF5s (``architecture`` attr is the hidden-width list)
-    and LeNet5 HDF5s (``arch_type=lenet5``; deepest hidden is
-    ``n_conv + n_fc_hidden``).
+    and LeNet5 HDF5s (``arch_type=lenet5``; hidden layers are
+    n_conv conv-ReLU steps + n_fc_hidden FC-ReLU steps).
     """
     with h5py.File(h5_path, "r") as f:
         attrs = dict(f["metadata"].attrs)
-        epochs = sorted(
+        all_epochs = sorted(
             int(k.split("_")[1]) for k in f["epochs"].keys() if k.startswith("epoch_")
         )
         arch_type = str(attrs.get("arch_type", "mlp"))
@@ -99,15 +105,15 @@ def _h5_summary(h5_path: Path) -> dict:
             conv_channels = list(attrs.get("conv_channels", []))
             fc_widths = list(attrs.get("fc_widths", []))
             arch = list(conv_channels) + list(fc_widths)
-            deepest = len(conv_channels) + len(fc_widths)  # last fc-ReLU layer
+            n_hidden = len(conv_channels) + len(fc_widths)
         else:
             arch = list(attrs.get("architecture", []))
-            deepest = len(arch)
+            n_hidden = len(arch)
     return {
         "architecture": arch,
         "arch_type": arch_type,
-        "deepest_layer": int(deepest),  # 1-indexed last hidden ReLU step
-        "last_epoch": int(epochs[-1]),
+        "all_epochs": all_epochs,
+        "all_layers": list(range(1, n_hidden + 1)),  # 1-indexed hidden ReLU layers
         "num_classes": int(attrs.get("inferred_num_classes", 0)),
         "network_id": str(attrs.get("experiment_name", h5_path.stem)),
     }
@@ -149,45 +155,33 @@ def _crossref_existing(h5_path: Path, epoch: int, layer: int) -> dict:
 # ---------------------------------------------------------------------------
 # Per-HDF5 evaluation
 # ---------------------------------------------------------------------------
-def evaluate_one(
-    job: dict,
-    probe: ProbeBundle,
+def _evaluate_cell(
+    h5_path: Path,
+    epoch: int,
+    layer: int,
+    X: np.ndarray,
+    Y: np.ndarray,
+    N_orig: int,
+    N_eff: int,
+    meta: dict,
     args: argparse.Namespace,
-) -> pd.DataFrame:
-    h5_path: Path = job["h5"]
-    info = _h5_summary(h5_path)
-    epoch = info["last_epoch"]
-    layer = info["deepest_layer"]
-    num_classes = info["num_classes"]
-
-    X = probe.X_probe.astype(np.float32, copy=False)
-    Y = probe.y_probe.astype(np.int64, copy=False)
-    N = X.shape[0]
-
-    # Subsample (deterministic per HDF5) if probe larger than the cap.
-    if N > args.subsample_n:
-        rng = np.random.default_rng(int(job["seed"]))
-        idx = rng.choice(N, size=args.subsample_n, replace=False)
-        X = X[idx]
-        Y = Y[idx]
-        N_eff = args.subsample_n
-    else:
-        N_eff = N
-
+) -> dict:
+    """Evaluate all baseline estimators at a single (epoch, layer) cell."""
+    num_classes = meta["num_classes"]
     T = load_activations_dispatch(h5_path, epoch, layer, X, kind="pre")
     d_T = T.shape[1]
 
     row: dict = {
-        "network_id": info["network_id"],
-        "dataset": job["dataset"],
-        "noise_level": job["noise"],
-        "arch_str": job["arch"],
-        "seed": int(job["seed"]),
+        "network_id": meta["network_id"],
+        "dataset": meta["dataset"],
+        "noise_level": meta["noise"],
+        "arch_str": meta["arch"],
+        "seed": int(meta["seed"]),
         "epoch": int(epoch),
         "layer": int(layer),
         "d_T": int(d_T),
         "num_classes": int(num_classes),
-        "probe_N": int(N),
+        "probe_N": int(N_orig),
         "N_used": int(N_eff),
     }
 
@@ -212,7 +206,7 @@ def evaluate_one(
             seen.add(K)
     t0 = time.perf_counter()
     for label, K in kmeans_settings:
-        out = kmeans_mi(T, Y, K=K, seed=int(job["seed"]), num_classes=num_classes)
+        out = kmeans_mi(T, Y, K=K, seed=int(meta["seed"]), num_classes=num_classes)
         row[f"bits_kmeans_K{label}"] = out["bits"]
         row[f"R_kmeans_K{label}"] = out["num_regions"]
     row["wall_seconds_kmeans"] = time.perf_counter() - t0
@@ -257,7 +251,88 @@ def evaluate_one(
     # Cross-ref to existing new-estimator CSV (no-op if missing).
     row.update(_crossref_existing(h5_path, epoch, layer))
 
-    return pd.DataFrame([row])
+    return row
+
+
+def evaluate_one(
+    job: dict,
+    probe: ProbeBundle,
+    args: argparse.Namespace,
+) -> pd.DataFrame:
+    """Sweep all (epoch, layer) cells for one HDF5; skip already-computed pairs."""
+    h5_path: Path = job["h5"]
+    info = _h5_summary(h5_path)
+    num_classes = info["num_classes"]
+
+    all_epochs: List[int] = info["all_epochs"]
+    all_layers: List[int] = info["all_layers"]
+
+    # Apply CLI epoch/layer filters if provided.
+    if args.epoch_filter:
+        all_epochs = [e for e in all_epochs if e in set(args.epoch_filter)]
+    if args.layer_filter:
+        all_layers = [l for l in all_layers if l in set(args.layer_filter)]
+
+    # Load existing rows so we can resume partial runs.
+    out_csv = _csv_path_for(h5_path)
+    done_cells: set = set()
+    existing_rows: List[pd.DataFrame] = []
+    if out_csv.exists() and not args.force:
+        try:
+            prev = pd.read_csv(out_csv)
+            done_cells = set(zip(prev["epoch"].tolist(), prev["layer"].tolist()))
+            existing_rows.append(prev)
+        except Exception:
+            pass
+
+    todo = [
+        (e, l) for e in all_epochs for l in all_layers if (e, l) not in done_cells
+    ]
+    if not todo:
+        # Signal to run_jobs that nothing was computed.
+        return pd.DataFrame()
+
+    X = probe.X_probe.astype(np.float32, copy=False)
+    Y = probe.y_probe.astype(np.int64, copy=False)
+    N = X.shape[0]
+
+    # Subsample once (deterministic per HDF5) so all cells use the same subset.
+    if N > args.subsample_n:
+        rng = np.random.default_rng(int(job["seed"]))
+        idx = rng.choice(N, size=args.subsample_n, replace=False)
+        X = X[idx]
+        Y = Y[idx]
+        N_eff = args.subsample_n
+    else:
+        N_eff = N
+
+    meta = {
+        "network_id": info["network_id"],
+        "dataset": job["dataset"],
+        "noise": job["noise"],
+        "arch": job["arch"],
+        "seed": job["seed"],
+        "num_classes": num_classes,
+    }
+
+    new_rows: List[dict] = []
+    for cell_idx, (epoch, layer) in enumerate(todo, start=1):
+        print(f"    cell {cell_idx}/{len(todo)}: epoch={epoch} layer={layer}", flush=True)
+        try:
+            row = _evaluate_cell(h5_path, epoch, layer, X, Y, N, N_eff, meta, args)
+            new_rows.append(row)
+        except Exception as exc:
+            print(f"    -> FAILED epoch={epoch} layer={layer}: {exc!r}", flush=True)
+
+        # Write incrementally so a crash only loses the current cell.
+        if new_rows:
+            combined = pd.concat(
+                existing_rows + [pd.DataFrame(new_rows)], ignore_index=True
+            )
+            combined.to_csv(out_csv, index=False)
+
+    all_frames = existing_rows + ([pd.DataFrame(new_rows)] if new_rows else [])
+    return pd.concat(all_frames, ignore_index=True) if all_frames else pd.DataFrame()
 
 
 # ---------------------------------------------------------------------------
@@ -280,35 +355,35 @@ def run_jobs(jobs: List[dict], args: argparse.Namespace) -> None:
     total = len(jobs)
     cum = 0.0
     done = 0
+    skipped = 0
     for i, job in enumerate(jobs, start=1):
         tag = f"{job['dataset']}/n{job['noise']}/{job['arch']}/seed_{job['seed']}"
-        out_csv = _csv_path_for(job["h5"])
-        if out_csv.exists() and not args.force:
-            print(f"[{i}/{total}] skip (exists): {tag}")
-            continue
         if job["dataset"] not in probes:
             probes[job["dataset"]] = _resolve_probe(job["dataset"])
             print(f"  probe[{job['dataset']}]: {probes[job['dataset']].note}")
 
-        print(f"[{i}/{total}] running: {tag}")
+        print(f"[{i}/{total}] {tag}", flush=True)
         t0 = time.perf_counter()
         try:
             df = evaluate_one(job, probes[job["dataset"]], args)
         except Exception as exc:
             print(f"  -> FAILED: {exc!r}", file=sys.stderr)
             continue
-        df.to_csv(out_csv, index=False)
+        if df.empty:
+            skipped += 1
+            print(f"  -> all cells already done, skipped")
+            continue
         dt = time.perf_counter() - t0
         cum += dt
         done += 1
         avg = cum / done
         eta = avg * (total - i)
         print(
-            f"  -> {dt:6.2f}s   cum={cum/60:.1f}min   "
+            f"  -> {len(df)} rows   {dt:6.2f}s   cum={cum/60:.1f}min   "
             f"ETA {eta/60:.1f} min over {total - i} remaining"
         )
 
-    print(f"\nfinished: {done} ran, {total - done} skipped/failed.")
+    print(f"\nfinished: {done} ran, {skipped} fully-skipped, {total - done - skipped} failed.")
 
 
 def aggregate(output: Path) -> None:
@@ -357,6 +432,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     p.add_argument("--subsample-n", type=int, default=SUBSAMPLE_N_DEFAULT,
                    help="cap probe size when running estimators (default 5000)")
+    p.add_argument("--epoch-filter", nargs="+", type=int, default=None,
+                   help="restrict to these epoch indices (default: all saved epochs)")
+    p.add_argument("--layer-filter", nargs="+", type=int, default=None,
+                   help="restrict to these layer indices (default: all hidden layers)")
     p.add_argument("--skip-mine", action="store_true")
     p.add_argument("--skip-infonce", action="store_true")
     p.add_argument("--mine-seeds", type=int, default=MINE_SEEDS_DEFAULT)
