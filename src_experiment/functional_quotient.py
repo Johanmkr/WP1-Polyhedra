@@ -138,6 +138,20 @@ def _build_active_data(
     return out
 
 
+def _relative_frob(A1: np.ndarray, A2: np.ndarray) -> float:
+    """Relative Frobenius distance between two matrices."""
+    denom = 0.5 * (np.linalg.norm(A1, "fro") + np.linalg.norm(A2, "fro"))
+    if denom < 1e-12:
+        return 0.0
+    return float(np.linalg.norm(A1 - A2, "fro") / denom)
+
+
+def are_functionally_equivalent(A1: np.ndarray, A2: np.ndarray, eps: float) -> bool:
+    """True if A1 and A2 implement the same linear transformation up to relative
+    tolerance eps.  Bias is excluded by design."""
+    return _relative_frob(A1, A2) <= eps
+
+
 def cluster_functional(
     active_data: Dict[bytes, _RegionActive],
     epsilon: float,
@@ -145,8 +159,9 @@ def cluster_functional(
     """ε-tolerance functional-equivalence clustering.
 
     Buckets first by ``S_l`` (matching active output set is necessary), then
-    naive O(k²) Frobenius+L2 comparison within each bucket. The spec writes
-    strict ``<``; we use ``<=`` so ``epsilon=0`` recovers numerical equality.
+    naive O(k²) relative-Frobenius comparison of tilde_A within each bucket.
+    Bias tilde_c is excluded from the criterion (scale-invariant definition).
+    Uses ``<=`` so ``epsilon=0`` recovers numerical equality.
     """
     buckets: Dict[Tuple[int, bytes], List[bytes]] = defaultdict(list)
     for rid, ra in active_data.items():
@@ -156,21 +171,18 @@ def cluster_functional(
     quotient_map: Dict[bytes, int] = {}
     next_qid = 0
     for rids in buckets.values():
-        reps: List[Tuple[int, np.ndarray, np.ndarray]] = []
+        reps: List[Tuple[int, np.ndarray]] = []
         for rid in rids:
             ra = active_data[rid]
             assigned = False
-            for ref_qid, ref_A, ref_c in reps:
-                d = float(np.linalg.norm(ra.tilde_A - ref_A)) + float(
-                    np.linalg.norm(ra.tilde_c - ref_c)
-                )
-                if d <= epsilon:
+            for ref_qid, ref_A in reps:
+                if are_functionally_equivalent(ra.tilde_A, ref_A, epsilon):
                     quotient_map[rid] = ref_qid
                     assigned = True
                     break
             if not assigned:
                 quotient_map[rid] = next_qid
-                reps.append((next_qid, ra.tilde_A, ra.tilde_c))
+                reps.append((next_qid, ra.tilde_A))
                 next_qid += 1
 
     return quotient_map, next_qid

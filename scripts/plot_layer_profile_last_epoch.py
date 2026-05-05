@@ -59,10 +59,7 @@ DATASETS = ["composite", "wbc", "mnist"]
 DATASET_TITLE = {"composite": "Composite", "wbc": "WBC", "mnist": "MNIST (PCA-10, 3 layers)"}
 
 OURS = [
-    ("plug_in_bits", r"$\hat I_{\mathrm{raw}}$ (plug-in)", "tab:red", "-", "o"),
-    ("miller_madow_bits", r"$\tilde I_{\mathrm{raw}}$ (M-M)", "tab:orange", "-", "s"),
-    ("plug_in_func_bits", r"$\hat I_{\mathrm{func}}$ (plug-in)", "tab:blue", ":", "o"),
-    ("miller_madow_func_bits", r"$\tilde I_{\mathrm{func}}$ (M-M)", "tab:green", ":", "s"),
+    ("miller_madow_bits", r"$\tilde I_{\mathrm{raw}}$ (routing, M-M)", "tab:blue", "-", "o"),
 ]
 
 BASELINES = [
