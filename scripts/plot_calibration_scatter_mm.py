@@ -1,8 +1,7 @@
-"""Calibration scatter: plug-in routing MI (x) vs each baseline (y).
+"""Calibration scatter: Miller-Madow routing MI (x) vs each baseline (y).
 
-For every (dataset, architecture, seed) at last epoch / deepest layer,
-scatter plug-in routing MI against each baseline. Diagonal y=x and Pearson r
-show agreement across all conditions.
+Identical layout to plot_calibration_scatter.py but uses the MM-corrected
+estimator (miller_madow_bits) instead of the plug-in.
 
 Inputs:
     results/mi_baselines.csv
@@ -12,7 +11,7 @@ Inputs:
     results/mnist_fc_baselines.csv
 
 Outputs:
-    figures/calibration_scatter_raw.png / .pdf
+    figures/calibration_scatter_mm.png / .pdf
 """
 
 from __future__ import annotations
@@ -66,9 +65,9 @@ BASELINES = [
     ("bits_ksg_k3",     r"KSG $k{=}3$"),
 ]
 
-OURS_COL   = "plug_in_bits"
-OURS_LABEL = r"$\hat{I}$: Ours [bits]"
-OUT_STEM   = "calibration_scatter_raw"
+OURS_COL   = "miller_madow_bits"
+OURS_LABEL = r"$\tilde{I}_{\mathrm{raw}}$ (M-M) [bits]"
+OUT_STEM   = "calibration_scatter_mm"
 
 
 def _arch_depth(arch_str: str) -> int:
@@ -147,7 +146,7 @@ def plot(df: pd.DataFrame) -> None:
         x = sub[OURS_COL].to_numpy()
         y = sub[bl_col].to_numpy()
         for ds, sub_ds in sub.groupby("dataset"):
-            ax.scatter(sub_ds[bl_col], sub_ds[OURS_COL],
+            ax.scatter(sub_ds[OURS_COL], sub_ds[bl_col],
                        s=22, alpha=0.7,
                        color=DATASET_COLOUR.get(ds, "tab:gray"),
                        label=DATASET_LABEL.get(ds, ds),
@@ -155,22 +154,21 @@ def plot(df: pd.DataFrame) -> None:
         ax.plot([0.0, 2.5], [0.0, 2.5], "k--", lw=0.8, alpha=0.5)
         r = float(np.corrcoef(x, y)[0, 1])
         ax.text(0.04, 0.96, rf"$r = {r:.3f}$  ($n={len(x)}$)",
-                transform=ax.transAxes, ha="left", va="top", fontsize=12,
+                transform=ax.transAxes, ha="left", va="top", fontsize=10,
                 bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.85))
         ax.set_xlim(0.0, 2.5)
         ax.set_ylim(0.0, 2.5)
         ax.set_aspect("equal")
-        ax.set_xlabel(r"$\hat{I}$: " + bl_label + " [bits]", fontsize=14)
-        ax.set_ylabel(OURS_LABEL if ax is axes[0] else "", fontsize=14)
-        # ax.set_title(bl_label, fontsize=14)
-        ax.tick_params(labelsize=12)
+        ax.set_xlabel(OURS_LABEL, fontsize=11)
+        ax.set_ylabel(bl_label + " [bits]" if ax is axes[0] else "", fontsize=11)
+        ax.set_title(bl_label, fontsize=11)
         ax.grid(alpha=0.25)
 
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", ncol=len(labels),
-               bbox_to_anchor=(0.5, 1.1), frameon=False, fontsize=12)
-    # fig.suptitle("Calibration: plug-in routing MI vs baselines (last epoch, deepest layer)",
-    #              y=1.08, fontsize=14)
+               bbox_to_anchor=(0.5, 1.02), frameon=False, fontsize=9)
+    fig.suptitle("Calibration: M-M routing MI vs baselines (last epoch, deepest layer)",
+                 y=1.08, fontsize=11)
     fig.tight_layout()
     savefig(fig, neurips_figpath / OUT_STEM)
 

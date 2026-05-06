@@ -27,7 +27,7 @@ from src_experiment.functional_quotient import FunctionalQuotientEstimator
 REPO = Path(__file__).resolve().parent
 ROOT = REPO / "outputs" / "mnist_capacity"
 
-DEFAULT_EPSILONS = (0.0, 1e-4, 1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0)
+DEFAULT_EPSILONS = (0.0, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.5, 2.0)
 
 # Filename pattern: ``2_dim_[5, 5, 5]`` -> target_dim=2, arch="[5, 5, 5]"
 _DIR_RE = re.compile(r"^(?P<dim>\d+)_dim_(?P<arch>\[.*\])$")

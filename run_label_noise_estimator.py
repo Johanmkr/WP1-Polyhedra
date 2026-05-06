@@ -52,7 +52,7 @@ DATASETS = {
 }
 
 # Wider than spec default. See `new_estimator_next_steps.md` for rationale.
-DEFAULT_EPSILONS = (0.0, 1e-4, 1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0)
+DEFAULT_EPSILONS = (0.0, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.5, 2.0)
 
 # Filename pattern: ``n0.2_[25, 25, 25]`` (MLP) or ``n0.0_LeNet-XS`` (CNN).
 # arch group accepts either a bracketed list or a hyphenated identifier.

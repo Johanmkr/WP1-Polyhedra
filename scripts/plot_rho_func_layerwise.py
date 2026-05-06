@@ -40,21 +40,18 @@ FIGURES = REPO / "figures"
 
 NOISE = 0.0
 LAST_EPOCH = 150
-EPS_FUNC = 10.0
 
 ARCHS_FIVE = ["[5, 5, 5, 5, 5]", "[9, 9, 9, 9, 9]", "[25, 25, 25, 25, 25]"]
 ARCHS_MNIST = ["[5, 5, 5]", "[7, 7, 7]"]
 MNIST_TARGET_DIM = 10
+
+EPSILONS = [0.0, 0.1, 0.3, 0.5, 1.0, 2.0]
 
 DATASET_TITLE = {
     "composite": "Composite (7 cls, $N$=10k)",
     "wbc": "WBC (2 cls, $N$=569)",
     "mnist": "MNIST (10 cls, PCA-10)",
 }
-
-# Width labels for legend.
-def _width(arch: str) -> int:
-    return int(arch.strip()[1:-1].split(",")[0].strip())
 
 
 def load_composite_wbc(dataset: str) -> pd.DataFrame:
@@ -63,8 +60,7 @@ def load_composite_wbc(dataset: str) -> pd.DataFrame:
         (df["noise_level"] == NOISE)
         & (df["epoch"] == LAST_EPOCH)
         & (df["arch_str"].isin(ARCHS_FIVE))
-        & (np.isclose(df["epsilon"], EPS_FUNC))
-    ][["arch_str", "layer", "rho_func", "seed"]].copy()
+    ][["arch_str", "layer", "epsilon", "rho_func", "seed"]].copy()
 
 
 def load_mnist() -> pd.DataFrame:
@@ -73,23 +69,15 @@ def load_mnist() -> pd.DataFrame:
         (df["epoch"] == LAST_EPOCH)
         & (df["target_dim"] == MNIST_TARGET_DIM)
         & (df["arch_str"].isin(ARCHS_MNIST))
-        & (np.isclose(df["epsilon"], EPS_FUNC))
-    ][["arch_str", "layer", "rho_func", "seed"]].copy()
+    ][["arch_str", "layer", "epsilon", "rho_func", "seed"]].copy()
 
 
-def _plot_panel(
-    ax: plt.Axes,
-    df: pd.DataFrame,
-    title: str,
-    archs: list[str],
-) -> None:
-    widths = sorted({_width(a) for a in archs})
-    colours = cm.viridis(np.linspace(0.15, 0.85, len(widths)))
-    colour_map = {w: c for w, c in zip(widths, colours)}
+def _plot_panel(ax: plt.Axes, df: pd.DataFrame, title: str) -> None:
+    palette = plt.get_cmap("tab10")
+    colours = {eps: palette(i) for i, eps in enumerate(EPSILONS)}
 
-    for arch in archs:
-        w = _width(arch)
-        sub = df[df["arch_str"] == arch].groupby("layer")["rho_func"].agg(
+    for eps in EPSILONS:
+        sub = df[np.isclose(df["epsilon"], eps)].groupby("layer")["rho_func"].agg(
             ["mean", "std"]
         ).reset_index()
         if sub.empty:
@@ -97,46 +85,48 @@ def _plot_panel(
         xs = sub["layer"].to_numpy()
         ys = sub["mean"].to_numpy()
         es = sub["std"].to_numpy()
-        colour = colour_map[w]
+        colour = colours[eps]
         ax.plot(xs, ys, marker="o", color=colour, lw=1.8, markersize=5,
-                label=f"width {w}")
-        ax.fill_between(xs, ys - es, ys + es, color=colour, alpha=0.15, lw=0)
+                label=rf"$\varepsilon={eps:g}$")
+        ax.fill_between(xs, ys - es, ys + es, color=colour, alpha=0.13, lw=0)
 
     ax.axhline(1.0, color="k", linestyle="--", lw=0.7, alpha=0.4)
     layers = sorted(df["layer"].unique())
     ax.set_xticks(layers)
-    ax.set_xlabel("layer")
-    ax.set_ylabel(r"$\rho_{\mathrm{func}}$")
+    ax.set_xlabel("Layer", fontsize=12)
+    ax.set_ylabel(r"$\rho_{\mathrm{func}}$", fontsize=12)
     ax.set_ylim(0, 1.08)
-    ax.set_title(title)
+    ax.set_title(title, fontsize=12)
+    ax.tick_params(labelsize=10)
     ax.grid(alpha=0.25)
-    ax.legend(fontsize=8, frameon=False)
+    ax.legend(fontsize=9, frameon=False)
 
 
 def main() -> None:
     FIGURES.mkdir(exist_ok=True)
 
     data = {
-        "composite": (load_composite_wbc("composite"), ARCHS_FIVE),
-        "wbc": (load_composite_wbc("wbc"), ARCHS_FIVE),
-        "mnist": (load_mnist(), ARCHS_MNIST),
+        "composite": load_composite_wbc("composite"),
+        "wbc":       load_composite_wbc("wbc"),
+        "mnist":     load_mnist(),
     }
 
     n = len(data)
-    fig, axes = plt.subplots(1, n, figsize=(4.5 * n, 3.8), sharey=False)
+    fig, axes = plt.subplots(1, n, figsize=(4.5 * n, 3.8), sharey=True)
 
-    for ax, (ds, (df, archs)) in zip(axes, data.items()):
+    for ax, (ds, df) in zip(axes, data.items()):
         if df.empty:
             print(f"[warn] no data for {ds}")
             ax.set_visible(False)
             continue
-        _plot_panel(ax, df, DATASET_TITLE[ds], archs)
+        _plot_panel(ax, df, DATASET_TITLE[ds])
+        if ax is not axes[0]:
+            ax.set_ylabel("")
 
     fig.suptitle(
-        rf"Functional-quotient compression $\rho_{{\mathrm{{func}}}}$ by layer"
-        rf" (epoch {LAST_EPOCH}, $\varepsilon={EPS_FUNC:g}$)",
-        fontsize=11,
-        y=1.03,
+        rf"$\rho_{{\mathrm{{func}}}}$ by layer for multiple $\varepsilon$"
+        rf" (epoch {LAST_EPOCH}, averaged over architectures and seeds)",
+        fontsize=11, y=1.03,
     )
     fig.tight_layout()
     savefig(fig, neurips_figpath / "rho_func_layerwise")

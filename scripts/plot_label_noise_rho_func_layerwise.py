@@ -33,7 +33,7 @@ RESULTS_DIR = REPO / "results"
 FIGURES_DIR = REPO / "figures"
 
 LAST_EPOCH = 150
-EPS_FUNC = 10.0
+EPS_FUNC = 1.0
 
 ARCHS_FIVE = ["[5, 5, 5, 5, 5]", "[9, 9, 9, 9, 9]", "[25, 25, 25, 25, 25]"]
 LAYERS_FIVE = [1, 2, 3, 4, 5]

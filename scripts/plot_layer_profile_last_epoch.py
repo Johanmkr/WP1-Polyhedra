@@ -39,7 +39,7 @@ FIGURES = REPO / "figures"
 
 NOISE = 0.0
 LAST_EPOCH = 150
-EPS_FUNC = 10.0
+EPS_FUNC = 1.0
 LAYERS_FIVE = [1, 2, 3, 4, 5]
 LAYERS_THREE = [1, 2, 3]
 
@@ -59,7 +59,7 @@ DATASETS = ["composite", "wbc", "mnist"]
 DATASET_TITLE = {"composite": "Composite", "wbc": "WBC", "mnist": "MNIST (PCA-10, 3 layers)"}
 
 OURS = [
-    ("miller_madow_bits", r"$\tilde I_{\mathrm{raw}}$ (routing, M-M)", "tab:blue", "-", "o"),
+    ("plug_in_bits", r"$\hat I$", "tab:blue", "-", "o"),
 ]
 
 BASELINES = [
@@ -163,18 +163,20 @@ def _draw_panel(
 
     ax.axhline(h_y, color="k", linestyle="-.", lw=0.8, alpha=0.5)
     ax.text(
-        layers[-1] + 0.05,
-        h_y,
-        f"  $H(Y)={h_y:.2f}$",
+        layers[-1]-1,
+        h_y+0.1,
+        r"$H(Y)={h_y:.2f}$".format(h_y=h_y),
         va="center",
         ha="left",
-        fontsize=8,
+        fontsize=12,
         alpha=0.7,
     )
     ax.set_xticks(layers)
-    ax.set_xlabel("layer")
-    ax.set_ylabel("bits")
-    ax.set_title(DATASET_TITLE.get(ds, ds))
+    ax.set_xticklabels(layers, fontsize=12)
+    ax.set_xlabel("layer", fontsize=14)
+    ax.set_title(DATASET_TITLE.get(ds, ds), fontsize=14)
+    ax.set_ylim(bottom=0, top=3.5)
+    ax.tick_params(labelsize=12)
     ax.grid(alpha=0.25)
 
 
@@ -185,7 +187,7 @@ def plot(
     out_path: Path,
 ) -> None:
     n = len(ours_summary)
-    fig, axes = plt.subplots(1, n, figsize=(5.0 * n, 4.0), sharey=False)
+    fig, axes = plt.subplots(1, n, figsize=(5.0 * n, 4.0), sharey=True)
     if n == 1:
         axes = [axes]
 
@@ -198,6 +200,8 @@ def plot(
             H_Y[ds],
             layers,
         )
+
+    axes[0].set_ylabel("bits", fontsize=14)
 
     handles, labels = [], []
     seen = set()
@@ -214,13 +218,13 @@ def plot(
         ncol=4,
         bbox_to_anchor=(0.5, 1.05),
         frameon=False,
-        fontsize=9,
+        fontsize=12,
     )
-    fig.suptitle(
-        rf"Layerwise bits at last epoch ($\eta=0$, $\varepsilon={EPS_FUNC:g}$)",
-        y=1.13,
-        fontsize=11,
-    )
+    # fig.suptitle(
+    #     rf"Layerwise bits at last epoch ($\eta=0$, $\varepsilon={EPS_FUNC:g}$)",
+    #     y=1.13,
+    #     fontsize=18,
+    # )
     savefig(fig, neurips_figpath / "layer_profile_last_epoch")
 
 
